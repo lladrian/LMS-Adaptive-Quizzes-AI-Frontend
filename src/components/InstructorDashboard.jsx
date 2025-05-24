@@ -1,203 +1,625 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  FiUsers, 
-  FiUpload, 
-  FiBook, 
-  FiPlus, 
+import React, { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  FiUsers,
+  FiUpload,
+  FiBook,
+  FiPlus,
   FiLogOut,
   FiBarChart2,
   FiCalendar,
   FiMessageSquare,
-  FiAlertCircle
-} from 'react-icons/fi';
+  FiAlertCircle,
+  FiAward,
+  FiClock,
+  FiDownload,
+  FiMail,
+} from "react-icons/fi";
 
 const InstructorDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Sample data for dashboard overview
-  const stats = [
-    { title: 'Total Students', value: 142, change: '+12%', icon: FiUsers, color: 'text-indigo-600' },
-    { title: 'Active Classes', value: 8, change: '+2', icon: FiBook, color: 'text-green-600' },
-    { title: 'Materials Shared', value: 47, change: '+5', icon: FiUpload, color: 'text-blue-600' },
-    { title: 'Pending Tasks', value: 3, change: '-2', icon: FiAlertCircle, color: 'text-yellow-600' },
-  ];
-
-  const recentActivities = [
-    { id: 1, action: 'Uploaded new material', course: 'Math 101', time: '2 hours ago' },
-    { id: 2, action: 'Added new student', course: 'Science 202', time: '5 hours ago' },
-    { id: 3, action: 'Created new assignment', course: 'History 301', time: '1 day ago' },
-    { id: 4, action: 'Graded submissions', course: 'English 102', time: '2 days ago' },
-  ];
-
-  const upcomingEvents = [
-    { id: 1, title: 'Faculty Meeting', date: 'Tomorrow, 10:00 AM' },
-    { id: 2, title: 'Parent-Teacher Conference', date: 'May 25, 2:00 PM' },
-    { id: 3, title: 'End of Term Exams', date: 'June 5-9' },
-  ];
-
-  const navItems = [
-    { path: '/instructor/students', icon: FiUsers, label: 'Students' },
-    { path: '/instructor/materials', icon: FiUpload, label: 'Materials' },
-    { path: '/instructor/classes', icon: FiBook, label: 'Classes' },
-  ];
+  // Enhanced data structure
+  const dashboardData = {
+    stats: [
+      {
+        title: "Total Students",
+        value: 142,
+        change: "+12%",
+        icon: FiUsers,
+        color: "text-indigo-600",
+        trend: "up",
+      },
+      {
+        title: "Active Classes",
+        value: 8,
+        change: "+2",
+        icon: FiBook,
+        color: "text-green-600",
+        trend: "up",
+      },
+      {
+        title: "Materials Shared",
+        value: 47,
+        change: "+5",
+        icon: FiUpload,
+        color: "text-blue-600",
+        trend: "up",
+      },
+      {
+        title: "Pending Grading",
+        value: 23,
+        change: "-8",
+        icon: FiAlertCircle,
+        color: "text-yellow-600",
+        trend: "down",
+      },
+      {
+        title: "Avg. Class Rating",
+        value: 4.8,
+        change: "+0.2",
+        icon: FiAward,
+        color: "text-purple-600",
+        trend: "up",
+      },
+      {
+        title: "Unread Messages",
+        value: 5,
+        change: "+3",
+        icon: FiMail,
+        color: "text-red-600",
+        trend: "up",
+      },
+    ],
+    recentActivities: [
+      {
+        id: 1,
+        action: "Uploaded new material",
+        course: "Math 101",
+        time: "2 hours ago",
+        icon: FiUpload,
+        type: "material",
+      },
+      {
+        id: 2,
+        action: "Added new student",
+        course: "Science 202",
+        time: "5 hours ago",
+        icon: FiUsers,
+        type: "student",
+      },
+      {
+        id: 3,
+        action: "Created new assignment",
+        course: "History 301",
+        time: "1 day ago",
+        icon: FiBook,
+        type: "assignment",
+      },
+      {
+        id: 4,
+        action: "Graded submissions",
+        course: "English 102",
+        time: "2 days ago",
+        icon: FiBarChart2,
+        type: "grading",
+      },
+      {
+        id: 5,
+        action: "Replied to student query",
+        course: "CS401",
+        time: "3 days ago",
+        icon: FiMessageSquare,
+        type: "communication",
+      },
+    ],
+    upcomingEvents: [
+      {
+        id: 1,
+        title: "Faculty Meeting",
+        date: "Tomorrow, 10:00 AM",
+        type: "meeting",
+        priority: "high",
+      },
+      {
+        id: 2,
+        title: "Parent-Teacher Conference",
+        date: "May 25, 2:00 PM",
+        type: "conference",
+        priority: "medium",
+      },
+      {
+        id: 3,
+        title: "End of Term Exams",
+        date: "June 5-9",
+        type: "exam",
+        priority: "high",
+      },
+      {
+        id: 4,
+        title: "Curriculum Review",
+        date: "June 15",
+        type: "planning",
+        priority: "low",
+      },
+    ],
+    performanceMetrics: {
+      studentEngagement: 78,
+      assignmentCompletion: 92,
+      avgGrades: 85.6,
+      attendanceRate: 94.2,
+    },
+    quickLinks: [
+      {
+        title: "Grade Assignments",
+        icon: FiBarChart2,
+        path: "/instructor/grading",
+      },
+      {
+        title: "Course Analytics",
+        icon: FiAward,
+        path: "/instructor/analytics",
+      },
+      {
+        title: "Student Reports",
+        icon: FiUsers,
+        path: "/instructor/reports",
+      },
+      {
+        title: "Resource Library",
+        icon: FiDownload,
+        path: "/instructor/resources",
+      },
+    ],
+  };
 
   const quickActions = [
-    { icon: FiPlus, label: 'Add Student', action: () => navigate('/instructor/students') },
-    { icon: FiUpload, label: 'Upload Material', action: () => navigate('/instructor/materials') },
-    { icon: FiBook, label: 'Create Class', action: () => navigate('/instructor/classes') },
-    { icon: FiMessageSquare, label: 'Send Announcement', action: () => alert('Feature coming soon!') },
+    {
+      icon: FiPlus,
+      label: "Add Student",
+      action: () => navigate("/instructor/students/new"),
+      color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      icon: FiUpload,
+      label: "Upload Material",
+      action: () => navigate("/instructor/materials/upload"),
+      color: "bg-blue-100 text-blue-600",
+    },
+    {
+      icon: FiBook,
+      label: "Create Class",
+      action: () => navigate("/instructor/classes/new"),
+      color: "bg-green-100 text-green-600",
+    },
+    {
+      icon: FiMessageSquare,
+      label: "Send Announcement",
+      action: () => navigate("/instructor/announcements/new"),
+      color: "bg-purple-100 text-purple-600",
+    },
+    {
+      icon: FiBarChart2,
+      label: "Grade Assignments",
+      action: () => navigate("/instructor/grading"),
+      color: "bg-yellow-100 text-yellow-600",
+    },
+    {
+      icon: FiCalendar,
+      label: "Schedule Event",
+      action: () => navigate("/instructor/calendar/new"),
+      color: "bg-red-100 text-red-600",
+    },
   ];
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`bg-white shadow-md transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          {sidebarOpen && <h1 className="text-xl font-bold text-indigo-600">Instructor Portal</h1>}
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 rounded-lg hover:bg-gray-100"
-          >
-            {sidebarOpen ? '«' : '»'}
-          </button>
-        </div>
-        
-        <nav className="p-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center p-3 rounded-lg mb-1 transition-colors ${
-                location.pathname === item.path
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="text-lg" />
-              {sidebarOpen && <span className="ml-3">{item.label}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <button className="flex items-center text-gray-600 hover:text-red-500 w-full p-2 rounded-lg hover:bg-gray-100">
-            <FiLogOut />
-            {sidebarOpen && <span className="ml-3">Logout</span>}
-          </button>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800">
-            {location.pathname === '/instructor' && 'Dashboard Overview'}
-            {location.pathname.includes('students') && 'Student Management'}
-            {location.pathname.includes('materials') && 'Lesson Materials'}
-            {location.pathname.includes('classes') && 'My Classes'}
+            {location.pathname === "/instructor/dashboard" &&
+              "Dashboard Overview"}
+            {location.pathname.includes("students") && "Student Management"}
+            {location.pathname.includes("materials") && "Lesson Materials"}
+            {location.pathname.includes("classes") && "Class Management"}
+            {location.pathname.includes("calendar") && "Calendar"}
+            {location.pathname.includes("messages") && "Messages"}
           </h2>
           <div className="flex space-x-3">
-            <button 
-              onClick={() => navigate('/instructor/students/new')}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
-            >
-              <FiPlus className="mr-2" />
-              Add New
+            <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
+              <FiClock className="text-gray-600" />
+            </button>
+            <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 relative">
+              <FiMessageSquare className="text-gray-600" />
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
           </div>
         </header>
 
         <div className="p-6">
-          {/* Show dashboard overview when at the root path */}
-          {location.pathname === '/instructor' ? (
+          {/* Dashboard Content */}
+          {location.pathname === "/instructor/dashboard" && (
             <div className="space-y-6">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, index) => (
-                  <div key={index} className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">{stat.title}</p>
-                        <p className="text-2xl font-semibold mt-1">{stat.value}</p>
-                        <p className={`text-xs mt-1 ${stat.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                          {stat.change}
-                        </p>
+              {/* Dashboard Tabs */}
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                <div className="flex border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`px-6 py-3 font-medium ${
+                      activeTab === "overview"
+                        ? "text-indigo-600 border-b-2 border-indigo-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("performance")}
+                    className={`px-6 py-3 font-medium ${
+                      activeTab === "performance"
+                        ? "text-indigo-600 border-b-2 border-indigo-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    Performance
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("quick-access")}
+                    className={`px-6 py-3 font-medium ${
+                      activeTab === "quick-access"
+                        ? "text-indigo-600 border-b-2 border-indigo-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    Quick Access
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  {activeTab === "overview" && (
+                    <>
+                      {/* Stats Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-6">
+                        {dashboardData.stats.map((stat, index) => (
+                          <div
+                            key={index}
+                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex justify-between">
+                              <div>
+                                <p className="text-sm text-gray-500">
+                                  {stat.title}
+                                </p>
+                                <p className="text-2xl font-semibold mt-1">
+                                  {stat.value}
+                                </p>
+                                <div className="flex items-center mt-1">
+                                  <span
+                                    className={`text-xs ${
+                                      stat.trend === "up"
+                                        ? "text-green-500"
+                                        : "text-red-500"
+                                    }`}
+                                  >
+                                    {stat.change}
+                                  </span>
+                                  <svg
+                                    className={`w-4 h-4 ml-1 ${
+                                      stat.trend === "up"
+                                        ? "text-green-500"
+                                        : "text-red-500"
+                                    }`}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    {stat.trend === "up" ? (
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 15l7-7 7 7"
+                                      />
+                                    ) : (
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    )}
+                                  </svg>
+                                </div>
+                              </div>
+                              <div
+                                className={`p-2 rounded-lg ${stat.color
+                                  .replace("text", "bg")
+                                  .replace("600", "100")}`}
+                              >
+                                <stat.icon
+                                  className={`text-xl ${stat.color}`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className={`p-3 rounded-lg bg-opacity-20 ${stat.color.replace('text', 'bg')}`}>
-                        <stat.icon className={`text-xl ${stat.color}`} />
+
+                      {/* Activity and Events */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Recent Activities */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                          <div className="p-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold flex items-center">
+                              <FiBarChart2 className="mr-2 text-indigo-600" />
+                              Recent Activities
+                            </h3>
+                          </div>
+                          <div className="divide-y divide-gray-200">
+                            {dashboardData.recentActivities.map((activity) => (
+                              <div
+                                key={activity.id}
+                                className="p-4 hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex items-start">
+                                  <div
+                                    className={`p-2 rounded-lg mr-3 ${
+                                      activity.type === "material"
+                                        ? "bg-indigo-100 text-indigo-600"
+                                        : activity.type === "student"
+                                        ? "bg-green-100 text-green-600"
+                                        : activity.type === "assignment"
+                                        ? "bg-blue-100 text-blue-600"
+                                        : activity.type === "grading"
+                                        ? "bg-yellow-100 text-yellow-600"
+                                        : "bg-purple-100 text-purple-600"
+                                    }`}
+                                  >
+                                    <activity.icon />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">
+                                      {activity.action}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {activity.course} • {activity.time}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Upcoming Events */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                          <div className="p-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold flex items-center">
+                              <FiCalendar className="mr-2 text-indigo-600" />
+                              Upcoming Events
+                            </h3>
+                          </div>
+                          <div className="divide-y divide-gray-200">
+                            {dashboardData.upcomingEvents.map((event) => (
+                              <div
+                                key={event.id}
+                                className="p-4 hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex items-start">
+                                  <div
+                                    className={`p-2 rounded-lg mr-3 ${
+                                      event.priority === "high"
+                                        ? "bg-red-100 text-red-600"
+                                        : event.priority === "medium"
+                                        ? "bg-yellow-100 text-yellow-600"
+                                        : "bg-gray-100 text-gray-600"
+                                    }`}
+                                  >
+                                    <FiCalendar />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{event.title}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {event.date}
+                                    </p>
+                                    <span
+                                      className={`inline-block mt-1 text-xs px-2 py-1 rounded-full ${
+                                        event.type === "meeting"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : event.type === "conference"
+                                          ? "bg-purple-100 text-purple-800"
+                                          : event.type === "exam"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-gray-100 text-gray-800"
+                                      }`}
+                                    >
+                                      {event.type}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {activeTab === "performance" && (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold">
+                        Performance Metrics
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Student Engagement */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-medium">Student Engagement</h4>
+                            <span className="text-sm text-gray-500">
+                              Last 30 days
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                              <div
+                                className="bg-indigo-600 h-4 rounded-full"
+                                style={{
+                                  width: `${dashboardData.performanceMetrics.studentEngagement}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span className="ml-3 font-medium">
+                              {
+                                dashboardData.performanceMetrics
+                                  .studentEngagement
+                              }
+                              %
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Assignment Completion */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-medium">
+                              Assignment Completion
+                            </h4>
+                            <span className="text-sm text-gray-500">
+                              Current Term
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                              <div
+                                className="bg-green-600 h-4 rounded-full"
+                                style={{
+                                  width: `${dashboardData.performanceMetrics.assignmentCompletion}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span className="ml-3 font-medium">
+                              {
+                                dashboardData.performanceMetrics
+                                  .assignmentCompletion
+                              }
+                              %
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Average Grades */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-medium">Average Grades</h4>
+                            <span className="text-sm text-gray-500">
+                              Current Term
+                            </span>
+                          </div>
+                          <div className="text-center">
+                            <div className="inline-flex items-center justify-center">
+                              <div
+                                className="radial-progress text-indigo-600"
+                                style={{
+                                  "--value":
+                                    dashboardData.performanceMetrics.avgGrades,
+                                  "--size": "8rem",
+                                }}
+                              >
+                                {dashboardData.performanceMetrics.avgGrades}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Attendance Rate */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-medium">Attendance Rate</h4>
+                            <span className="text-sm text-gray-500">
+                              Current Term
+                            </span>
+                          </div>
+                          <div className="text-center">
+                            <div className="inline-flex items-center justify-center">
+                              <div
+                                className="radial-progress text-blue-600"
+                                style={{
+                                  "--value":
+                                    dashboardData.performanceMetrics
+                                      .attendanceRate,
+                                  "--size": "8rem",
+                                }}
+                              >
+                                {
+                                  dashboardData.performanceMetrics
+                                    .attendanceRate
+                                }
+                                %
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
 
-              {/* Quick Actions */}
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {quickActions.map((action, index) => (
-                    <button
-                      key={index}
-                      onClick={action.action}
-                      className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
-                    >
-                      <action.icon className="text-2xl text-indigo-600 mb-2" />
-                      <span className="text-sm text-center">{action.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Activities */}
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <FiBarChart2 className="mr-2" /> Recent Activities
-                  </h3>
-                  <div className="space-y-4">
-                    {recentActivities.map((activity) => (
-                      <div key={activity.id} className="flex items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                        <div className="p-2 bg-indigo-50 rounded-lg mr-3">
-                          <FiUpload className="text-indigo-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{activity.action}</p>
-                          <p className="text-sm text-gray-500">
-                            {activity.course} • {activity.time}
-                          </p>
-                        </div>
+                  {activeTab === "quick-access" && (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold">Quick Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {quickActions.map((action, index) => (
+                          <button
+                            key={index}
+                            onClick={action.action}
+                            className={`flex flex-col items-center justify-center p-4 rounded-lg hover:shadow-md transition-all ${action.color}`}
+                          >
+                            <action.icon className="text-2xl mb-2" />
+                            <span className="text-sm text-center font-medium">
+                              {action.label}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Upcoming Events */}
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <FiCalendar className="mr-2" /> Upcoming Events
-                  </h3>
-                  <div className="space-y-4">
-                    {upcomingEvents.map((event) => (
-                      <div key={event.id} className="flex items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                        <div className="p-2 bg-blue-50 rounded-lg mr-3">
-                          <FiCalendar className="text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{event.title}</p>
-                          <p className="text-sm text-gray-500">{event.date}</p>
-                        </div>
+                      <h3 className="text-lg font-semibold mt-8">
+                        Quick Links
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {dashboardData.quickLinks.map((link, index) => (
+                          <Link
+                            key={index}
+                            to={link.path}
+                            className="bg-white p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all flex items-center"
+                          >
+                            <div
+                              className={`p-3 rounded-lg mr-3 ${
+                                link.icon === FiBarChart2
+                                  ? "bg-indigo-100 text-indigo-600"
+                                  : link.icon === FiAward
+                                  ? "bg-yellow-100 text-yellow-600"
+                                  : link.icon === FiUsers
+                                  ? "bg-green-100 text-green-600"
+                                  : "bg-blue-100 text-blue-600"
+                              }`}
+                            >
+                              <link.icon className="text-xl" />
+                            </div>
+                            <span className="font-medium">{link.title}</span>
+                          </Link>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          ) : (
-            <Outlet />
           )}
+
+          {/* Other Pages Content */}
+          {location.pathname !== "/instructor/dashboard" && <Outlet />}
         </div>
       </div>
     </div>

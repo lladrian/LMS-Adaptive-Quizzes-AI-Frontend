@@ -3,13 +3,33 @@ import AdminDashboard from "./components/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
 import AdminSettings from "./pages/admin/Settings";
 
+import InstructorLayout from "./pages/layouts/InstructorLayout";
 import InstructorDashboard from "./components/InstructorDashboard";
-import StudentsPage from "./pages/instructor/StudentsPage";
-import MaterialsPage from "./pages/instructor/MaterialsPage";
-import ClassesPage from "./pages/instructor/ClassesPage";
-import ClassViewPage from "./pages/instructor/ClassViewPage";
 
-import StudentDashboard from "./components/StudentDashboard";
+import AddStudentPage from "./pages/instructor/AddStudentPage";
+import EditStudentPage from "./pages/instructor/EditStudentPage";
+
+import ClassesPage from "./pages/instructor/ClassesPage";
+import CreateClassPage from "./pages/instructor/CreateClassPage";
+import EditClassPage from "./pages/instructor/EditClassPage";
+import ClassViewPage from "./pages/instructor/ClassViewPage";
+import ClassStudentsPage from "./pages/instructor/ClassStudentsPage";
+import AddStudentsToClassPage from "./pages/instructor/AddStudentsToClassPage";
+import CreateAssignmentPage from "./pages/instructor/CreateAssignmentPage";
+import AssignmentDetailPage from "./pages/instructor/AssignmentDetailPage";
+import MaterialsPage from "./pages/instructor/MaterialsPage";
+import UploadMaterialPage from "./pages/instructor/UploadMaterialPage";
+import EditMaterialPage from "./pages/instructor/EditMaterialPage";
+import InstructorSettings from "./pages/instructor/SettingsPage";
+import IntructorGradesPage from "./pages/instructor/GradesPage";
+
+import StudentLayout from "./pages/layouts/StudentLayout";
+import DashboardHome from "./pages/student/DashboardHome";
+import ClassesPageStudent from "./pages/student/ClassesPage";
+import ClassDetailPageStudent from "./pages/student/ClassDetailPage";
+import PracticePage from "./pages/student/PracticePage";
+import GradesPage from "./pages/student/GradesPage";
+
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 
@@ -25,14 +45,60 @@ function App() {
         <Route path="/admin/instructors" element={<Instructors />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
 
-        <Route path="/instructor" element={<InstructorDashboard />} />
+        {/*   <Route path="/instructor" element={<InstructorDashboard />} />
 
         <Route path="/instructor/students" element={<StudentsPage />} />
         <Route path="/instructor/materials" element={<MaterialsPage />} />
         <Route path="/instructor/classes" element={<ClassesPage />} />
-        <Route path="/instructor/classes/:classId" element={<ClassViewPage />} />
+        <Route
+          path="/instructor/classes/:classId"
+          element={<ClassViewPage />}
+        /> */}
 
-        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/instructor" element={<InstructorLayout />}>
+          <Route index element={<InstructorDashboard />} />
+
+          <Route path="dashboard" element={<InstructorDashboard />} />
+          <Route path="students/add" element={<AddStudentPage />} />
+          <Route path="students/edit/:id" element={<EditStudentPage />} />
+
+          <Route path="classes" element={<ClassesPage />} />
+          <Route path="classes/create" element={<CreateClassPage />} />
+          <Route path="classes/edit/:id" element={<EditClassPage />} />
+          <Route path="class/:classId" element={<ClassViewPage />} />
+          <Route
+            path="class/:classId/students"
+            element={<ClassStudentsPage />}
+          />
+          <Route
+            path="class/:classId/students/add"
+            element={<AddStudentsToClassPage />}
+          />
+
+          <Route
+            path="class/:classId/assignments/create"
+            element={<CreateAssignmentPage />}
+          />
+          <Route
+            path="class/:classId/assignment/:assignmentId"
+            element={<AssignmentDetailPage />}
+          />
+
+          <Route path="materials" element={<MaterialsPage />} />
+          <Route path="materials/upload" element={<UploadMaterialPage />} />
+          <Route path="materials/edit/:id" element={<EditMaterialPage />} />
+          <Route path="grades" element={<IntructorGradesPage />} />
+          <Route path="settings" element={<InstructorSettings />} />
+        </Route>
+
+        <Route path="/student" element={<StudentLayout />}>
+          <Route index element={<DashboardHome />} />
+          <Route path="dashboard" element={<DashboardHome />} />
+          <Route path="classes" element={<ClassesPageStudent />} />
+          <Route path="class/:classId" element={<ClassDetailPageStudent />} />
+          <Route path="practice" element={<PracticePage />} />
+          <Route path="grades" element={<GradesPage />} />
+        </Route>
       </Routes>
     </Router>
   );
