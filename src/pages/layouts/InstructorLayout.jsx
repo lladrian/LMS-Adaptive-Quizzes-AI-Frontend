@@ -15,7 +15,9 @@ const InstructorLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = [
+    
     { path: "/instructor/dashboard", icon: FiHome, label: "Dashboard" },
+
     { path: "/instructor/classes", icon: FiBook, label: "Classes" },
     { path: "/instructor/materials", icon: FiFileText, label: "Materials" },
     { path: "/instructor/grades", icon: FiBarChart2, label: "Grades" },

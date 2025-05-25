@@ -1,4 +1,13 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import AdminDashboard from "./components/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
 import AdminSettings from "./pages/admin/Settings";
@@ -8,7 +17,6 @@ import InstructorDashboard from "./components/InstructorDashboard";
 
 import AddStudentPage from "./pages/instructor/AddStudentPage";
 import EditStudentPage from "./pages/instructor/EditStudentPage";
-
 import ClassesPage from "./pages/instructor/ClassesPage";
 import CreateClassPage from "./pages/instructor/CreateClassPage";
 import EditClassPage from "./pages/instructor/EditClassPage";
@@ -27,80 +35,77 @@ import StudentLayout from "./pages/layouts/StudentLayout";
 import DashboardHome from "./pages/student/DashboardHome";
 import ClassesPageStudent from "./pages/student/ClassesPage";
 import ClassDetailPageStudent from "./pages/student/ClassDetailPage";
-import PracticePage from "./pages/student/PracticePage";
+import LessonPracticePage from "./pages/student/LessonPracticePage";
 import GradesPage from "./pages/student/GradesPage";
 
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
-
-import React from "react";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/instructors" element={<Instructors />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/instructors" element={<Instructors />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
 
-        {/*   <Route path="/instructor" element={<InstructorDashboard />} />
+          <Route path="/instructor" element={<InstructorLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
 
-        <Route path="/instructor/students" element={<StudentsPage />} />
-        <Route path="/instructor/materials" element={<MaterialsPage />} />
-        <Route path="/instructor/classes" element={<ClassesPage />} />
-        <Route
-          path="/instructor/classes/:classId"
-          element={<ClassViewPage />}
-        /> */}
+            <Route path="dashboard" element={<InstructorDashboard />} />
+            <Route path="students/add" element={<AddStudentPage />} />
+            <Route path="students/edit/:id" element={<EditStudentPage />} />
+            <Route path="classes" element={<ClassesPage />} />
+            <Route path="classes/create" element={<CreateClassPage />} />
+            <Route path="classes/edit/:id" element={<EditClassPage />} />
+            <Route path="class/:classId" element={<ClassViewPage />} />
+            <Route
+              path="class/:classId/students"
+              element={<ClassStudentsPage />}
+            />
+            <Route
+              path="class/:classId/students/add"
+              element={<AddStudentsToClassPage />}
+            />
+            <Route
+              path="class/:classId/assignments/create"
+              element={<CreateAssignmentPage />}
+            />
+            <Route
+              path="class/:classId/assignment/:assignmentId"
+              element={<AssignmentDetailPage />}
+            />
+            <Route path="materials" element={<MaterialsPage />} />
+            <Route path="materials/upload" element={<UploadMaterialPage />} />
+            <Route path="materials/edit/:id" element={<EditMaterialPage />} />
+            <Route path="grades" element={<IntructorGradesPage />} />
+            <Route path="settings" element={<InstructorSettings />} />
+          </Route>
 
-        <Route path="/instructor" element={<InstructorLayout />}>
-          <Route index element={<InstructorDashboard />} />
+          <Route path="/student" element={<StudentLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="dashboard" element={<DashboardHome />} />
+            <Route path="classes" element={<ClassesPageStudent />} />
+            <Route path="class/:classId" element={<ClassDetailPageStudent />} />
+            <Route
+              path="class/:classId/lesson/:lessonId/practice"
+              element={<LessonPracticePage />}
+            />
+            <Route path="grades" element={<GradesPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
 
-          <Route path="dashboard" element={<InstructorDashboard />} />
-          <Route path="students/add" element={<AddStudentPage />} />
-          <Route path="students/edit/:id" element={<EditStudentPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
 
-          <Route path="classes" element={<ClassesPage />} />
-          <Route path="classes/create" element={<CreateClassPage />} />
-          <Route path="classes/edit/:id" element={<EditClassPage />} />
-          <Route path="class/:classId" element={<ClassViewPage />} />
-          <Route
-            path="class/:classId/students"
-            element={<ClassStudentsPage />}
-          />
-          <Route
-            path="class/:classId/students/add"
-            element={<AddStudentsToClassPage />}
-          />
-
-          <Route
-            path="class/:classId/assignments/create"
-            element={<CreateAssignmentPage />}
-          />
-          <Route
-            path="class/:classId/assignment/:assignmentId"
-            element={<AssignmentDetailPage />}
-          />
-
-          <Route path="materials" element={<MaterialsPage />} />
-          <Route path="materials/upload" element={<UploadMaterialPage />} />
-          <Route path="materials/edit/:id" element={<EditMaterialPage />} />
-          <Route path="grades" element={<IntructorGradesPage />} />
-          <Route path="settings" element={<InstructorSettings />} />
-        </Route>
-
-        <Route path="/student" element={<StudentLayout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="dashboard" element={<DashboardHome />} />
-          <Route path="classes" element={<ClassesPageStudent />} />
-          <Route path="class/:classId" element={<ClassDetailPageStudent />} />
-          <Route path="practice" element={<PracticePage />} />
-          <Route path="grades" element={<GradesPage />} />
-        </Route>
-      </Routes>
-    </Router>
+      {/* ✅ Toast container (place once globally) */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+    </>
   );
 }
 

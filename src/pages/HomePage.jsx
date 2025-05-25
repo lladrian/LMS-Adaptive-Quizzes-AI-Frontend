@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaChalkboardTeacher,
   FaUserGraduate,
   FaLaptopCode,
   FaRobot,
 } from "react-icons/fa";
+import { loginStudent, registerStudent } from "../utils/authService";
+
+import { toast } from "react-toastify";
 
 const LandingPage = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -229,6 +232,60 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
     role: "student",
   });
 
+  // Reset form when tab changes
+  useEffect(() => {
+    setFormData({
+      email: "",
+      password: "",
+      name: "",
+      role: "student",
+    });
+  }, [activeTab]);
+
+  const handleLogin = async (e) => {
+    console.log("hello");
+    e.preventDefault(); // Prevent default form submission
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const result = await loginStudent({
+        email: formData.email,
+        password: formData.password,
+      });
+      if (result.success) {
+        toast.success(`Welcome, ${result.data.fullname}!`);
+        onClose(); // Close modal after login
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error("An error occurred during login");
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault(); // Prevent default form submission
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const result = await registerStudent(formData);
+      if (result.success) {
+        toast.success(`Account created for ${formData.name}!`);
+        setActiveTab("login"); // Switch to login tab after registration
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error("An error occurred during registration");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -287,7 +344,7 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
         {/* Modal Body */}
         <div className="p-6">
           {activeTab === "login" ? (
-            <div>
+            <form onSubmit={handleLogin}>
               <h3 className="text-lg font-medium text-gray-900 mb-6">
                 Sign in to your account
               </h3>
@@ -307,6 +364,7 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="you@example.com"
+                    required
                   />
                 </div>
                 <div>
@@ -324,44 +382,21 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="••••••••"
+                    required
                   />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label
-                      htmlFor="remember-me"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Remember me
-                    </label>
-                  </div>
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-indigo-600 hover:text-indigo-500"
-                    >
-                      Forgot password?
-                    </a>
-                  </div>
                 </div>
                 <div>
                   <button
-                    type="button"
+                    type="submit"
                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     Sign in
                   </button>
                 </div>
               </div>
-            </div>
+            </form>
           ) : (
-            <div>
+            <form onSubmit={handleRegister}>
               <h3 className="text-lg font-medium text-gray-900 mb-6">
                 Create a new account
               </h3>
@@ -381,6 +416,7 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="John Doe"
+                    required
                   />
                 </div>
                 <div>
@@ -398,6 +434,7 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="you@example.com"
+                    required
                   />
                 </div>
                 <div>
@@ -415,6 +452,7 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="••••••••"
+                    required
                   />
                 </div>
                 <div>
@@ -454,48 +492,16 @@ const AuthModal = ({ activeTab, setActiveTab, onClose }) => {
                     </div>
                   </div>
                 </div>
-                {/*    <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="terms"
-                      name="terms"
-                      type="checkbox"
-                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="terms"
-                      className="font-medium text-gray-700"
-                    >
-                      I agree to the{" "}
-                      <a
-                        href="#"
-                        className="text-indigo-600 hover:text-indigo-500"
-                      >
-                        Terms
-                      </a>{" "}
-                      and{" "}
-                      <a
-                        href="#"
-                        className="text-indigo-600 hover:text-indigo-500"
-                      >
-                        Privacy Policy
-                      </a>
-                    </label>
-                  </div>
-                </div>
-              */}
                 <div>
                   <button
-                    type="button"
+                    type="submit"
                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     Create account
                   </button>
                 </div>
               </div>
-            </div>
+            </form>
           )}
         </div>
       </div>
