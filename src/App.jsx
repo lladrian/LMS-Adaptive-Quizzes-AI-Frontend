@@ -8,9 +8,13 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
+import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./components/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
+import Classrooms from "./pages/admin/Classrooms";
 import AdminSettings from "./pages/admin/Settings";
+import AdminsManagement from "./pages/admin/AdminsManagement";
 
 import InstructorLayout from "./pages/layouts/InstructorLayout";
 import InstructorDashboard from "./components/InstructorDashboard";
@@ -38,7 +42,6 @@ import ClassDetailPageStudent from "./pages/student/ClassDetailPage";
 import LessonPracticePage from "./pages/student/LessonPracticePage";
 import GradesPage from "./pages/student/GradesPage";
 
-import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 
@@ -48,11 +51,18 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          {/* <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/instructors" element={<Instructors />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
-
+          */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="instructors" element={<Instructors />} />
+            <Route path="classrooms" element={<Classrooms />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="admins" element={<AdminsManagement />} />
+          </Route>
           <Route path="/instructor" element={<InstructorLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
 

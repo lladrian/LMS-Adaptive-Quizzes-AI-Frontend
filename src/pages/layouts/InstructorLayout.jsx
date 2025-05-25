@@ -9,13 +9,13 @@ import {
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const InstructorLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = [
-    
     { path: "/instructor/dashboard", icon: FiHome, label: "Dashboard" },
 
     { path: "/instructor/classes", icon: FiBook, label: "Classes" },
@@ -40,9 +40,13 @@ const InstructorLayout = () => {
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 rounded-lg hover:bg-gray-100"
+            className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
           >
-            {sidebarOpen ? "«" : "»"}
+            {sidebarOpen ? (
+              <HiOutlineChevronLeft className="w-6 h-6" />
+            ) : (
+              <HiOutlineChevronRight className="w-6 h-6" />
+            )}
           </button>
         </div>
 

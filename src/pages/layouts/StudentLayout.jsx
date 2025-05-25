@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { FiHome, FiBook, FiCode, FiAward, FiLogOut } from "react-icons/fi";
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const StudentLayout = () => {
   const location = useLocation();
@@ -30,9 +31,13 @@ const StudentLayout = () => {
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-lg hover:bg-gray-100"
+              className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
             >
-              {sidebarOpen ? "«" : "»"}
+              {sidebarOpen ? (
+                <HiOutlineChevronLeft className="w-6 h-6" />
+              ) : (
+                <HiOutlineChevronRight className="w-6 h-6" />
+              )}
             </button>
           </div>
 

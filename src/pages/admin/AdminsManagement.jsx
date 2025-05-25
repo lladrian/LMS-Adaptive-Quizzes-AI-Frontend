@@ -1,157 +1,148 @@
-// pages/Instructor/Instructors.jsx
+// pages/admin/AdminsManagement.jsx
 import React, { useEffect, useState } from "react";
 import {
   FiUser,
   FiMail,
-  FiCalendar,
+  FiLock,
   FiSearch,
   FiPlus,
   FiEdit,
   FiTrash2,
 } from "react-icons/fi";
 import {
-  getAllInstructors,
-  registerInstructor,
-  updateInstructor,
-  deleteInstructor,
+  getAllAdmins,
+  registerAdmin,
+  updateAdmin,
+  deleteAdmin,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
-const Instructors = () => {
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const [showAddInstructorModal, setShowAddInstructorModal] = useState(false);
-  const [showEditInstructorModal, setShowEditInstructorModal] = useState(false);
-  const [deleteModalInstructor, setDeleteModalInstructor] = useState(null);
+const AdminsManagement = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [showEditAdminModal, setShowEditAdminModal] = useState(false);
+  const [deleteModalAdmin, setDeleteModalAdmin] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const [newInstructor, setNewInstructor] = useState({
+  const [newAdmin, setNewAdmin] = useState({
     fullname: "",
     email: "",
     password: "",
-    role: "Instructor",
+    role: "admin",
   });
 
-  const [editInstructorData, setEditInstructorData] = useState({
+  const [editAdminData, setEditAdminData] = useState({
     id: "",
     fullname: "",
     email: "",
-    role: "Instructor",
+    role: "admin",
   });
 
-  const [Instructor, setInstructor] = useState([]);
+  const [admins, setAdmins] = useState([]);
 
   useEffect(() => {
-    fetchInstructor();
-  }, [setEditInstructorData]);
+    fetchAdmins();
+  }, [setEditAdminData]);
 
-  const fetchInstructor = async () => {
+  const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      const result = await getAllInstructors();
+      const result = await getAllAdmins();
       if (result.success) {
-        setInstructor(result.data.data);
-        console.log(Instructor);
+        setAdmins(result.data.data);
       }
     } catch (error) {
-      console.error("Error fetching Instructor:", error);
-      toast.error("Failed to fetch Instructor");
+      console.error("Error fetching admins:", error);
+      toast.error("Failed to fetch admins");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredInstructors = Instructor.filter(
-    (instructor) =>
-      instructor.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAdmins = admins.filter(
+    (admin) =>
+      admin.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      admin.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddInstructor = async (e) => {
+  const handleAddAdmin = async (e) => {
     e.preventDefault();
     try {
-      const response = await registerInstructor(
-        newInstructor.fullname,
-        newInstructor.email,
-        newInstructor.password
+      const response = await registerAdmin(
+        newAdmin.fullname,
+        newAdmin.email,
+        newAdmin.password,
+        newAdmin.role
       );
 
       if (response.success) {
-        toast.success(
-          `Instructor ${newInstructor.fullname} added successfully!`
-        );
-        setShowAddInstructorModal(false);
-        setNewInstructor({
-          fullname: "",
-          email: "",
-          password: "",
-          role: "Instructor",
-        });
-        await fetchInstructor();
+        toast.success(`Admin ${newAdmin.fullname} added successfully!`);
+        setShowAddAdminModal(false);
+        setNewAdmin({ fullname: "", email: "", password: "", role: "admin" });
+        await fetchAdmins();
       } else {
         toast.error(response.error);
       }
     } catch (error) {
-      console.error("Error adding Instructor:", error);
+      console.error("Error adding admin:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to add Instructor. Please try again."
+          "Failed to add admin. Please try again."
       );
     }
   };
 
-  const handleEditInstructor = (Instructor) => {
-    setEditInstructorData({
-      id: Instructor._id,
-      fullname: Instructor.fullname,
-      email: Instructor.email,
-      role: Instructor.role,
+  const handleEditAdmin = (admin) => {
+    setEditAdminData({
+      id: admin._id,
+      fullname: admin.fullname,
+      email: admin.email,
+      role: admin.role,
     });
-    console.log(editInstructorData.id);
-    setShowEditInstructorModal(true);
+    console.log(editAdminData.id);
+    setShowEditAdminModal(true);
   };
 
-  const handleUpdateInstructor = async (e) => {
-    console.log(editInstructorData.id);
-    e.preventDefault();
+  const handleUpdateAdmin = async (e) => {
+    /*     console.log(editAdminData.id);
+     */ e.preventDefault();
     try {
-      const response = await updateInstructor(editInstructorData.id, {
-        fullname: editInstructorData.fullname,
-        email: editInstructorData.email,
-        role: editInstructorData.role,
+      const response = await updateAdmin(editAdminData.id, {
+        fullname: editAdminData.fullname,
+        email: editAdminData.email,
+        role: editAdminData.role,
       });
 
       if (response.success) {
-        toast.success(
-          `Instructor ${editInstructorData.fullname} updated successfully!`
-        );
-        setShowEditInstructorModal(false);
-        await fetchInstructor();
+        toast.success(`Admin ${editAdminData.fullname} updated successfully!`);
+        setShowEditAdminModal(false);
+        await fetchAdmins();
       } else {
         toast.error(response.error);
       }
     } catch (error) {
-      console.error("Error updating Instructor:", error);
+      console.error("Error updating admin:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to update Instructor. Please try again."
+          "Failed to update admin. Please try again."
       );
     }
   };
 
-  const handleDeleteInstructor = async (InstructorId) => {
+  const handleDeleteAdmin = async (adminId) => {
     try {
-      const response = await deleteInstructor(InstructorId);
+      const response = await deleteAdmin(adminId);
 
       if (response.success) {
-        toast.success("Instructor deleted successfully!");
-        await fetchInstructor();
+        toast.success("Admin deleted successfully!");
+        await fetchAdmins();
       }
     } catch (error) {
-      console.error("Error deleting Instructor:", error);
+      console.error("Error deleting admin:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to delete Instructor. Please try again."
+          "Failed to delete admin. Please try again."
       );
     }
   };
@@ -159,15 +150,13 @@ const Instructors = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Instructors Management
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-800">Admins Management</h1>
         <button
-          onClick={() => setShowAddInstructorModal(true)}
-          className="cursor-pointer flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          onClick={() => setShowAddAdminModal(true)}
+          className="cursor-pointer flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <FiPlus className="mr-2" />
-          Add Instructor
+          Add Admin
         </button>
       </div>
 
@@ -177,7 +166,7 @@ const Instructors = () => {
           <FiSearch className="absolute left-3 top-3 text-gray-400" />
           <input
             type="text"
-            placeholder="Search instructors..."
+            placeholder="Search admins..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -185,7 +174,7 @@ const Instructors = () => {
         </div>
       </div>
 
-      {/* Instructors Table */}
+      {/* Admins Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-500">Loading admins...</div>
@@ -200,12 +189,11 @@ const Instructors = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CREATED
+                    Created
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -213,20 +201,20 @@ const Instructors = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredInstructors.length === 0 ? (
+                {filteredAdmins.length === 0 ? (
                   <tr>
                     <td
                       colSpan="5"
                       className="px-6 py-4 text-center text-gray-500"
                     >
                       {searchTerm
-                        ? "No matching instructors found"
-                        : "No instructors available"}
+                        ? "No matching admins found"
+                        : "No admins available"}
                     </td>
                   </tr>
                 ) : (
-                  filteredInstructors.map((instructor) => (
-                    <tr key={instructor.id}>
+                  filteredAdmins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-3">
@@ -234,7 +222,7 @@ const Instructors = () => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {instructor.fullname}
+                              {admin.fullname}
                             </div>
                           </div>
                         </div>
@@ -242,33 +230,36 @@ const Instructors = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">
                           <FiMail className="mr-2" />
-                          {instructor.email}
+                          {admin.email}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800`}
                         >
-                          {instructor.role}
+                          {admin.role.replace("_", " ")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FiCalendar className="mr-2" />
-                          {new Date(instructor.created_at).toLocaleDateString()}
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(admin.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
-                          onClick={() => handleEditInstructor(instructor)}
+                          onClick={() => handleEditAdmin(admin)}
                           className="text-indigo-600 hover:text-indigo-900 mr-4 cursor-pointer"
                           title="Edit"
                         >
                           <FiEdit size={18} />
                         </button>
                         <button
-                          onClick={() => setDeleteModalInstructor(instructor)}
+                          onClick={() => setDeleteModalAdmin(admin)}
                           className="text-red-600 hover:text-red-900 cursor-pointer"
                           title="Delete"
                         >
@@ -284,15 +275,15 @@ const Instructors = () => {
         )}
       </div>
 
-      {/* Add Instructor Modal */}
-      {showAddInstructorModal && (
+      {/* Add Admin Modal */}
+      {showAddAdminModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
-                Add New Instructor
+                Add New Admin
               </h2>
-              <form onSubmit={handleAddInstructor}>
+              <form onSubmit={handleAddAdmin}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name
@@ -300,12 +291,9 @@ const Instructors = () => {
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newInstructor.fullname}
+                    value={newAdmin.fullname}
                     onChange={(e) =>
-                      setNewInstructor({
-                        ...newInstructor,
-                        fullname: e.target.value,
-                      })
+                      setNewAdmin({ ...newAdmin, fullname: e.target.value })
                     }
                     required
                   />
@@ -317,12 +305,9 @@ const Instructors = () => {
                   <input
                     type="email"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newInstructor.email}
+                    value={newAdmin.email}
                     onChange={(e) =>
-                      setNewInstructor({
-                        ...newInstructor,
-                        email: e.target.value,
-                      })
+                      setNewAdmin({ ...newAdmin, email: e.target.value })
                     }
                     required
                   />
@@ -334,12 +319,9 @@ const Instructors = () => {
                   <input
                     type="password"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newInstructor.password}
+                    value={newAdmin.password}
                     onChange={(e) =>
-                      setNewInstructor({
-                        ...newInstructor,
-                        password: e.target.value,
-                      })
+                      setNewAdmin({ ...newAdmin, password: e.target.value })
                     }
                     required
                     minLength={6}
@@ -351,21 +333,18 @@ const Instructors = () => {
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newInstructor.role}
+                    value={newAdmin.role}
                     onChange={(e) =>
-                      setNewInstructor({
-                        ...newInstructor,
-                        role: e.target.value,
-                      })
+                      setNewAdmin({ ...newAdmin, role: e.target.value })
                     }
                   >
-                    <option value="Instructor">Instructor</option>
+                    <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setShowAddInstructorModal(false)}
+                    onClick={() => setShowAddAdminModal(false)}
                     className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Cancel
@@ -374,7 +353,7 @@ const Instructors = () => {
                     type="submit"
                     className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                   >
-                    Add Instructor
+                    Add Admin
                   </button>
                 </div>
               </form>
@@ -383,15 +362,15 @@ const Instructors = () => {
         </div>
       )}
 
-      {/* Edit Instructor Modal */}
-      {showEditInstructorModal && (
+      {/* Edit Admin Modal */}
+      {showEditAdminModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">
-                Edit Instructor
+                Edit Admin
               </h2>
-              <form onSubmit={handleUpdateInstructor}>
+              <form onSubmit={handleUpdateAdmin}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name
@@ -399,10 +378,10 @@ const Instructors = () => {
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editInstructorData.fullname}
+                    value={editAdminData.fullname}
                     onChange={(e) =>
-                      setEditInstructorData({
-                        ...editInstructorData,
+                      setEditAdminData({
+                        ...editAdminData,
                         fullname: e.target.value,
                       })
                     }
@@ -416,10 +395,10 @@ const Instructors = () => {
                   <input
                     type="email"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editInstructorData.email}
+                    value={editAdminData.email}
                     onChange={(e) =>
-                      setEditInstructorData({
-                        ...editInstructorData,
+                      setEditAdminData({
+                        ...editAdminData,
                         email: e.target.value,
                       })
                     }
@@ -432,21 +411,21 @@ const Instructors = () => {
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editInstructorData.role}
+                    value={editAdminData.role}
                     onChange={(e) =>
-                      setEditInstructorData({
-                        ...editInstructorData,
+                      setEditAdminData({
+                        ...editAdminData,
                         role: e.target.value,
                       })
                     }
                   >
-                    <option value="Instructor">Instructor</option>
+                    <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setShowEditInstructorModal(false)}
+                    onClick={() => setShowEditAdminModal(false)}
                     className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Cancel
@@ -455,7 +434,7 @@ const Instructors = () => {
                     type="submit"
                     className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                   >
-                    Update Instructor
+                    Update Admin
                   </button>
                 </div>
               </form>
@@ -465,7 +444,7 @@ const Instructors = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteModalInstructor && (
+      {deleteModalAdmin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
@@ -474,13 +453,13 @@ const Instructors = () => {
                   <FiTrash2 className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2 text-center">
-                  Delete Instructor Account
+                  Delete Admin Account
                 </h3>
                 <div className="mt-2 text-sm text-gray-500 text-center">
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalInstructor.fullname}
+                      {deleteModalAdmin.fullname}
                     </span>
                     ?
                   </p>
@@ -490,7 +469,7 @@ const Instructors = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setDeleteModalInstructor(null)}
+                  onClick={() => setDeleteModalAdmin(null)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Cancel
@@ -498,8 +477,8 @@ const Instructors = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    handleDeleteInstructor(deleteModalInstructor._id);
-                    setDeleteModalInstructor(null);
+                    handleDeleteAdmin(deleteModalAdmin._id);
+                    setDeleteModalAdmin(null);
                   }}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                 >
@@ -514,4 +493,4 @@ const Instructors = () => {
   );
 };
 
-export default Instructors;
+export default AdminsManagement;
