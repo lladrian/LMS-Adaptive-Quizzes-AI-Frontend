@@ -10,6 +10,7 @@ import {
   FiEdit2,
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
+import EditClassModal from "../../components/EditClassModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -67,6 +68,8 @@ const ClassDetailPage = () => {
   ];
 
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditClassModal, setShowEditClassModal] = useState(false);
+
   const [refreshMaterials, setRefreshMaterials] = useState(false);
 
   const handleUploadSuccess = () => {
@@ -75,21 +78,19 @@ const ClassDetailPage = () => {
 
   return (
     <>
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">
           {classData.name} ({classData.code})
-        </h2>
-        <div className="flex space-x-3">
-          <Link
-            to={`/instructor/classes/edit/${classId}`}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
-          >
-            <FiEdit2 className="mr-2" /> Edit Class
-          </Link>
-        </div>
-      </header>
+        </h1>
+        <button
+          onClick={() => setShowEditClassModal(true)}
+          className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+        >
+          <FiEdit2 className="mr-2" /> Edit Class
+        </button>
+      </div>
 
-      <div className="p-6">
+      <div className="py-4">
         {/* Class Navigation */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
           <div className="flex border-b border-gray-200">
@@ -347,6 +348,13 @@ const ClassDetailPage = () => {
           </div>
         )}
       </div>
+      {showEditClassModal && (
+        <EditClassModal
+          showEditClassModal={showEditClassModal}
+          setShowEditClassModal={setShowEditClassModal}
+          classId="123" // pass the class ID as needed
+        />
+      )}
     </>
   );
 };

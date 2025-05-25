@@ -64,14 +64,6 @@ const InstructorDashboard = () => {
         color: "text-purple-600",
         trend: "up",
       },
-      {
-        title: "Unread Messages",
-        value: 5,
-        change: "+3",
-        icon: FiMail,
-        color: "text-red-600",
-        trend: "up",
-      },
     ],
     recentActivities: [
       {
@@ -115,48 +107,12 @@ const InstructorDashboard = () => {
         type: "communication",
       },
     ],
-    upcomingEvents: [
-      {
-        id: 1,
-        title: "Faculty Meeting",
-        date: "Tomorrow, 10:00 AM",
-        type: "meeting",
-        priority: "high",
-      },
-      {
-        id: 2,
-        title: "Parent-Teacher Conference",
-        date: "May 25, 2:00 PM",
-        type: "conference",
-        priority: "medium",
-      },
-      {
-        id: 3,
-        title: "End of Term Exams",
-        date: "June 5-9",
-        type: "exam",
-        priority: "high",
-      },
-      {
-        id: 4,
-        title: "Curriculum Review",
-        date: "June 15",
-        type: "planning",
-        priority: "low",
-      },
-    ],
     performanceMetrics: {
       studentEngagement: 78,
       assignmentCompletion: 92,
       avgGrades: 85.6,
-      attendanceRate: 94.2,
     },
     quickLinks: [
-      {
-        title: "Grade Assignments",
-        icon: FiBarChart2,
-        path: "/instructor/grading",
-      },
       {
         title: "Course Analytics",
         icon: FiAward,
@@ -194,434 +150,292 @@ const InstructorDashboard = () => {
       action: () => navigate("/instructor/classes/new"),
       color: "bg-green-100 text-green-600",
     },
-    {
-      icon: FiMessageSquare,
-      label: "Send Announcement",
-      action: () => navigate("/instructor/announcements/new"),
-      color: "bg-purple-100 text-purple-600",
-    },
-    {
-      icon: FiBarChart2,
-      label: "Grade Assignments",
-      action: () => navigate("/instructor/grading"),
-      color: "bg-yellow-100 text-yellow-600",
-    },
-    {
-      icon: FiCalendar,
-      label: "Schedule Event",
-      action: () => navigate("/instructor/calendar/new"),
-      color: "bg-red-100 text-red-600",
-    },
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">
-            {location.pathname === "/instructor/dashboard" &&
-              "Dashboard Overview"}
-            {location.pathname.includes("students") && "Student Management"}
-            {location.pathname.includes("materials") && "Lesson Materials"}
-            {location.pathname.includes("classes") && "Class Management"}
-            {location.pathname.includes("calendar") && "Calendar"}
-            {location.pathname.includes("messages") && "Messages"}
-          </h2>
-          <div className="flex space-x-3">
-            <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
-              <FiClock className="text-gray-600" />
-            </button>
-            <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 relative">
-              <FiMessageSquare className="text-gray-600" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-          </div>
-        </header>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-800">Welcome back, Gerald</h1>
 
-        <div className="p-6">
-          {/* Dashboard Content */}
-          {location.pathname === "/instructor/dashboard" && (
-            <div className="space-y-6">
-              {/* Dashboard Tabs */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-                <div className="flex border-b border-gray-200">
-                  <button
-                    onClick={() => setActiveTab("overview")}
-                    className={`px-6 py-3 font-medium ${
-                      activeTab === "overview"
-                        ? "text-indigo-600 border-b-2 border-indigo-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    Overview
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("performance")}
-                    className={`px-6 py-3 font-medium ${
-                      activeTab === "performance"
-                        ? "text-indigo-600 border-b-2 border-indigo-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    Performance
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("quick-access")}
-                    className={`px-6 py-3 font-medium ${
-                      activeTab === "quick-access"
-                        ? "text-indigo-600 border-b-2 border-indigo-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    Quick Access
-                  </button>
-                </div>
+      {/* Dashboard Content */}
+      {location.pathname === "/instructor/dashboard" && (
+        <div className="space-y-6">
+          {/* Dashboard Tabs */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`px-6 py-3 font-medium ${
+                  activeTab === "overview"
+                    ? "text-indigo-600 border-b-2 border-indigo-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("performance")}
+                className={`px-6 py-3 font-medium ${
+                  activeTab === "performance"
+                    ? "text-indigo-600 border-b-2 border-indigo-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                Performance
+              </button>
+              <button
+                onClick={() => setActiveTab("quick-access")}
+                className={`px-6 py-3 font-medium ${
+                  activeTab === "quick-access"
+                    ? "text-indigo-600 border-b-2 border-indigo-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                Quick Access
+              </button>
+            </div>
 
-                <div className="p-6">
-                  {activeTab === "overview" && (
-                    <>
-                      {/* Stats Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-6">
-                        {dashboardData.stats.map((stat, index) => (
+            <div className="p-6">
+              {activeTab === "overview" && (
+                <>
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+                    {dashboardData.stats.map((stat, index) => (
+                      <div
+                        key={index}
+                        className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">
+                              {stat.title}
+                            </p>
+                            <p className="text-2xl font-semibold mt-1">
+                              {stat.value}
+                            </p>
+                            <div className="flex items-center mt-1">
+                              <span
+                                className={`text-xs ${
+                                  stat.trend === "up"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {stat.change}
+                              </span>
+                              <svg
+                                className={`w-4 h-4 ml-1 ${
+                                  stat.trend === "up"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                }`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                {stat.trend === "up" ? (
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 15l7-7 7 7"
+                                  />
+                                ) : (
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
+                                )}
+                              </svg>
+                            </div>
+                          </div>
                           <div
-                            key={index}
-                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                            className={`p-2 rounded-lg ${stat.color
+                              .replace("text", "bg")
+                              .replace("600", "100")}`}
                           >
-                            <div className="flex justify-between">
-                              <div>
-                                <p className="text-sm text-gray-500">
-                                  {stat.title}
-                                </p>
-                                <p className="text-2xl font-semibold mt-1">
-                                  {stat.value}
-                                </p>
-                                <div className="flex items-center mt-1">
-                                  <span
-                                    className={`text-xs ${
-                                      stat.trend === "up"
-                                        ? "text-green-500"
-                                        : "text-red-500"
-                                    }`}
-                                  >
-                                    {stat.change}
-                                  </span>
-                                  <svg
-                                    className={`w-4 h-4 ml-1 ${
-                                      stat.trend === "up"
-                                        ? "text-green-500"
-                                        : "text-red-500"
-                                    }`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    {stat.trend === "up" ? (
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 15l7-7 7 7"
-                                      />
-                                    ) : (
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    )}
-                                  </svg>
-                                </div>
-                              </div>
-                              <div
-                                className={`p-2 rounded-lg ${stat.color
-                                  .replace("text", "bg")
-                                  .replace("600", "100")}`}
-                              >
-                                <stat.icon
-                                  className={`text-xl ${stat.color}`}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Activity and Events */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Recent Activities */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                          <div className="p-4 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold flex items-center">
-                              <FiBarChart2 className="mr-2 text-indigo-600" />
-                              Recent Activities
-                            </h3>
-                          </div>
-                          <div className="divide-y divide-gray-200">
-                            {dashboardData.recentActivities.map((activity) => (
-                              <div
-                                key={activity.id}
-                                className="p-4 hover:bg-gray-50 transition-colors"
-                              >
-                                <div className="flex items-start">
-                                  <div
-                                    className={`p-2 rounded-lg mr-3 ${
-                                      activity.type === "material"
-                                        ? "bg-indigo-100 text-indigo-600"
-                                        : activity.type === "student"
-                                        ? "bg-green-100 text-green-600"
-                                        : activity.type === "assignment"
-                                        ? "bg-blue-100 text-blue-600"
-                                        : activity.type === "grading"
-                                        ? "bg-yellow-100 text-yellow-600"
-                                        : "bg-purple-100 text-purple-600"
-                                    }`}
-                                  >
-                                    <activity.icon />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">
-                                      {activity.action}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {activity.course} • {activity.time}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Upcoming Events */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                          <div className="p-4 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold flex items-center">
-                              <FiCalendar className="mr-2 text-indigo-600" />
-                              Upcoming Events
-                            </h3>
-                          </div>
-                          <div className="divide-y divide-gray-200">
-                            {dashboardData.upcomingEvents.map((event) => (
-                              <div
-                                key={event.id}
-                                className="p-4 hover:bg-gray-50 transition-colors"
-                              >
-                                <div className="flex items-start">
-                                  <div
-                                    className={`p-2 rounded-lg mr-3 ${
-                                      event.priority === "high"
-                                        ? "bg-red-100 text-red-600"
-                                        : event.priority === "medium"
-                                        ? "bg-yellow-100 text-yellow-600"
-                                        : "bg-gray-100 text-gray-600"
-                                    }`}
-                                  >
-                                    <FiCalendar />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{event.title}</p>
-                                    <p className="text-sm text-gray-500">
-                                      {event.date}
-                                    </p>
-                                    <span
-                                      className={`inline-block mt-1 text-xs px-2 py-1 rounded-full ${
-                                        event.type === "meeting"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : event.type === "conference"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : event.type === "exam"
-                                          ? "bg-red-100 text-red-800"
-                                          : "bg-gray-100 text-gray-800"
-                                      }`}
-                                    >
-                                      {event.type}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                            <stat.icon className={`text-xl ${stat.color}`} />
                           </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                    ))}
+                  </div>
 
-                  {activeTab === "performance" && (
-                    <div className="space-y-6">
-                      <h3 className="text-lg font-semibold">
-                        Performance Metrics
+                  {/* Recent Activities */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <FiBarChart2 className="mr-2 text-indigo-600" />
+                        Recent Activities
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Student Engagement */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium">Student Engagement</h4>
-                            <span className="text-sm text-gray-500">
-                              Last 30 days
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-full bg-gray-200 rounded-full h-4">
-                              <div
-                                className="bg-indigo-600 h-4 rounded-full"
-                                style={{
-                                  width: `${dashboardData.performanceMetrics.studentEngagement}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <span className="ml-3 font-medium">
-                              {
-                                dashboardData.performanceMetrics
-                                  .studentEngagement
-                              }
-                              %
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Assignment Completion */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium">
-                              Assignment Completion
-                            </h4>
-                            <span className="text-sm text-gray-500">
-                              Current Term
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-full bg-gray-200 rounded-full h-4">
-                              <div
-                                className="bg-green-600 h-4 rounded-full"
-                                style={{
-                                  width: `${dashboardData.performanceMetrics.assignmentCompletion}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <span className="ml-3 font-medium">
-                              {
-                                dashboardData.performanceMetrics
-                                  .assignmentCompletion
-                              }
-                              %
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Average Grades */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium">Average Grades</h4>
-                            <span className="text-sm text-gray-500">
-                              Current Term
-                            </span>
-                          </div>
-                          <div className="text-center">
-                            <div className="inline-flex items-center justify-center">
-                              <div
-                                className="radial-progress text-indigo-600"
-                                style={{
-                                  "--value":
-                                    dashboardData.performanceMetrics.avgGrades,
-                                  "--size": "8rem",
-                                }}
-                              >
-                                {dashboardData.performanceMetrics.avgGrades}%
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Attendance Rate */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium">Attendance Rate</h4>
-                            <span className="text-sm text-gray-500">
-                              Current Term
-                            </span>
-                          </div>
-                          <div className="text-center">
-                            <div className="inline-flex items-center justify-center">
-                              <div
-                                className="radial-progress text-blue-600"
-                                style={{
-                                  "--value":
-                                    dashboardData.performanceMetrics
-                                      .attendanceRate,
-                                  "--size": "8rem",
-                                }}
-                              >
-                                {
-                                  dashboardData.performanceMetrics
-                                    .attendanceRate
-                                }
-                                %
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  )}
-
-                  {activeTab === "quick-access" && (
-                    <div className="space-y-6">
-                      <h3 className="text-lg font-semibold">Quick Actions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {quickActions.map((action, index) => (
-                          <button
-                            key={index}
-                            onClick={action.action}
-                            className={`flex flex-col items-center justify-center p-4 rounded-lg hover:shadow-md transition-all ${action.color}`}
-                          >
-                            <action.icon className="text-2xl mb-2" />
-                            <span className="text-sm text-center font-medium">
-                              {action.label}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <h3 className="text-lg font-semibold mt-8">
-                        Quick Links
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {dashboardData.quickLinks.map((link, index) => (
-                          <Link
-                            key={index}
-                            to={link.path}
-                            className="bg-white p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all flex items-center"
-                          >
+                    <div className="divide-y divide-gray-200">
+                      {dashboardData.recentActivities.map((activity) => (
+                        <div
+                          key={activity.id}
+                          className="p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-start">
                             <div
-                              className={`p-3 rounded-lg mr-3 ${
-                                link.icon === FiBarChart2
+                              className={`p-2 rounded-lg mr-3 ${
+                                activity.type === "material"
                                   ? "bg-indigo-100 text-indigo-600"
-                                  : link.icon === FiAward
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : link.icon === FiUsers
+                                  : activity.type === "student"
                                   ? "bg-green-100 text-green-600"
-                                  : "bg-blue-100 text-blue-600"
+                                  : activity.type === "assignment"
+                                  ? "bg-blue-100 text-blue-600"
+                                  : activity.type === "grading"
+                                  ? "bg-yellow-100 text-yellow-600"
+                                  : "bg-purple-100 text-purple-600"
                               }`}
                             >
-                              <link.icon className="text-xl" />
+                              <activity.icon />
                             </div>
-                            <span className="font-medium">{link.title}</span>
-                          </Link>
-                        ))}
+                            <div>
+                              <p className="font-medium">{activity.action}</p>
+                              <p className="text-sm text-gray-500">
+                                {activity.course} • {activity.time}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "performance" && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Performance Metrics</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Student Engagement */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium">Student Engagement</h4>
+                        <span className="text-sm text-gray-500">
+                          Last 30 days
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-4">
+                          <div
+                            className="bg-indigo-600 h-4 rounded-full"
+                            style={{
+                              width: `${dashboardData.performanceMetrics.studentEngagement}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-3 font-medium">
+                          {dashboardData.performanceMetrics.studentEngagement}%
+                        </span>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Other Pages Content */}
-          {location.pathname !== "/instructor/dashboard" && <Outlet />}
+                    {/* Assignment Completion */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium">Assignment Completion</h4>
+                        <span className="text-sm text-gray-500">
+                          Current Term
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-4">
+                          <div
+                            className="bg-green-600 h-4 rounded-full"
+                            style={{
+                              width: `${dashboardData.performanceMetrics.assignmentCompletion}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-3 font-medium">
+                          {
+                            dashboardData.performanceMetrics
+                              .assignmentCompletion
+                          }
+                          %
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Average Grades */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium">Average Grades</h4>
+                        <span className="text-sm text-gray-500">
+                          Current Term
+                        </span>
+                      </div>
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center">
+                          <div
+                            className="radial-progress text-indigo-600"
+                            style={{
+                              "--value":
+                                dashboardData.performanceMetrics.avgGrades,
+                              "--size": "8rem",
+                            }}
+                          >
+                            {dashboardData.performanceMetrics.avgGrades}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "quick-access" && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Quick Actions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {quickActions.map((action, index) => (
+                      <button
+                        key={index}
+                        onClick={action.action}
+                        className={`flex flex-col items-center justify-center p-4 rounded-lg hover:shadow-md transition-all ${action.color}`}
+                      >
+                        <action.icon className="text-2xl mb-2" />
+                        <span className="text-sm text-center font-medium">
+                          {action.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <h3 className="text-lg font-semibold mt-8">Quick Links</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {dashboardData.quickLinks.map((link, index) => (
+                      <Link
+                        key={index}
+                        to={link.path}
+                        className="bg-white p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all flex items-center"
+                      >
+                        <div
+                          className={`p-3 rounded-lg mr-3 ${
+                            link.icon === FiBarChart2
+                              ? "bg-indigo-100 text-indigo-600"
+                              : link.icon === FiAward
+                              ? "bg-yellow-100 text-yellow-600"
+                              : link.icon === FiUsers
+                              ? "bg-green-100 text-green-600"
+                              : "bg-blue-100 text-blue-600"
+                          }`}
+                        >
+                          <link.icon className="text-xl" />
+                        </div>
+                        <span className="font-medium">{link.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

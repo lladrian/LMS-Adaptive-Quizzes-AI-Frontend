@@ -21,8 +21,9 @@ const AdminLayout = () => {
   const navItems = [
     { path: "/admin/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/admin/instructors", icon: FiUsers, label: "Instructors" },
-    { path: "/admin/classrooms", icon: FiBook, label: "Classrooms" },
+
     { path: "/admin/admins", icon: FiLock, label: "Admins" },
+    { path: "/admin/classrooms", icon: FiBook, label: "Classrooms" },
     { path: "/admin/settings", icon: FiSettings, label: "Settings" },
   ];
 
@@ -92,15 +93,25 @@ const AdminLayout = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Top Navigation */}
-        <header className="bg-white shadow-sm">
+        <header className="bg-white shadow-sm sticky top-0 z-10">
           <div className="px-6 py-4 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-800">
-              {location.pathname
-                .split("/")
-                .pop()
-                .replace(/-/g, " ")
-                .replace(/^\w/, (c) => c.toUpperCase())}
+              {(() => {
+                const segments = location.pathname.split("/").filter(Boolean);
+                const last = segments[segments.length - 1];
+                const secondLast = segments[segments.length - 2];
+
+                const isLikelyId =
+                  /^[0-9a-fA-F]{8,}$/.test(last) || !isNaN(last); // crude ID check (UUID or number)
+
+                const label = isLikelyId ? secondLast : last;
+
+                return label
+                  ?.replace(/-/g, " ")
+                  .replace(/^\w/, (c) => c.toUpperCase());
+              })()}
             </h2>
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <button className="p-1 rounded-full hover:bg-gray-100">

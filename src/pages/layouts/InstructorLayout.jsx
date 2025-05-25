@@ -8,6 +8,8 @@ import {
   FiBarChart2,
   FiSettings,
   FiLogOut,
+  FiLock,
+  FiBell,
 } from "react-icons/fi";
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
@@ -77,7 +79,49 @@ const InstructorLayout = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <Outlet />
+        <header className="bg-white shadow-sm sticky top-0 z-10">
+          <div className="px-6 py-4 flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-800">
+              {(() => {
+                const segments = location.pathname.split("/").filter(Boolean);
+                const last = segments[segments.length - 1];
+                const secondLast = segments[segments.length - 2];
+
+                const isLikelyId =
+                  /^[0-9a-fA-F]{8,}$/.test(last) || !isNaN(last); // crude ID check (UUID or number)
+
+                const label = isLikelyId ? secondLast : last;
+
+                return label
+                  ?.replace(/-/g, " ")
+                  .replace(/^\w/, (c) => c.toUpperCase());
+              })()}
+            </h2>
+
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <button className="p-1 rounded-full hover:bg-gray-100">
+                  <FiBell className="text-gray-600" />
+                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                </button>
+              </div>
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
+                  G
+                </div>
+                {sidebarOpen && (
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    Gerald
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./components/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
@@ -23,7 +22,6 @@ import AddStudentPage from "./pages/instructor/AddStudentPage";
 import EditStudentPage from "./pages/instructor/EditStudentPage";
 import ClassesPage from "./pages/instructor/ClassesPage";
 import CreateClassPage from "./pages/instructor/CreateClassPage";
-import EditClassPage from "./pages/instructor/EditClassPage";
 import ClassViewPage from "./pages/instructor/ClassViewPage";
 import ClassStudentsPage from "./pages/instructor/ClassStudentsPage";
 import AddStudentsToClassPage from "./pages/instructor/AddStudentsToClassPage";
@@ -71,7 +69,6 @@ function App() {
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="classes/create" element={<CreateClassPage />} />
-            <Route path="classes/edit/:id" element={<EditClassPage />} />
             <Route path="class/:classId" element={<ClassViewPage />} />
             <Route
               path="class/:classId/students"

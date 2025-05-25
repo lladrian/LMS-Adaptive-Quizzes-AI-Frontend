@@ -8,6 +8,8 @@ import {
   FiEdit2,
   FiTrash2,
 } from "react-icons/fi";
+import CreateClassModal from "../../components/CreateClassModal";
+import EditClassModal from "../../components/EditClassModal";
 
 const ClassesPage = () => {
   const [classes, setClasses] = useState([
@@ -15,17 +17,27 @@ const ClassesPage = () => {
       id: 1,
       name: "Advanced Programming",
       code: "CS401",
+      description: "Advanced concepts in programming",
       students: 24,
       materials: 5,
+      maxStudents: 30,
+      status: "active",
     },
     {
       id: 2,
       name: "Data Structures",
       code: "CS301",
+      description: "Fundamentals of data structures",
       students: 18,
       materials: 3,
+      maxStudents: 25,
+      status: "active",
     },
   ]);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingClass, setEditingClass] = useState(null);
+  const [showEditClassModal, setShowEditClassModal] = useState(false);
 
   const handleDelete = (id) => {
     setClasses(classes.filter((cls) => cls.id !== id));
@@ -33,19 +45,17 @@ const ClassesPage = () => {
 
   return (
     <>
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Class Management
-        </h2>
-        <Link
-          to="/instructor/classes/create"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Class Management</h1>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
         >
           <FiPlus className="mr-2" /> Create Class
-        </Link>
-      </header>
+        </button>
+      </div>
 
-      <div className="p-6">
+      <div className="py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes.map((cls) => (
             <div
@@ -61,15 +71,15 @@ const ClassesPage = () => {
                     <p className="text-gray-600">{cls.code}</p>
                   </div>
                   <div className="flex space-x-2">
-                    <Link
-                      to={`/instructor/classes/edit/${cls.id}`}
-                      className="text-indigo-600 hover:text-indigo-800"
+                    <button
+                      onClick={() => setShowEditClassModal(true)}
+                      className="cursor-pointer text-indigo-600 hover:text-indigo-800"
                     >
                       <FiEdit2 />
-                    </Link>
+                    </button>
                     <button
                       onClick={() => handleDelete(cls.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="cursor-pointer text-red-600 hover:text-red-800"
                     >
                       <FiTrash2 />
                     </button>
@@ -104,6 +114,23 @@ const ClassesPage = () => {
           ))}
         </div>
       </div>
+
+      {showCreateModal && (
+        <CreateClassModal onClose={() => setShowCreateModal(false)} />
+      )}
+      {showEditClassModal && (
+        /*  <EditClassModal
+          classData={editingClass}
+          onClose={() => setEditingClass(null)}
+          onSave={handleUpdateClass}
+ */
+
+        <EditClassModal
+          showEditClassModal={showEditClassModal}
+          setShowEditClassModal={setShowEditClassModal}
+          classId="123" // pass the class ID as needed
+        />
+      )}
     </>
   );
 };
