@@ -262,3 +262,175 @@ export const deleteAdmin = async (id) => {
     };
   }
 };
+
+/* CLASSROOM */
+export const addClassroom = async (
+  classroom_name,
+  subject_code,
+  instructor,
+  classroom_code
+) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/classrooms/classrooms/add_classroom`,
+      {
+        classroom_name,
+        subject_code,
+        instructor,
+        classroom_code,
+      }
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to add new classroom",
+    };
+  }
+};
+
+export const joinClassroom = async (classroom_code, student_id) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/classrooms/classrooms/student_join_classroom`,
+      { classroom_code, student_id }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to join classroom",
+    };
+  }
+};
+
+export const leaveClassroom = async (classroom_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/student_leave_classroom/${classroom_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to leave classroom",
+    };
+  }
+};
+
+export const allClassrooms = async () => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_all_classroom`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch all classroom",
+    };
+  }
+};
+
+export const allClassroomStudent = async (roomId) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_all_classroom_student/${roomId}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch all classroom",
+    };
+  }
+};
+export const allClassroomSpecificStudent = async (studentId) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_all_classroom_specific_student/${studentId}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch all classroom",
+    };
+  }
+};
+export const allClassroomSpecificInstructor = async (instructorId) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_all_classroom_specific_instructor/${instructorId}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch all classroom",
+    };
+  }
+};
+
+export const updateClassroom = async (roomId, classroom_name, subject_code) => {
+  try {
+    const response = await axios.put(
+      `
+      ${BASE_URL}/classrooms/update_classroom/${roomId}`,
+      {
+        classroom_name,
+        subject_code,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to update classroom",
+    };
+  }
+};
+export const deleteClassroom = async (roomId) => {
+  try {
+    const response = await axios.put(
+      `
+      ${BASE_URL}/classrooms/delete_classroom/${roomId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to delete classroom",
+    };
+  }
+};
+
+/* QUIZ/EXAM */

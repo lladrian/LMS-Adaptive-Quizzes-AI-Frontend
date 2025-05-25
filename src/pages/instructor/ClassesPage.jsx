@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiBook,
@@ -11,8 +11,15 @@ import {
 import CreateClassModal from "../../components/CreateClassModal";
 import EditClassModal from "../../components/EditClassModal";
 
+import {
+  allClassrooms,
+  updateClassroom,
+  deleteClassroom,
+} from "../../utils/authService";
+import { toast } from "react-toastify";
+
 const ClassesPage = () => {
-  const [classes, setClasses] = useState([
+  /* const [classes, setClasses] = useState([
     {
       id: 1,
       name: "Advanced Programming",
@@ -33,11 +40,34 @@ const ClassesPage = () => {
       maxStudents: 25,
       status: "active",
     },
-  ]);
+  ]); */
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
+
+  const [Classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    setIsLoading(true);
+    try {
+      const result = await allClassrooms();
+      if (result.success) {
+        setClasses(result.data.data);
+        console.log(Classes);
+      }
+    } catch (error) {
+      console.error("Error fetching Instructor:", error);
+      toast.error("Failed to fetch Instructor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDelete = (id) => {
     setClasses(classes.filter((cls) => cls.id !== id));
