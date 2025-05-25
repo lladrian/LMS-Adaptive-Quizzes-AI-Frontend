@@ -96,7 +96,7 @@ const EditClassModal = ({
               />
             </div>
 
-            <div>
+            {/*   <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Maximum Students
               </label>
@@ -112,7 +112,7 @@ const EditClassModal = ({
                   className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

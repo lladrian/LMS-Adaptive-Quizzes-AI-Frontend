@@ -59,7 +59,6 @@ const ClassesPage = () => {
       const result = await allClassrooms();
       if (result.success) {
         setClasses(result.data.data);
-        console.log(Classes);
       }
     } catch (error) {
       console.error("Error fetching Instructor:", error);
@@ -70,7 +69,7 @@ const ClassesPage = () => {
   };
 
   const handleDelete = (id) => {
-    setClasses(classes.filter((cls) => cls.id !== id));
+    setClasses(Classes.filter((cls) => cls.id !== id));
   };
 
   return (
@@ -87,18 +86,18 @@ const ClassesPage = () => {
 
       <div className="py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((cls) => (
+          {Classes.map((cls) => (
             <div
-              key={cls.id}
+              key={cls._id}
               className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden"
             >
               <div className="p-5">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-800">
-                      {cls.name}
+                      {cls.classroom_name}
                     </h3>
-                    <p className="text-gray-600">{cls.code}</p>
+                    <p className="text-gray-600">{cls.classroom_code}</p>
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -127,13 +126,13 @@ const ClassesPage = () => {
 
                 <div className="flex justify-between">
                   <Link
-                    to={`/instructor/class/${cls.id}`}
+                    to={`/instructor/class/${cls._id}`}
                     className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                   >
                     View Class
                   </Link>
                   <Link
-                    to={`/instructor/class/${cls.id}/students`}
+                    to={`/instructor/class/${cls._id}/students`}
                     className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     Manage Students
