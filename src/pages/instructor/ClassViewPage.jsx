@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   FiBook,
@@ -104,13 +104,15 @@ const ClassDetailPage = () => {
     setRefreshMaterials((prev) => !prev); // Toggle to trigger refresh
   };
 
-  const handleClassUpdate = (updatedClass) => {
-    setClassroomData(
-      ClassroomData.map((cls) =>
-        cls._id === updatedClass._id ? updatedClass : cls
-      )
-    );
-  };
+  const handleClassUpdate = useCallback((updatedClass) => {
+    setClassroomData((prev) => ({
+      ...prev,
+      classroom: {
+        ...prev.classroom,
+        ...updatedClass,
+      },
+    }));
+  }, []);
 
   return (
     <>
@@ -430,5 +432,3 @@ const ClassDetailPage = () => {
 };
 
 export default ClassDetailPage;
-
-

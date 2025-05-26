@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiUsers, FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import { updateClassroom } from "../utils/authService";
 import { toast } from "react-toastify";
 
@@ -20,9 +20,9 @@ const EditClassModal = ({
   useEffect(() => {
     if (showEditClassModal && data) {
       setFormData({
-        name: data.classroom_name,
-        code: data.classroom_code,
-        description: data.description,
+        name: data.classroom_name || "",
+        code: data.classroom_code || "",
+        description: data.description || "",
       });
     }
   }, [showEditClassModal, data]);
@@ -33,10 +33,10 @@ const EditClassModal = ({
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Make sure to prevent default form submission
-    e.stopPropagation(); // Stop event bubbling
+    e.preventDefault();
+    e.stopPropagation();
 
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting || !data?._id) return;
 
     setIsSubmitting(true);
 
@@ -48,39 +48,50 @@ const EditClassModal = ({
         formData.description
       );
 
+      if (!response) {
+        throw new Error("No response from server");
+      }
+
       if (response.success) {
+        toast.dismiss(); // Clear any existing toasts
         toast.success(`Class ${formData.name} updated successfully!`);
 
         const updatedClass = {
           ...data,
           classroom_name: formData.name,
-          classroom_code: formData.code,
           description: formData.description,
         };
 
-        if (onUpdate) {
-          onUpdate(updatedClass);
-        }
-
+        onUpdate?.(updatedClass);
         setShowEditClassModal(false);
-      } else {
-        toast.error(response.error);
+        return; // Explicit return after success
       }
+
+      throw new Error(response.error || "Failed to update class");
     } catch (error) {
-      console.error("Error updating class:", error);
+      console.error("Update error:", error);
+      toast.dismiss(); // Clear any existing toasts
       toast.error(
         error.response?.data?.message ||
+          error.message ||
           "Failed to update class. Please try again."
       );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!showEditClassModal) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl">
+      <div
+        className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl"
+        onClick={(e) => e.stopPropagation()} // Prevent click-through
+      >
         <div className="flex items-center mb-6">
           <button
+            type="button"
             onClick={() => setShowEditClassModal(false)}
             className="p-2 mr-4 rounded-lg hover:bg-gray-100"
             disabled={isSubmitting}
@@ -90,7 +101,7 @@ const EditClassModal = ({
           <h2 className="text-xl font-semibold">Edit Class</h2>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -140,21 +151,14 @@ const EditClassModal = ({
             <button
               type="button"
               onClick={() => setShowEditClassModal(false)}
-              className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               disabled={isSubmitting}
             >
               Cancel
             </button>
-            {/*   <button
-              type="submit"
-              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </button> */}
             <button
-              type="submit" // Make sure this is explicitly set
-              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
