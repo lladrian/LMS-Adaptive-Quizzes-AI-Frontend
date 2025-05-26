@@ -1,23 +1,74 @@
 import React, { useState } from "react";
 import { FiArrowLeft, FiUsers } from "react-icons/fi";
+import { addClassroom } from "../utils/authService";
+import { toast } from "react-toastify";
 
-const CreateClassModal = ({ onClose }) => {
+const CreateClassModal = ({ onClose, onClassCreated }) => {
+  const instructorId = localStorage.getItem("userId");
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
+    instructor: instructorId,
+    classroom_name: "",
+    subject_code: "",
     description: "",
-    maxStudents: 30,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const generateClassCode = () => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
+    }
+    return result;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Class created:", formData);
-    onClose(); // Close modal after submission
+    setIsSubmitting(true);
+
+    try {
+      // Generate random classroom code
+      const classroom_code = generateClassCode();
+
+      // Combine form data with generated code
+      const classData = {
+        ...formData,
+        classroom_code,
+      };
+
+      const response = await addClassroom(
+        classData.classroom_name,
+        classData.subject_code,
+        classData.instructor,
+        classData.classroom_code,
+        classData.description
+      );
+
+      if (response.success) {
+        toast.success(
+          `Class "${classData.classroom_name}" created successfully!`
+        );
+        onClassCreated(response.data);
+        onClose();
+      } else {
+        toast.error(response.error || "Failed to create class");
+      }
+    } catch (error) {
+      console.error("Error creating class:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to create class. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,6 +78,7 @@ const CreateClassModal = ({ onClose }) => {
           <button
             onClick={onClose}
             className="p-2 mr-4 rounded-lg hover:bg-gray-100"
+            disabled={isSubmitting}
           >
             <FiArrowLeft />
           </button>
@@ -41,24 +93,26 @@ const CreateClassModal = ({ onClose }) => {
               </label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="classroom_name"
+                value={formData.classroom_name}
                 onChange={handleChange}
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Class Code
+                Subject Code
               </label>
               <input
                 type="text"
-                name="code"
-                value={formData.code}
+                name="subject_code"
+                value={formData.subject_code}
                 onChange={handleChange}
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div className="md:col-span-2">
@@ -71,24 +125,8 @@ const CreateClassModal = ({ onClose }) => {
                 onChange={handleChange}
                 rows="3"
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={isSubmitting}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Students
-              </label>
-              <div className="relative">
-                <FiUsers className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="number"
-                  name="maxStudents"
-                  min="1"
-                  max="100"
-                  value={formData.maxStudents}
-                  onChange={handleChange}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
             </div>
           </div>
 
@@ -97,14 +135,16 @@ const CreateClassModal = ({ onClose }) => {
               type="button"
               onClick={onClose}
               className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              Create Class
+              {isSubmitting ? "Creating..." : "Create Class"}
             </button>
           </div>
         </form>

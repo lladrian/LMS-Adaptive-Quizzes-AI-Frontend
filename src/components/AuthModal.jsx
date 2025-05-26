@@ -46,6 +46,11 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
       if (result.success) {
         toast.success(`Welcome, ${result.data.data.fullname}!`);
         onClose(); // Close modal after login
+
+        localStorage.setItem("userId", result.data.data._id);
+        localStorage.setItem("role", result.data.data.role);
+        localStorage.setItem("fullname", result.data.data.fullname);
+        
         if (result.data.data.role === "student") {
           navigate("/student/dashboard");
         } else if (result.data.data.role === "instructor") {

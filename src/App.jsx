@@ -68,20 +68,26 @@ function App() {
             <Route path="students/add" element={<AddStudentPage />} />
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
-            <Route path="classes/create" element={<CreateClassPage />} />
+           
             <Route path="class/:classId" element={<ClassViewPage />} />
+
             <Route
               path="class/:classId/students"
               element={<ClassStudentsPage />}
             />
+
+
             <Route
               path="class/:classId/students/add"
               element={<AddStudentsToClassPage />}
             />
+
+
             <Route
               path="class/:classId/assignments/create"
               element={<CreateAssignmentPage />}
             />
+
             <Route
               path="class/:classId/assignment/:assignmentId"
               element={<AssignmentDetailPage />}
@@ -91,6 +97,7 @@ function App() {
             <Route path="materials/edit/:id" element={<EditMaterialPage />} />
             <Route path="grades" element={<IntructorGradesPage />} />
             <Route path="settings" element={<InstructorSettings />} />
+            
           </Route>
 
           <Route path="/student" element={<StudentLayout />}>

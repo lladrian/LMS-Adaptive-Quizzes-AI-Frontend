@@ -1,45 +1,81 @@
 import React, { useState, useEffect } from "react";
 import { FiUsers, FiArrowLeft } from "react-icons/fi";
+import { updateClassroom } from "../utils/authService";
+import { toast } from "react-toastify";
 
 const EditClassModal = ({
   showEditClassModal,
   setShowEditClassModal,
-  classId,
+  data,
+  onUpdate,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
     description: "",
-    maxStudents: 30,
-    status: "active",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
-    if (showEditClassModal) {
-      // Simulated API fetch
-      const mockClass = {
-        name: "Advanced Programming",
-        code: "CS401",
-        description:
-          "Advanced concepts in programming including algorithms, data structures and system design",
-        maxStudents: 25,
-        status: "active",
-      };
-      setFormData(mockClass);
+    if (showEditClassModal && data) {
+      setFormData({
+        name: data.classroom_name,
+        code: data.classroom_code,
+        description: data.description,
+      });
     }
-  }, [showEditClassModal, classId]);
+  }, [showEditClassModal, data]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Class updated:", formData);
-    setShowEditClassModal(false);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Make sure to prevent default form submission
+    e.stopPropagation(); // Stop event bubbling
 
+    if (isSubmitting) return; // Prevent multiple submissions
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await updateClassroom(
+        data._id,
+        formData.name,
+        formData.code,
+        formData.description
+      );
+
+      if (response.success) {
+        toast.success(`Class ${formData.name} updated successfully!`);
+
+        const updatedClass = {
+          ...data,
+          classroom_name: formData.name,
+          classroom_code: formData.code,
+          description: formData.description,
+        };
+
+        if (onUpdate) {
+          onUpdate(updatedClass);
+        }
+
+        setShowEditClassModal(false);
+      } else {
+        toast.error(response.error);
+      }
+    } catch (error) {
+      console.error("Error updating class:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to update class. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl">
@@ -47,6 +83,7 @@ const EditClassModal = ({
           <button
             onClick={() => setShowEditClassModal(false)}
             className="p-2 mr-4 rounded-lg hover:bg-gray-100"
+            disabled={isSubmitting}
           >
             <FiArrowLeft />
           </button>
@@ -66,6 +103,7 @@ const EditClassModal = ({
                 onChange={handleChange}
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -79,7 +117,7 @@ const EditClassModal = ({
                 value={formData.code}
                 onChange={handleChange}
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                required
+                disabled
               />
             </div>
 
@@ -93,41 +131,8 @@ const EditClassModal = ({
                 onChange={handleChange}
                 rows="3"
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                disabled={isSubmitting}
               />
-            </div>
-
-            {/*   <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Students
-              </label>
-              <div className="relative">
-                <FiUsers className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="number"
-                  name="maxStudents"
-                  min="1"
-                  max="100"
-                  value={formData.maxStudents}
-                  onChange={handleChange}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div> */}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="archived">Archived</option>
-              </select>
             </div>
           </div>
 
@@ -136,14 +141,23 @@ const EditClassModal = ({
               type="button"
               onClick={() => setShowEditClassModal(false)}
               className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button
+            {/*   <button
               type="submit"
-              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              Save Changes
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </button> */}
+            <button
+              type="submit" // Make sure this is explicitly set
+              className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

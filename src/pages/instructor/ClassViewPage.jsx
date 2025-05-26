@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   FiBook,
@@ -12,12 +12,16 @@ import {
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
 
+import { updateClassroom, specificClassroom } from "../../utils/authService";
+import { toast } from "react-toastify";
+
 const ClassDetailPage = () => {
   const { classId } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
+  const [classData, setClassData] = useState(null);
 
   // Sample data
-  const classData = {
+  /*  const classData = {
     id: classId,
     name: "Advanced Programming",
     code: "CS401",
@@ -27,6 +31,7 @@ const ClassDetailPage = () => {
     materials: 5,
     assignments: 3,
   };
+ */
 
   const students = [
     { id: 1, name: "John Doe", email: "john@example.com", status: "active" },
@@ -67,6 +72,29 @@ const ClassDetailPage = () => {
     },
   ];
 
+  const [ClassroomData, setClassroomData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    setIsLoading(true);
+    try {
+      const result = await specificClassroom(classId);
+      if (result.success) {
+        setClassroomData(result.data.data);
+        console.log(result.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching Instructor:", error);
+      toast.error("Failed to fetch Instructor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
 
@@ -76,20 +104,38 @@ const ClassDetailPage = () => {
     setRefreshMaterials((prev) => !prev); // Toggle to trigger refresh
   };
 
+  const handleClassUpdate = (updatedClass) => {
+    setClassroomData(
+      ClassroomData.map((cls) =>
+        cls._id === updatedClass._id ? updatedClass : cls
+      )
+    );
+  };
+
   return (
     <>
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {classData.name} ({classData.code})
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {ClassroomData.classroom?.classroom_name} (
+            {ClassroomData.classroom?.subject_code})
+          </h1>
+          <p class="mt-1">
+            Class code: {ClassroomData.classroom?.classroom_code}
+          </p>
+        </div>
+
         <button
-          onClick={() => setShowEditClassModal(true)}
+          /*         onClick={() => setShowEditClassModal(true)} */
+          onClick={() => {
+            setShowEditClassModal(true);
+            setClassData(ClassroomData.classroom);
+          }}
           className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
         >
           <FiEdit2 className="mr-2" /> Edit Class
         </button>
       </div>
-
       <div className="py-4">
         {/* Class Navigation */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 mb-6">
@@ -142,13 +188,17 @@ const ClassDetailPage = () => {
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <h3 className="text-lg font-semibold mb-4">Class Information</h3>
-              <p className="text-gray-700 mb-4">{classData.description}</p>
+              <p className="text-gray-700 mb-4">
+                {ClassroomData.classroom?.description}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiUsers className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {classData.students} Students
+                      {ClassroomData.students?.length <= 1
+                        ? `${ClassroomData.students?.length} Student`
+                        : `${ClassroomData.students?.length} Students`}
                     </span>
                   </div>
                 </div>
@@ -156,7 +206,9 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiFileText className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {classData.materials} Materials
+                      {ClassroomData.materials?.length <= 1
+                        ? `${ClassroomData.materials?.length} Material`
+                        : `${ClassroomData.materials?.length} Materials`}
                     </span>
                   </div>
                 </div>
@@ -164,7 +216,14 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiBarChart2 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {classData.assignments} Assignments
+                      {(() => {
+                        const total =
+                          (ClassroomData.quizzes?.length || 0) +
+                          (ClassroomData.exams?.length || 0);
+                        return `${total} ${
+                          total <= 1 ? "Assignment" : "Assignments"
+                        }`;
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -203,38 +262,47 @@ const ClassDetailPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {students.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {student.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {student.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            student.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {student.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          to={`/instructor/students/edit/${student.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 mr-3"
-                        >
-                          Edit
-                        </Link>
-                        <button className="text-red-600 hover:text-red-900">
-                          Remove
-                        </button>
+                  {ClassroomData.students?.length > 0 ? (
+                    ClassroomData.students.map((student) => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {student.fullname}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+              bg-green-100 text-green-800
+            `}
+                          >
+                            active
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link
+                            to={`/instructor/students/edit/${student.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          >
+                            Edit
+                          </Link>
+                          <button className="text-red-600 hover:text-red-900">
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No students in this classroom
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -348,11 +416,13 @@ const ClassDetailPage = () => {
           </div>
         )}
       </div>
-      {showEditClassModal && (
+
+      {showEditClassModal && classData && (
         <EditClassModal
           showEditClassModal={showEditClassModal}
           setShowEditClassModal={setShowEditClassModal}
-          classId="123" // pass the class ID as needed
+          data={classData}
+          onUpdate={handleClassUpdate}
         />
       )}
     </>
@@ -360,3 +430,5 @@ const ClassDetailPage = () => {
 };
 
 export default ClassDetailPage;
+
+

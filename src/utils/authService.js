@@ -268,18 +268,17 @@ export const addClassroom = async (
   classroom_name,
   subject_code,
   instructor,
-  classroom_code
+  classroom_code,
+  description
 ) => {
   try {
-    const response = await axios.post(
-      `${BASE_URL}/classrooms/classrooms/add_classroom`,
-      {
-        classroom_name,
-        subject_code,
-        instructor,
-        classroom_code,
-      }
-    );
+    const response = await axios.post(`${BASE_URL}/classrooms/add_classroom`, {
+      classroom_name,
+      subject_code,
+      instructor,
+      classroom_code,
+      description,
+    });
 
     return { success: true, data: response.data };
   } catch (error) {
@@ -293,7 +292,7 @@ export const addClassroom = async (
 export const joinClassroom = async (classroom_code, student_id) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/classrooms/classrooms/student_join_classroom`,
+      `${BASE_URL}/classrooms/student_join_classroom`,
       { classroom_code, student_id }
     );
 
@@ -338,7 +337,25 @@ export const allClassrooms = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to fetch all classroom",
+      error: error.response?.data?.message || "Failed to fetch all classrooms",
+    };
+  }
+};
+
+export const specificClassroom = async (classId) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_specific_classroom/${classId}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to fetch specific classroom",
     };
   }
 };
@@ -375,6 +392,7 @@ export const allClassroomSpecificStudent = async (studentId) => {
     };
   }
 };
+
 export const allClassroomSpecificInstructor = async (instructorId) => {
   try {
     const response = await axios.get(`
@@ -392,7 +410,12 @@ export const allClassroomSpecificInstructor = async (instructorId) => {
   }
 };
 
-export const updateClassroom = async (roomId, classroom_name, subject_code) => {
+export const updateClassroom = async (
+  roomId,
+  classroom_name,
+  subject_code,
+  description
+) => {
   try {
     const response = await axios.put(
       `
@@ -400,6 +423,7 @@ export const updateClassroom = async (roomId, classroom_name, subject_code) => {
       {
         classroom_name,
         subject_code,
+        description,
       }
     );
 
@@ -414,11 +438,11 @@ export const updateClassroom = async (roomId, classroom_name, subject_code) => {
     };
   }
 };
-export const deleteClassroom = async (roomId) => {
+export const hideClassroom = async (roomId) => {
   try {
-    const response = await axios.put(
+    const response = await axios.get(
       `
-      ${BASE_URL}/classrooms/delete_classroom/${roomId}`
+      ${BASE_URL}/classrooms/hide_classroom/${roomId}`
     );
 
     return {
@@ -428,7 +452,25 @@ export const deleteClassroom = async (roomId) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to delete classroom",
+      error: error.response?.data?.message || "Failed to archive classroom",
+    };
+  }
+};
+export const unHideClassroom = async (roomId) => {
+  try {
+    const response = await axios.get(
+      `
+      ${BASE_URL}/classrooms/unhide_classroom/${roomId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to unarchive classroom",
     };
   }
 };
