@@ -475,4 +475,123 @@ export const unHideClassroom = async (roomId) => {
   }
 };
 
+/* MATERIALS */
+
+export const addMaterial = async (file, classroom_id) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/materials/add_material`,
+
+      {
+        file_uploaded: file,
+        classroom_id,
+      }
+    );
+
+    console.log("Material added:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error adding material",
+    };
+  }
+};
+
+export const specificMaterial = async (materialId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/materials/get_specific_material/${materialId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching materials",
+    };
+  }
+};
+export const extractMaterialData = async (materialId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/materials/extract_material/${materialId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error extracting materials data",
+    };
+  }
+};
+
+export const allMaterialsSpecificClass = async (classId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/materials/get_all_material_specific_classroom/${classId}`
+    );
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching  materials",
+    };
+  }
+};
+export const updateMaterial = async (materialId, classroomId, file) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/materials/update_material/${materialId}`,
+
+      {
+        file_uploaded: file,
+        classroom_id: classroomId,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to update material.",
+    };
+  }
+};
+
+export const deleteMaterial = async (materialId) => {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/materials/delete_material/${materialId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to delete material.",
+    };
+  }
+};
+
 /* QUIZ/EXAM */
