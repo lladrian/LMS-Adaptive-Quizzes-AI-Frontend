@@ -1,16 +1,24 @@
 import React, { useState } from "react";
-import { FiUpload, FiFileText, FiX } from "react-icons/fi";
-import { addMaterial } from "../utils/authService";
+import { FiUpload, FiFileText, FiX, FiDownload } from "react-icons/fi";
+import { updateMaterial } from "../utils/authService";
 import { toast } from "react-toastify";
 
-const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
+const EditMaterialModal = ({
+  isOpen,
+  onClose,
+  material,
+  classId,
+  onUpdateSuccess,
+}) => {
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
+    title: material.title,
+    description: material.description,
     file: null,
-    filePreview: null,
-    fileType: "",
+    filePreview: material.file_url || null,
+    fileType: material.file_type || "",
+    existingFileName: material.file_name || "",
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -41,12 +49,13 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
         file,
         fileType: fileType === "jpeg" ? "jpg" : fileType,
         filePreview: URL.createObjectURL(file),
+        existingFileName: "",
       }));
     }
   };
 
   const removeFile = () => {
-    if (formData.filePreview) {
+    if (formData.filePreview && formData.file) {
       URL.revokeObjectURL(formData.filePreview);
     }
     setFormData((prev) => ({
@@ -54,6 +63,7 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
       file: null,
       filePreview: null,
       fileType: "",
+      existingFileName: "",
     }));
     setError(null);
   };
@@ -61,14 +71,8 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form
     if (!formData.title.trim()) {
       setError("Title is required");
-      return;
-    }
-
-    if (!formData.file) {
-      setError("File is required");
       return;
     }
 
@@ -76,44 +80,25 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
     setError(null);
 
     try {
-      /*      const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("file", formData.file);
-      formDataToSend.append("classId", classId); */
-
-      // Add any additional fields your API expects
-      // formDataToSend.append("someField", someValue);
-      /* file, classroom_id, description, title */
-
-      const response = await addMaterial(
-        formData.file,
+      const response = await updateMaterial(
+        material._id,
         classId,
+        formData.file,
         formData.description,
         formData.title
       );
 
       if (response.success) {
-        toast.success(`Material added successfully!`);
+        toast.success("Material updated successfully!");
+        onUpdateSuccess();
+        onClose();
       } else {
-        toast.error(response.error);
+        toast.error(response.error || "Failed to update material");
       }
-
-      setFormData({
-        title: "",
-        description: "",
-        file: null,
-        filePreview: null,
-        fileType: "",
-      });
-
-      // Notify parent component
-      onUploadSuccess();
-      onClose();
     } catch (err) {
-      console.error("Material upload error:", err);
+      console.error("Material update error:", err);
       setError(
-        err.message || "An error occurred during upload. Please try again."
+        err.message || "An error occurred during update. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -130,13 +115,15 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
     return colorMap[fileType] || "bg-gray-100 text-gray-600";
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">
-              Upload Class Material
+              Edit Material
             </h3>
             <button
               onClick={onClose}
@@ -187,7 +174,7 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                File *
+                File
               </label>
               {formData.file ? (
                 <div className="mt-1 flex items-center justify-between p-3 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50">
@@ -218,18 +205,56 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
                     <FiX className="w-5 h-5 text-gray-500" />
                   </button>
                 </div>
+              ) : formData.filePreview ? (
+                <div className="mt-1 flex items-center justify-between p-3 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50">
+                  <div className="flex items-center">
+                    <div
+                      className={`p-2 rounded-lg mr-3 ${getFileIconColor(
+                        formData.fileType
+                      )}`}
+                    >
+                      <FiFileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {formData.existingFileName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formData.fileType.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <a
+                      href={formData.filePreview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                      title="Download"
+                    >
+                      <FiDownload />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={removeFile}
+                      className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+                      aria-label="Remove file"
+                    >
+                      <FiX className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-300 transition-colors">
                   <div className="space-y-1 text-center">
                     <FiUpload className="mx-auto h-8 w-8 text-gray-400" />
                     <div className="flex text-sm text-gray-600 justify-center">
                       <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
-                        <span>Upload a file</span>
+                        <span>Upload a new file</span>
                         <input
                           type="file"
                           className="sr-only"
                           onChange={handleFileChange}
-                          required
                           accept=".pdf,.doc,.docx"
                         />
                       </label>
@@ -253,9 +278,7 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
               <button
                 type="submit"
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                disabled={
-                  isSubmitting || !formData.title.trim() || !formData.file
-                }
+                disabled={isSubmitting || !formData.title.trim()}
               >
                 {isSubmitting ? (
                   <>
@@ -279,10 +302,10 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Uploading...
+                    Updating...
                   </>
                 ) : (
-                  "Upload Material"
+                  "Update Material"
                 )}
               </button>
             </div>
@@ -293,4 +316,4 @@ const UploadMaterialModal = ({ classId, onClose, onUploadSuccess }) => {
   );
 };
 
-export default UploadMaterialModal;
+export default EditMaterialModal;

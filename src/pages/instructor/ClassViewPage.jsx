@@ -11,47 +11,28 @@ import {
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
-
-import { updateClassroom, specificClassroom } from "../../utils/authService";
+import { BASE_URL } from "../../utils/config";
+import {
+  updateClassroom,
+  specificClassroom,
+  addMaterial,
+  specificMaterial,
+} from "../../utils/authService";
 import { toast } from "react-toastify";
+import CreateAssignmentModal from "../../components/CreateAssignmentModal";
+import EditMaterialModal from "../../components/EditMaterialModal";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [classData, setClassData] = useState(null);
 
-  // Sample data
-  /*  const classData = {
-    id: classId,
-    name: "Advanced Programming",
-    code: "CS401",
-    description:
-      "Advanced concepts in programming including algorithms, data structures and system design",
-    students: 24,
-    materials: 5,
-    assignments: 3,
-  };
- */
-
-  const students = [
-    { id: 1, name: "John Doe", email: "john@example.com", status: "active" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", status: "active" },
-  ];
-
-  const materials = [
-    {
-      id: 1,
-      title: "Algorithm Complexity",
-      type: "lecture",
-      date: "2023-05-01",
-    },
-    {
-      id: 2,
-      title: "Data Structures Review",
-      type: "slides",
-      date: "2023-05-08",
-    },
-  ];
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [materialToDelete, setMaterialToDelete] = useState(null);
 
   const assignments = [
     {
@@ -98,10 +79,8 @@ const ClassDetailPage = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
 
-  const [refreshMaterials, setRefreshMaterials] = useState(false);
-
   const handleUploadSuccess = () => {
-    setRefreshMaterials((prev) => !prev); // Toggle to trigger refresh
+    fetchClasses(); // This will refetch the classroom data including materials
   };
 
   const handleClassUpdate = useCallback((updatedClass) => {
@@ -114,6 +93,29 @@ const ClassDetailPage = () => {
     }));
   }, []);
 
+  const handleDownload = async (materialId) => {
+    try {
+      const result = await specificMaterial(materialId);
+
+      if (result.success) {
+        // Get file path from result (e.g., 'materials/filename.docx')
+        const filePath = result.data.data?.material;
+        console.log(filePath);
+
+        // Construct the full URL
+        const fileUrl = `${BASE_URL}/uploads/${filePath}`;
+
+        // Open in new tab instead of downloading directly
+        window.open(fileUrl, "_blank");
+      } else {
+        toast.error(result.error || "Failed to download file");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("An error occurred while downloading");
+    }
+  };
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -122,7 +124,7 @@ const ClassDetailPage = () => {
             {ClassroomData.classroom?.classroom_name} (
             {ClassroomData.classroom?.subject_code})
           </h1>
-          <p class="mt-1">
+          <p className="mt-1">
             Class code: {ClassroomData.classroom?.classroom_code}
           </p>
         </div>
@@ -180,7 +182,7 @@ const ClassDetailPage = () => {
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              Assignments
+              Activities
             </button>
           </div>
         </div>
@@ -223,7 +225,7 @@ const ClassDetailPage = () => {
                           (ClassroomData.quizzes?.length || 0) +
                           (ClassroomData.exams?.length || 0);
                         return `${total} ${
-                          total <= 1 ? "Assignment" : "Assignments"
+                          total <= 1 ? "Activity" : "Activities"
                         }`;
                       })()}
                     </span>
@@ -315,49 +317,78 @@ const ClassDetailPage = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Materials</h3>
-              {/*            <Link
-                to={`/instructor/class/${classId}/materials/upload`}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
-              >
-                <FiPlus className="mr-2" /> Upload Material
-              </Link> */}
+
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
+                className="cursor-pointer  px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
               >
                 <FiPlus className="mr-2" /> Upload Material
               </button>
             </div>
             <div className="divide-y divide-gray-200">
-              {materials.map((material) => (
-                <div
-                  key={material.id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{material.title}</h4>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                          {material.type}
-                        </span>
-                        <span>Posted: {material.date}</span>
+              {ClassroomData.materials && ClassroomData.materials.length > 0 ? (
+                ClassroomData.materials.map((material) => (
+                  <div
+                    key={material._id}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{material.title}</h4>
+                        <h6 className="font-light">{material.description}</h6>
+
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                            Material
+                          </span>
+                          <span>
+                            Posted:{" "}
+                            {new Date(material.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleDownload(material._id)}
+                          className="cursor-pointer p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                          title="Download"
+                        >
+                          <FiDownload />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedMaterial(material);
+                            setShowEditMaterialModal(true);
+                          }}
+                          className="cursor-pointer p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                        >
+                          <FiEdit2 />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMaterialToDelete(material);
+                            setShowDeleteModal(true);
+                          }}
+                          className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
-                        <FiDownload />
-                      </button>
-                      <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                        <FiEdit2 />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                        Delete
-                      </button>
-                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-4 text-gray-500 italic">
+                  No materials available.
                 </div>
-              ))}
+              )}
             </div>
 
             {showUploadModal && (
@@ -367,20 +398,45 @@ const ClassDetailPage = () => {
                 onUploadSuccess={handleUploadSuccess}
               />
             )}
+
+            {showEditMaterialModal && selectedMaterial && (
+              <EditMaterialModal
+                isOpen={showEditMaterialModal}
+                onClose={() => setShowEditMaterialModal(false)}
+                material={selectedMaterial}
+                classId={classId}
+                onUpdateSuccess={handleUploadSuccess} // Reuse the same success handler
+              />
+            )}
+
+            {showDeleteModal && materialToDelete && (
+              <DeleteConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                material={materialToDelete}
+                onDeleteSuccess={handleUploadSuccess} // Reuse the same success handler
+              />
+            )}
           </div>
         )}
 
         {activeTab === "assignments" && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Class Assignments</h3>
+              <h3 className="text-lg font-semibold">Class Activities</h3>
               <div className="flex space-x-3">
-                <Link
+                {/*      <Link
                   to={`/instructor/class/${classId}/assignments/create`}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
                 >
                   <FiPlus className="mr-2" /> New Assignment
-                </Link>
+                </Link> */}
+                <button
+                  onClick={() => setIsAssignmentModalOpen(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
+                >
+                  <FiPlus className="mr-2" /> New Acitivity
+                </button>
               </div>
             </div>
             <div className="divide-y divide-gray-200">
@@ -425,6 +481,14 @@ const ClassDetailPage = () => {
           setShowEditClassModal={setShowEditClassModal}
           data={classData}
           onUpdate={handleClassUpdate}
+        />
+      )}
+
+      {isAssignmentModalOpen && (
+        <CreateAssignmentModal
+          isOpen={isAssignmentModalOpen}
+          onClose={() => setIsAssignmentModalOpen(false)}
+          classId={classId}
         />
       )}
     </>

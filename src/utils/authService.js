@@ -476,15 +476,21 @@ export const unHideClassroom = async (roomId) => {
 };
 
 /* MATERIALS */
-
-export const addMaterial = async (file, classroom_id) => {
+export const addMaterial = async (file, classroom_id, description, title) => {
   try {
+    const formData = new FormData();
+    formData.append("file_uploaded", file);
+    formData.append("classroom_id", classroom_id);
+    formData.append("description", description);
+    formData.append("title", title);
+
     const response = await axios.post(
       `${BASE_URL}/materials/add_material`,
-
+      formData,
       {
-        file_uploaded: file,
-        classroom_id,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
 
@@ -495,6 +501,7 @@ export const addMaterial = async (file, classroom_id) => {
       data: response.data,
     };
   } catch (error) {
+    console.log(error);
     return {
       success: false,
       error: error.response?.data?.message || "Error adding material",
@@ -553,16 +560,32 @@ export const allMaterialsSpecificClass = async (classId) => {
     };
   }
 };
-export const updateMaterial = async (materialId, classroomId, file) => {
+
+export const updateMaterial = async (
+  materialId,
+  classroomId,
+  file,
+  description,
+  title
+) => {
   try {
+    const formData = new FormData();
+    formData.append("file_uploaded", file);
+    formData.append("classroom_id", classroomId);
+    formData.append("description", description);
+    formData.append("title", title);
+
     const response = await axios.put(
       `${BASE_URL}/materials/update_material/${materialId}`,
-
+      formData,
       {
-        file_uploaded: file,
-        classroom_id: classroomId,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
+
+    console.log("Material added:", response.data);
 
     return {
       success: true,
@@ -594,4 +617,21 @@ export const deleteMaterial = async (materialId) => {
   }
 };
 
-/* QUIZ/EXAM */
+/* ACTIVITIES */
+
+export const addQuiz = async () => {
+  try {
+    const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {});
+
+    return {
+      success: true,
+      data: response.data,
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to add quiz.",
+    };
+  }
+};

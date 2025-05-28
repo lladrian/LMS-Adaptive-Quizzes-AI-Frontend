@@ -25,7 +25,7 @@ import CreateClassPage from "./pages/instructor/CreateClassPage";
 import ClassViewPage from "./pages/instructor/ClassViewPage";
 import ClassStudentsPage from "./pages/instructor/ClassStudentsPage";
 import AddStudentsToClassPage from "./pages/instructor/AddStudentsToClassPage";
-import CreateAssignmentPage from "./pages/instructor/CreateAssignmentPage";
+
 import AssignmentDetailPage from "./pages/instructor/AssignmentDetailPage";
 import MaterialsPage from "./pages/instructor/MaterialsPage";
 import UploadMaterialPage from "./pages/instructor/UploadMaterialPage";
@@ -83,10 +83,6 @@ function App() {
             />
 
 
-            <Route
-              path="class/:classId/assignments/create"
-              element={<CreateAssignmentPage />}
-            />
 
             <Route
               path="class/:classId/assignment/:assignmentId"
