@@ -85,7 +85,7 @@ function App() {
 
 
             <Route
-              path="class/:classId/assignment/:assignmentId"
+              path="class/:classId/activity/:assignmentId"
               element={<AssignmentDetailPage />}
             />
             <Route path="materials" element={<MaterialsPage />} />

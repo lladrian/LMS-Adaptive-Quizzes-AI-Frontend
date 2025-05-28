@@ -33,7 +33,6 @@ const ClassDetailPage = () => {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState(null);
-
   const assignments = [
     {
       id: 1,
@@ -56,6 +55,18 @@ const ClassDetailPage = () => {
   const [ClassroomData, setClassroomData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  /* const activities = ClassroomData.exams; */
+  // Combine and sort
+  const quizzes = Array.isArray(ClassroomData.quizzes)
+    ? ClassroomData.quizzes
+    : [];
+  const exams = Array.isArray(ClassroomData.exams) ? ClassroomData.exams : [];
+
+  const activities = [...quizzes, ...exams].sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  console.log(activities);
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -425,43 +436,57 @@ const ClassDetailPage = () => {
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Activities</h3>
               <div className="flex space-x-3">
-                {/*      <Link
-                  to={`/instructor/class/${classId}/assignments/create`}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
-                >
-                  <FiPlus className="mr-2" /> New Assignment
-                </Link> */}
                 <button
                   onClick={() => setIsAssignmentModalOpen(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
                 >
                   <FiPlus className="mr-2" /> New Acitivity
                 </button>
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {assignments.map((assignment) => (
+              {activities.map((activity) => (
                 <div
-                  key={assignment.id}
+                  key={activity._id}
                   className="p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="font-medium">{assignment.title}</h4>
+                      <h4 className="font-medium">{activity.title}</h4>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                          {assignment.type}
+                          {activity.type}
                         </span>
-                        <span>Due: {assignment.due}</span>
-                        <span className="mx-2">•</span>
-                        <span>{assignment.submissions} submissions</span>
-                        <span className="mx-2">•</span>
-                        <span>{assignment.graded} graded</span>
+                        {/*          <span>Description: {activity.description}</span> */}
+
+                        {/* Description */}
+                        <span className="text-gray-700">
+                          <strong className="font-medium">Description:</strong>{" "}
+                          {activity.description}
+                        </span>
+
+                        {/* Submission Time */}
+                        <span className="text-gray-700 flex items-center">
+                          <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
+                          <strong className="font-medium mr-2">
+                            Duration:{" "}
+                          </strong>
+                          {activity.submission_time >= 60
+                            ? `${Math.floor(activity.submission_time / 60)}h ${
+                                activity.submission_time % 60
+                              }m`
+                            : `${activity.submission_time}m`}
+                        </span>
+
+                        <span className="ml-2 text-gray-700">
+                          <strong className="font-medium">Points:</strong>{" "}
+                          <span>{activity.points} </span>
+                        </span>
                       </div>
                     </div>
                     <div className="flex space-x-2">
                       <Link
-                        to={`/instructor/class/${classId}/assignment/${assignment.id}`}
+                        to={`/instructor/class/${classId}/activity/${activity._id}`}
                         className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                       >
                         View

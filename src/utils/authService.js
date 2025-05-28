@@ -619,15 +619,28 @@ export const deleteMaterial = async (materialId) => {
 
 /* ACTIVITIES */
 
-export const addQuiz = async () => {
+export const addQuiz = async (
+  classId,
+  questions, // Now an array of strings
+  timeLimit,
+  title,
+  description,
+  points
+) => {
   try {
-    const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {});
+    const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
+      classroom_id: classId,
+      question: questions, // Send as array of strings
+      time_limit: timeLimit,
+      title,
+      description,
+      points,
+    });
 
     return {
       success: true,
       data: response.data,
     };
-    
   } catch (error) {
     return {
       success: false,
@@ -635,3 +648,5 @@ export const addQuiz = async () => {
     };
   }
 };
+
+

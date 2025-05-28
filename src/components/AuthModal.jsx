@@ -51,6 +51,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
         localStorage.setItem("role", result.data.data.role);
         localStorage.setItem("fullname", result.data.data.fullname);
         
+        
         if (result.data.data.role === "student") {
           navigate("/student/dashboard");
         } else if (result.data.data.role === "instructor") {

@@ -13,6 +13,7 @@ import {
 
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
+  
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");

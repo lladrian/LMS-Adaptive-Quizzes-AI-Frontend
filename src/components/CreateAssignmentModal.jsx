@@ -4,11 +4,11 @@ import {
   FiTrash2,
   FiClock,
   FiCalendar,
-  FiCode,
   FiX,
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
+import { addQuiz } from "../utils/authService";
 
 const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,35 +19,29 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     title: "",
     description: "",
     type: "quiz",
-    dueDate: "",
+    /*     dueDate: "", */
     timeLimit: 60,
     totalPoints: 100,
     questions: [],
-    isPublished: false,
   });
 
   const [newQuestion, setNewQuestion] = useState({
     text: "",
-    type: "multiple-choice",
+    type: "programming",
     points: 1,
-    options: ["", "", "", ""],
-    correctAnswer: null,
-    correctShortAnswer: "",
     language: "javascript",
-    starterCode: "",
-    testCases: [{ input: "", output: "", isPublic: true }],
   });
 
   const programmingLanguages = [
     { value: "javascript", label: "JavaScript" },
     { value: "python", label: "Python" },
-    { value: "java", label: "Java" },
+    /*     { value: "java", label: "Java" },
     { value: "c", label: "C" },
-    { value: "cpp", label: "C++" },
+    { value: "cpp", label: "C++" }, */
   ];
 
   const steps = [
-    { id: 1, name: "Assignment Details" },
+    { id: 1, name: "Activity Details" },
     { id: 2, name: "Add Questions" },
     { id: 3, name: "Review & Submit" },
   ];
@@ -68,35 +62,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
       return;
     }
 
-    if (newQuestion.type === "programming") {
-      if (!newQuestion.starterCode.trim()) {
-        setError("Starter code is required for programming questions");
-        return;
-      }
-      if (newQuestion.testCases.length === 0) {
-        setError("At least one test case is required");
-        return;
-      }
-      for (const testCase of newQuestion.testCases) {
-        if (!testCase.input.trim() || !testCase.output.trim()) {
-          setError("All test cases must have both input and output");
-          return;
-        }
-      }
-    } else if (
-      newQuestion.type !== "short-answer" &&
-      !newQuestion.correctAnswer
-    ) {
-      setError("Please select the correct answer");
-      return;
-    } else if (
-      newQuestion.type === "short-answer" &&
-      !newQuestion.correctShortAnswer
-    ) {
-      setError("Please provide the correct answer");
-      return;
-    }
-
     setError(null);
 
     const questionToAdd = {
@@ -104,20 +69,8 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
       text: newQuestion.text,
       type: newQuestion.type,
       points: parseInt(newQuestion.points),
+      language: newQuestion.language,
     };
-
-    if (newQuestion.type === "programming") {
-      questionToAdd.language = newQuestion.language;
-      questionToAdd.starterCode = newQuestion.starterCode;
-      questionToAdd.testCases = newQuestion.testCases;
-    } else if (newQuestion.type !== "short-answer") {
-      questionToAdd.options = newQuestion.options.filter(
-        (opt) => opt.trim() !== ""
-      );
-      questionToAdd.correctAnswer = newQuestion.correctAnswer;
-    } else {
-      questionToAdd.correctShortAnswer = newQuestion.correctShortAnswer;
-    }
 
     setAssignmentData((prev) => ({
       ...prev,
@@ -125,16 +78,12 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
       totalPoints: prev.totalPoints + parseInt(newQuestion.points),
     }));
 
+    // Reset new question form
     setNewQuestion({
       text: "",
-      type: "multiple-choice",
+      type: "programming",
       points: 1,
-      options: ["", "", "", ""],
-      correctAnswer: null,
-      correctShortAnswer: "",
       language: "javascript",
-      starterCode: "",
-      testCases: [{ input: "", output: "", isPublic: true }],
     });
   };
 
@@ -151,30 +100,43 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-
+  
     if (assignmentData.questions.length === 0) {
       setError("Please add at least one question");
       setIsSubmitting(false);
       return;
     }
-
+  
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Assignment created:", assignmentData);
+      // Prepare the questions data for API - extract just the text
+      const questionTexts = assignmentData.questions.map(q => q.text);
+  
+      const result = await addQuiz(
+        classId,
+        questionTexts, // Now sending array of strings
+        assignmentData.timeLimit,
+        assignmentData.title,
+        assignmentData.description,
+        assignmentData.totalPoints
+      );
+  
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+  
+      console.log("Assignment created:", result.data);
       onClose();
       setAssignmentData({
         title: "",
         description: "",
         type: "quiz",
-        dueDate: "",
         timeLimit: 60,
         totalPoints: 100,
         questions: [],
-        isPublished: false,
       });
       setCurrentStep(1);
     } catch (err) {
-      setError("Failed to create assignment. Please try again.");
+      setError(err.message || "Failed to create assignment. Please try again.");
       console.error("Creation error:", err);
     } finally {
       setIsSubmitting(false);
@@ -185,7 +147,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     if (currentStep === 1) {
       if (
         !assignmentData.title ||
-        !assignmentData.dueDate ||
+        /*      !assignmentData.dueDate || */
         !assignmentData.timeLimit
       ) {
         setError("Please fill all required fields");
@@ -302,7 +264,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     </select>
                   </div>
 
-                  <div>
+                  {/*       <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Due Date *
                     </label>
@@ -317,7 +279,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                       />
                       <FiCalendar className="absolute left-3 top-3 text-gray-400" />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -360,8 +322,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                               {question.points !== 1 ? "s" : ""})
                               <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
                                 {question.type.replace("-", " ")}
-                                {question.type === "programming" &&
-                                  ` (${question.language})`}
+                                {` (${question.language})`}
                               </span>
                             </h4>
                             <button
@@ -374,65 +335,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                           </div>
 
                           <p className="text-gray-700 mt-1">{question.text}</p>
-
-                          {question.type === "programming" && (
-                            <div className="mt-3 space-y-3">
-                              <div>
-                                <h5 className="text-sm font-medium text-gray-700 mb-1">
-                                  Starter Code:
-                                </h5>
-                                <pre className="bg-gray-800 text-gray-100 p-3 rounded overflow-x-auto text-sm">
-                                  {question.starterCode}
-                                </pre>
-                              </div>
-
-                              <div>
-                                <h5 className="text-sm font-medium text-gray-700 mb-1">
-                                  Test Cases:
-                                </h5>
-                                <div className="space-y-2">
-                                  {question.testCases.map(
-                                    (testCase, tIndex) => (
-                                      <div
-                                        key={tIndex}
-                                        className="bg-gray-50 p-2 rounded text-sm"
-                                      >
-                                        <div className="grid grid-cols-2 gap-2 mb-1">
-                                          <div>
-                                            <span className="text-gray-500">
-                                              Input:
-                                            </span>
-                                            <pre className="bg-white p-1 rounded">
-                                              {testCase.input}
-                                            </pre>
-                                          </div>
-                                          <div>
-                                            <span className="text-gray-500">
-                                              Expected Output:
-                                            </span>
-                                            <pre className="bg-white p-1 rounded">
-                                              {testCase.output}
-                                            </pre>
-                                          </div>
-                                        </div>
-                                        <span
-                                          className={`text-xs px-2 py-1 rounded ${
-                                            testCase.isPublic
-                                              ? "bg-green-100 text-green-800"
-                                              : "bg-purple-100 text-purple-800"
-                                          }`}
-                                        >
-                                          {testCase.isPublic
-                                            ? "Public"
-                                            : "Private"}
-                                        </span>
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -459,23 +361,27 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                       rows="2"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Enter the question..."
+                      required
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Question Type *
+                        Programming Language *
                       </label>
                       <select
-                        name="type"
-                        value={newQuestion.type}
+                        name="language"
+                        value={newQuestion.language}
                         onChange={handleQuestionChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
                       >
-                        <option value="programming">
-                          Programming Question
-                        </option>
+                        {programmingLanguages.map((lang) => (
+                          <option key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -490,31 +396,10 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                         onChange={handleQuestionChange}
                         min="1"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
                       />
                     </div>
                   </div>
-
-                  {newQuestion.type === "programming" && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Programming Language *
-                        </label>
-                        <select
-                          name="language"
-                          value={newQuestion.language}
-                          onChange={handleQuestionChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          {programmingLanguages.map((lang) => (
-                            <option key={lang.value} value={lang.value}>
-                              {lang.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
 
                   {error && <div className="text-red-600 text-sm">{error}</div>}
 
@@ -552,12 +437,12 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                         {assignmentData.type}
                       </p>
                     </div>
-                    <div>
+                    {/*      <div>
                       <p className="text-sm text-gray-500">Due Date</p>
                       <p className="font-medium">
                         {new Date(assignmentData.dueDate).toLocaleString()}
                       </p>
-                    </div>
+                    </div> */}
                     <div>
                       <p className="text-sm text-gray-500">Time Limit</p>
                       <p className="font-medium">
@@ -589,8 +474,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                           </h5>
                           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
                             {question.type.replace("-", " ")}
-                            {question.type === "programming" &&
-                              ` (${question.language})`}
+                            {` (${question.language})`}
                           </span>
                         </div>
                         <p className="text-gray-700 mt-1">{question.text}</p>
