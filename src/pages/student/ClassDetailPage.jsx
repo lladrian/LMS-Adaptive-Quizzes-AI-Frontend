@@ -12,6 +12,10 @@ import {
   FiX,
 } from "react-icons/fi";
 import CodeEditor from "../../components/CodeEditor";
+import {specificClassroom, 
+allAnswerExamSpecificStudentSpecificClassroom,
+allAnswerQuizSpecificStudentSpecificClassroom
+} from "../../utils/authService";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -23,155 +27,68 @@ const ClassDetailPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [examStarted, setExamStarted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [classroom, setClassroom] = useState(null);
+  const [materials, setMaterial] = useState([]);
+  const [assignments, setAssignment] = useState([]);
+  const [answers, setAnswer] = useState([]);
+  const [students, setStudent] = useState([]);
+  const studentId = localStorage.getItem("userId");
+//   not yet  // student hasn't opened the exam
+// ongoing  // student started, not yet submitted
+// pending  // student submitted, not yet graded
+// graded // student submitted, yet graded
 
-  // Sample data
-  // Sample data
-  const classData = {
-    id: classId,
-    name: "Advanced Programming",
-    code: "CS401",
-    instructor: "Dr. Smith",
-    description:
-      "Advanced concepts in programming including algorithms, data structures and system design",
-    lessons: [
-      {
-        id: 1,
-        title: "Algorithm Complexity",
-        type: "lecture",
-        date: "2023-05-01",
-        content: "Learn about time and space complexity analysis...",
-        hasPractice: true,
-      },
-      {
-        id: 2,
-        title: "Data Structures Review",
-        type: "slides",
-        date: "2023-05-08",
-        content: "Review of fundamental data structures...",
-        hasPractice: true,
-      },
-    ],
-    assignments: [
-      {
-        id: 1,
-        title: "Sorting Algorithms Quiz",
-        type: "quiz",
-        due: "2023-05-10",
-        duration: 30, // minutes
-        status: "not-started",
-        questions: [
-          {
-            id: 1,
-            type: "multiple-choice",
-            text: "What is the time complexity of bubble sort in the worst case?",
-            options: ["O(n)", "O(n log n)", "O(n^2)", "O(1)"],
-            correctAnswer: 2,
-          },
-          {
-            id: 2,
-            type: "programming",
-            text: "Implement a bubble sort algorithm",
-            language: "javascript",
-            starterCode: "function bubbleSort(arr) {\n  // Your code here\n}",
-            testCases: [
-              { input: "[3,1,4,2]", output: "[1,2,3,4]", isPublic: false },
-            ],
-            points: 10,
-          },
-        ],
-      },
-      {
-        id: 2,
-        title: "Final Exam",
-        type: "exam",
-        due: "2023-06-01",
-        duration: 120, // minutes
-        status: "not-started",
-        questions: [
-          {
-            id: 1,
-            type: "short-answer",
-            text: "Explain the difference between BFS and DFS",
-            correctAnswer:
-              "BFS explores all neighbors first while DFS goes as deep as possible first",
-            points: 5,
-          },
-        ],
-      },
-    ],
-  };
 
-  // Run code for practice problems
-  const runCode = () => {
-    setIsRunning(true);
-    setOutput("Running tests...\n");
+  useEffect(() => {
+      fetchSpecificClassroom();
+  }, []);
+  
+  const fetchSpecificClassroom = async () => {
+      setIsLoading(true);
+      try {
+        const result = await specificClassroom(classId);
+        const result2 = await allAnswerExamSpecificStudentSpecificClassroom(classId, studentId);
+        const result3 = await allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId);
 
-    // Simulate code execution and testing
-    setTimeout(() => {
-      // In a real app, this would be handled by a backend service
-      const currentLesson = classData.lessons.find(
-        (l) => l.id === expandedLesson
-      );
-      if (currentLesson && currentLesson.practiceProblem) {
-        const testResults = currentLesson.practiceProblem.testCases.map(
-          (testCase, i) => {
-            // This is just a simulation - real implementation would actually run the code
-            const passed = Math.random() > 0.5; // Random pass/fail for demo
-            return (
-              `Test case ${i + 1}: ${passed ? "PASSED" : "FAILED"}\n` +
-              `Input: ${testCase.input}\n` +
-              `Expected: ${testCase.output}\n` +
-              `Received: ${testCase.output}\n`
-            ); // Simulating correct output for demo
-          }
-        );
+        if (result.success && result2.success && result3.success) {
+          setClassroom(result.data.data);
+          setMaterial(result.data.data.materials);
+          setStudent(result.data.data.students);
+          setAssignment(
+            [
+              ...(result.data.data.exams || []),
+              ...(result.data.data.quizzes || [])
+            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          );
+          setAnswer(
+            [
+              ...(result2.data.data || []),
+              ...(result3.data.data || [])
+            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          );
 
-        setOutput(
-          (prev) => prev + testResults.join("\n") + "\nAll tests completed"
-        );
-      }
-      setIsRunning(false);
-    }, 1500);
-  };
-
-  // Start exam timer
-  const startExam = (duration) => {
-    setExamStarted(true);
-    setTimeLeft(duration * 60); // convert to seconds
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          submitExam();
-          return 0;
+          console.log( 
+            [
+              ...(result2.data.data || []),
+              ...(result3.data.data || [])
+            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          )
         }
-        return prev - 1;
-      });
-    }, 1000);
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearInterval(timer);
-  };
-
-  // Submit exam
-  const submitExam = () => {
-    setExamStarted(false);
-    // In a real app, this would submit to the backend
-    alert("Exam submitted successfully!");
-  };
-
-  // Format time for display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
 
   return (
     <>
       <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {classData.name}
+        <h2 className="text-2xl font-semibold text-gray-800">
+          {classroom?.classroom.classroom_name}
         </h2>
       </header>
 
@@ -180,17 +97,15 @@ const ClassDetailPage = () => {
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                {classData.name}
+              <h1 className="text-4xl font-bold text-gray-800">
+                {classroom?.classroom.classroom_name}
               </h1>
               <p className="text-gray-600">
-                {classData.code} • {classData.instructor}
+                {classroom?.classroom.subject_code} • {classroom?.classroom.instructor.fullname}
               </p>
-              <p className="mt-2 text-gray-700">{classData.description}</p>
+              <p className="mt-2 text-gray-700">{classroom?.classroom.description}</p>
             </div>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-              <FiMessageSquare className="mr-2" /> Message Instructor
-            </button>
+         
           </div>
         </div>
 
@@ -227,6 +142,16 @@ const ClassDetailPage = () => {
             >
               Grades
             </button>
+            <button
+              onClick={() => setActiveTab("classroom_details")}
+              className={`px-6 py-3 font-medium ${
+                activeTab === "classroom_details"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Classroom Details
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -235,49 +160,49 @@ const ClassDetailPage = () => {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Class Materials</h2>
                 <div className="space-y-3">
-                  {classData.lessons.map((lesson) => (
+                  {materials.map((material) => (
                     <div
-                      key={lesson.id}
+                      key={material._id}
                       className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow overflow-hidden"
                     >
-                      <div
+                       <div
                         className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
                         onClick={() =>
                           setExpandedLesson(
-                            expandedLesson === lesson.id ? null : lesson.id
+                            expandedLesson === material._id ? null : material._id
                           )
                         }
                       >
                         <div>
-                          <h3 className="font-medium">{lesson.title}</h3>
+                          <h3 className="font-medium">{material.title}</h3>
                           <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                              {lesson.type}
+                            <span className="bg-fuchsia-100 text-fuchsia-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                              Material
                             </span>
-                            <span>Posted: {lesson.date}</span>
+                            <span>Posted: {material.created_at}</span>
                           </div>
                         </div>
-                        {expandedLesson === lesson.id ? (
+                        {expandedLesson === material._id ? (
                           <FiChevronUp className="text-gray-500" />
                         ) : (
                           <FiChevronDown className="text-gray-500" />
                         )}
                       </div>
 
-                      {expandedLesson === lesson.id && (
+                      {expandedLesson === material._id && (
                         <div className="border-t border-gray-200 p-4 bg-gray-50">
                           <div className="mb-4">
                             <h4 className="font-medium mb-2">Lesson Content</h4>
-                            <p className="text-gray-700">{lesson.content}</p>
+                            <p className="text-gray-700">{material.description}</p>
                             <button className="mt-2 px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm">
                               <FiDownload className="mr-2" /> Download Materials
                             </button>
                           </div>
 
-                          {lesson.hasPractice && (
+                          {material && (
                             <div className="mt-4 border-t pt-4">
                               <Link
-                                to={`/student/class/${classId}/lesson/${lesson.id}/practice`}
+                                to={`/student/class/${classId}/lesson/${material._id}/practice`}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                               >
                                 <FiCode className="mr-2" /> Start Practice
@@ -286,7 +211,7 @@ const ClassDetailPage = () => {
                             </div>
                           )}
                         </div>
-                      )}
+                      )}  
                     </div>
                   ))}
                 </div>
@@ -296,236 +221,96 @@ const ClassDetailPage = () => {
             {activeTab === "assignments" && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Assignments</h2>
-                <div className="space-y-3">
-                  {classData.assignments.map((assignment) => (
+                <div>
+                  {assignments.map((assignment) => (
                     <div
-                      key={assignment.id}
-                      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-sm transition-shadow"
+                      key={assignment._id}
+                      className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow w-full"
                     >
                       <div
-                        className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
+                        className="p-4 cursor-pointer hover:bg-gray-50"
                         onClick={() =>
                           setExpandedAssignment(
-                            expandedAssignment === assignment.id
-                              ? null
-                              : assignment.id
+                            expandedAssignment === assignment._id ? null : assignment._id
                           )
                         }
                       >
-                        <div>
-                          <h3 className="font-medium">{assignment.title}</h3>
-                          <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <FiClock className="mr-1" />
-                            <span>Due: {assignment.due}</span>
-                            {assignment.status === "in-progress" && (
-                              <span className="ml-3 text-orange-600">
-                                Time left: {formatTime(timeLeft)}
+
+              
+
+                        <div className="flex justify-center items-center w-full">
+                            <div className="flex-2 overflow-hidden">
+                              <span
+                                className={`pl-2 py-2 pr-4 rounded-full text-xs capitalize 
+                                  ${assignment.type === 'quiz' ? 'bg-yellow-100 text-yellow-800' : ''}
+                                  ${assignment.type === 'exam' ? 'bg-green-100 text-green-800 ' : ''}
+                                `}
+                              >
+                                {assignment.type}
                               </span>
-                            )}
+                              <h3 className="font-medium text-base">
+                                {assignment.title}
+                              </h3>
+                              <div className="mt-1">
+                                <p className="text-sm italic text-gray-700 whitespace-pre-wrap break-words">
+                                  {assignment.description} 
+                                </p>
+                              </div>
+                              <div className="flex items-center text-sm text-gray-500 mt-2">
+                                <FiClock  />
+                                <span className="ml-3">
+                                  Submission Time: {assignment.submission_time} minutes
+                                </span>
+                              </div>
+                              <div>
+                                 <span>Posted: {assignment.created_at}</span>
+                              </div>
+                            </div>
+
+                            <div className="ml-4 mt-1 shrink-0">
+                              {expandedAssignment === assignment._id ? (
+                                <FiChevronUp className="text-gray-500" />
+                              ) : (
+                                <FiChevronDown className="text-gray-500" />
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full mr-3 ${
-                              assignment.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : assignment.status === "in-progress"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {assignment.status.replace("-", " ")}
-                          </span>
-                          {expandedAssignment === assignment.id ? (
-                            <FiChevronUp className="text-gray-500" />
-                          ) : (
-                            <FiChevronDown className="text-gray-500" />
-                          )}
-                        </div>
                       </div>
 
-                      {expandedAssignment === assignment.id && (
+                        {expandedAssignment === assignment._id && (
                         <div className="border-t border-gray-200 p-4 bg-gray-50">
-                          {assignment.status === "completed" ? (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h4 className="font-medium text-green-800">
-                                    Completed
-                                  </h4>
-                                  <p className="text-sm text-green-600">
-                                    Your submission has been received
-                                  </p>
-                                </div>
-                                <button className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                                  View Results
-                                </button>
-                              </div>
-                            </div>
-                          ) : examStarted ? (
-                            <div className="space-y-4">
-                              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex justify-between items-center">
-                                <div className="flex items-center">
-                                  <FiClock className="text-orange-500 mr-2" />
-                                  <span className="text-orange-800">
-                                    Time remaining: {formatTime(timeLeft)}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={submitExam}
-                                  className="px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-                                >
-                                  Submit Exam
-                                </button>
-                              </div>
-
-                              <div className="space-y-6">
-                                {assignment.questions.map(
-                                  (question, qIndex) => (
-                                    <div
-                                      key={qIndex}
-                                      className="bg-white p-4 rounded-lg border border-gray-200"
-                                    >
-                                      <div className="flex justify-between items-start">
-                                        <div>
-                                          <h4 className="font-medium">
-                                            Question {qIndex + 1} (
-                                            {question.points} points)
-                                          </h4>
-                                          <p className="text-gray-700 mt-1">
-                                            {question.text}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {question.type === "multiple-choice" && (
-                                        <div className="mt-3 space-y-2">
-                                          {question.options.map(
-                                            (option, oIndex) => (
-                                              <div
-                                                key={oIndex}
-                                                className="flex items-center"
-                                              >
-                                                <input
-                                                  type="radio"
-                                                  name={`question-${qIndex}`}
-                                                  id={`question-${qIndex}-option-${oIndex}`}
-                                                  className="mr-2"
-                                                />
-                                                <label
-                                                  htmlFor={`question-${qIndex}-option-${oIndex}`}
-                                                >
-                                                  {option}
-                                                </label>
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {question.type === "short-answer" && (
-                                        <div className="mt-3">
-                                          <textarea
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                            rows="3"
-                                            placeholder="Type your answer here..."
-                                          />
-                                        </div>
-                                      )}
-
-                                      {question.type === "programming" && (
-                                        <div className="mt-3">
-                                          <CodeEditor
-                                            value={question.starterCode}
-                                            onChange={(value) => {
-                                              // Handle code changes for submission
-                                            }}
-                                            language={question.language}
-                                            height="200px"
-                                          />
-                                          <div className="mt-2">
-                                            <h5 className="text-sm font-medium mb-1">
-                                              Test Cases
-                                            </h5>
-                                            <div className="space-y-2">
-                                              {question.testCases
-                                                .filter((tc) => tc.isPublic)
-                                                .map((testCase, tIndex) => (
-                                                  <div
-                                                    key={tIndex}
-                                                    className="bg-gray-100 p-2 rounded text-sm"
-                                                  >
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                      <div>
-                                                        <span className="text-gray-500">
-                                                          Input:
-                                                        </span>
-                                                        <pre className="bg-white p-1 rounded">
-                                                          {testCase.input}
-                                                        </pre>
-                                                      </div>
-                                                      <div>
-                                                        <span className="text-gray-500">
-                                                          Expected Output:
-                                                        </span>
-                                                        <pre className="bg-white p-1 rounded">
-                                                          {testCase.output}
-                                                        </pre>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-4">
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <h4 className="font-medium text-blue-800 mb-2">
-                                  {assignment.type === "quiz" ? "Quiz" : "Exam"}{" "}
-                                  Instructions
-                                </h4>
-                                <ul className="text-sm text-blue-700 space-y-1">
-                                  <li>
-                                    Duration: {assignment.duration} minutes
-                                  </li>
-                                  <li>
-                                    Total questions:{" "}
-                                    {assignment.questions.length}
-                                  </li>
-                                  <li>
-                                    Once started, you cannot pause the timer
-                                  </li>
-                                  <li>
-                                    Make sure you have stable internet
-                                    connection
-                                  </li>
-                                </ul>
-                              </div>
-                              <div className="flex justify-end">
-                                <button
-                                  onClick={() => startExam(assignment.duration)}
-                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                                >
-                                  Start
-                                  {assignment.type === "quiz" ? "Quiz" : "Exam"}
-                                </button>
-                              </div>
+                          {(assignment.type === 'quiz' || assignment.type === 'exam') && (
+                          <div className="mt-4 border-t pt-4">
+                            <Link
+                              to={`/student/class/${classId}/${assignment._id}/answer`}
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                            >
+                              {assignment.type === 'quiz' ? (
+                                <>
+                                  <FiCode className="mr-2" />
+                                  Take Quiz
+                                </>
+                              ) : (
+                                <>
+                                  <FiCode className="mr-2" />
+                                  Take Exam
+                                </>
+                              )}
+                            </Link>
                             </div>
                           )}
+
                         </div>
-                      )}
+                      )}  
+
                     </div>
                   ))}
                 </div>
               </div>
             )}
+
+
+          
 
             {activeTab === "grades" && (
               <div className="space-y-4">
@@ -535,53 +320,58 @@ const ClassDetailPage = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Assignment
+                          Assignment Type
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Due Date
+                          Assignment Title
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          Submission Time
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Score
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Feedback
+                          Action
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {classData.assignments.map((assignment) => (
-                        <tr key={assignment.id}>
+                      {answers.map((answer) => (
+                        <tr key={answer._id}>
+                          {/* <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {answer.quiz?.type || answer.exam?.type}
+                          </td> */}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                            {(() => {
+                              const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
+                              const isQuiz = type === 'QUIZ';
+                              const isExam = type === 'EXAM';
+
+                              const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
+                              const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
+
+                              return (
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
+                                  {type}
+                                </span>
+                              );
+                            })()}
+                          </td>
+
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {assignment.title}
+                            {answer.quiz?.title || answer.exam?.title}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {assignment.due}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            <span
-                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                assignment.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {assignment.status.replace("-", " ")}
-                            </span>
+                            {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {assignment.score || "-"}
+                            {answer.points}/{(answer.quiz?.question || answer.exam?.question)?.reduce((acc, q) => acc + (q.points || 0), 0)}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            {assignment.status === "completed" ? (
-                              <button className="text-indigo-600 hover:text-indigo-900">
-                                View Feedback
-                              </button>
-                            ) : (
-                              "-"
-                            )}
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button className="px-4 py-1 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition duration-150 text-xs font-semibold shadow-sm">
+                              VIEW
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -590,6 +380,62 @@ const ClassDetailPage = () => {
                 </div>
               </div>
             )}
+
+           {activeTab === "classroom_details" && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold">Classroom Details</h2>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-100 text-blue-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Students</h3>
+                  <p className="text-2xl font-bold">{classroom.students.length}</p>
+                </div>
+
+                <div className="bg-cyan-100 text-cyan-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Assignments</h3>
+                  <p className="text-2xl font-bold">{assignments.length}</p>
+                </div>
+
+       
+                <div className="bg-yellow-100 text-yellow-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Quizzes</h3>
+                  <p className="text-2xl font-bold">{classroom.quizzes.length}</p>
+                </div>
+       
+                <div className="bg-green-100 text-green-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Exams</h3>
+                  <p className="text-2xl font-bold">{classroom.exams.length}</p>
+                </div> 
+
+                  <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Materials</h3>
+                  <p className="text-2xl font-bold">{classroom.exams.length}</p>
+                </div> 
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Students</h3>
+                <ul className="bg-white border rounded-lg divide-y">
+                  {students.map((student) => (
+                    <li key={student._id} className="p-2">
+                      {student.fullname}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+ 
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Instructor</h3>
+                <ul className="bg-white border rounded-lg divide-y">
+                    <li className="p-2">
+                      {classroom.classroom.instructor.fullname}
+                    </li>
+                </ul>
+              </div> 
+            </div>
+          )}
+
           </div>
         </div>
       </div>

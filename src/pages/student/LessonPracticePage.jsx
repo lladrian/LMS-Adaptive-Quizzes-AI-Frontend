@@ -1,63 +1,80 @@
-import React, { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-  FiCheck,
-  FiX,
-  FiArrowRight,
-  FiArrowLeft,
-  FiCode,
-} from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { FiCheck, FiX } from "react-icons/fi";
 import CodeEditor from "../../components/CodeEditor";
 
 const LessonPracticePage = () => {
   const { classId, lessonId } = useParams();
   const navigate = useNavigate();
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [practiceData, setPracticeData] = useState({});
+  const [runOutput, setRunOutput] = useState("");
 
-  // Sample practice questions for each lesson
-  const practiceData = {
-    1: [
-      {
-        id: 1,
-        type: "concept-check",
-        question: "What does O(n) time complexity mean?",
-        options: [
-          "Constant time",
-          "Linear time",
-          "Quadratic time",
-          "Logarithmic time",
-        ],
-        correctAnswer: 1,
-        explanation: "O(n) means the time grows linearly with the input size.",
-      },
-      {
-        id: 2,
-        type: "coding-challenge",
-        question:
-          "Implement a function that calculates the sum of all numbers up to n",
-        starterCode: "function sumUpTo(n) {\n  // Your code here\n}",
-        testCases: [
-          { input: "5", output: "15" },
-          { input: "10", output: "55" },
-        ],
-      },
-    ],
-    2: [
-      // Questions for Data Structures lesson
-    ],
-  };
+  // Fetch AI-generated question on load
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/ai/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ask: "Give me one simple programming quiz using Python programming. Do not give any solutions and instructions, just problems only.",
+          }),
+        });
+
+        const data = await response.json();
+        const generatedQuestion = data?.data || "No question generated.";
+
+        setPracticeData({
+          [lessonId]: [
+            {
+              id: 1,
+              type: "coding-challenge",
+              question: generatedQuestion,
+              starterCode: "print('Hello, World!')",
+              language: "python",
+            },
+          ],
+        });
+      } catch (err) {
+        console.error("Error fetching AI question:", err);
+      }
+    };
+
+    fetchQuiz();
+  }, [lessonId]);
 
   const currentPractice = practiceData[lessonId] || [];
   const currentQuestion = currentPractice[currentQuestionIndex];
 
-  const handleAnswerSubmit = (answer) => {
-    setUserAnswers((prev) => ({
-      ...prev,
-      [currentQuestionIndex]: answer,
-    }));
+  const runCode = async () => {
+    try {
+      const response = await fetch("http://localhost:4000/compilers/run_code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: currentQuestion.language || "python",
+          version: "3.10.0",
+          code: userAnswers[currentQuestionIndex] || currentQuestion.starterCode,
+        }),
+      });
 
+      const result = await response.json();
+      setRunOutput(result?.run?.output || "No output.");
+    } catch (error) {
+      console.error(error);
+      setRunOutput("Error running code.");
+    }
+  };
+
+  const handleAnswerSubmit = () => {
     if (currentQuestionIndex < currentPractice.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
@@ -66,122 +83,58 @@ const LessonPracticePage = () => {
   };
 
   const renderQuestion = () => {
-    if (!currentQuestion) return null;
+    if (!currentQuestion) return <p>Loading question...</p>;
 
-    switch (currentQuestion.type) {
-      case "concept-check":
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
-            <div className="space-y-2">
-              {currentQuestion.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswerSubmit(index)}
-                  className="w-full text-left p-3 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case "coding-challenge":
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
-            <CodeEditor
-              value={currentQuestion.starterCode}
-              onChange={(value) =>
-                setUserAnswers((prev) => ({
-                  ...prev,
-                  [currentQuestionIndex]: value,
-                }))
-              }
-              language="javascript"
-              height="200px"
-            />
+    if (currentQuestion.type === "coding-challenge") {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
+          <CodeEditor
+            value={userAnswers[currentQuestionIndex] || currentQuestion.starterCode}
+            onChange={(value) =>
+              setUserAnswers((prev) => ({
+                ...prev,
+                [currentQuestionIndex]: value,
+              }))
+            }
+            language={currentQuestion.language || "python"}
+            height="300px"
+          />
+          <div className="flex gap-4">
             <button
-              onClick={() =>
-                handleAnswerSubmit(
-                  userAnswers[currentQuestionIndex] ||
-                    currentQuestion.starterCode
-                )
-              }
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              onClick={runCode}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded"
             >
-              Submit Code
+              Run Code
+            </button>
+            <button
+              onClick={handleAnswerSubmit}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded"
+            >
+              Submit Answer
             </button>
           </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderResults = () => {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Practice Results</h2>
-
-        {currentPractice.map((question, index) => {
-          const userAnswer = userAnswers[index];
-          const isCorrect = question.correctAnswer === userAnswer;
-
-          return (
-            <div key={index} className="border-b pb-4">
-              <div className="flex items-start mb-2">
-                <span
-                  className={`flex-shrink-0 mt-1 mr-2 ${
-                    isCorrect ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {isCorrect ? <FiCheck /> : <FiX />}
-                </span>
-                <div>
-                  <h3 className="font-medium">Question {index + 1}</h3>
-                  <p className="text-gray-700">{question.question}</p>
-
-                  {question.explanation && !isCorrect && (
-                    <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                      <strong>Explanation:</strong> {question.explanation}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        <button
-          onClick={() => navigate(`/class/${classId}`)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-        >
-          Back to Lessons
-        </button>
-      </div>
-    );
-  };
-
-  if (currentPractice.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center">
-          <h2 className="text-xl font-semibold mb-4">
-            No Practice Exercises Available
-          </h2>
-          <button
-            onClick={() => navigate(`/class/${classId}`)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Back to Lessons
-          </button>
+          <div className="bg-gray-100 border border-gray-300 rounded p-4 mt-4 whitespace-pre-wrap">
+            {runOutput}
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
+    return <p>Unsupported question type</p>;
+  };
+
+  const renderResults = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Practice Complete</h2>
+      <button
+        onClick={() => navigate(`/class/${classId}`)}
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+      >
+        Back to Lessons
+      </button>
+    </div>
+  );
 
   if (showResults) {
     return <div className="p-6">{renderResults()}</div>;
@@ -191,55 +144,10 @@ const LessonPracticePage = () => {
     <>
       <header className="bg-white shadow-sm p-4 flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-800">
-          Practice Lesson
+          Practice Lesson - {lessonId}
         </h2>
       </header>
-      <div className="p-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <button
-              onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-              disabled={currentQuestionIndex === 0}
-              className={`p-2 rounded-full ${
-                currentQuestionIndex === 0
-                  ? "text-gray-400"
-                  : "text-indigo-600 hover:bg-indigo-50"
-              }`}
-            >
-              <FiArrowLeft className="w-5 h-5" />
-            </button>
-
-            <div className="text-center">
-              <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-                Question {currentQuestionIndex + 1} of {currentPractice.length}
-              </span>
-            </div>
-
-            <button
-              onClick={() =>
-                currentQuestionIndex < currentPractice.length - 1
-                  ? setCurrentQuestionIndex((prev) => prev + 1)
-                  : setShowResults(true)
-              }
-              className={`p-2 rounded-full ${
-                currentQuestionIndex === currentPractice.length - 1
-                  ? "text-green-600 hover:bg-green-50"
-                  : "text-indigo-600 hover:bg-indigo-50"
-              }`}
-            >
-              {currentQuestionIndex === currentPractice.length - 1 ? (
-                <span className="flex items-center">
-                  Finish <FiArrowRight className="ml-1" />
-                </span>
-              ) : (
-                <FiArrowRight className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-
-          {renderQuestion()}
-        </div>
-      </div>
+      <main className="p-6">{renderQuestion()}</main>
     </>
   );
 };
