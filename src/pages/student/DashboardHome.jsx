@@ -1,14 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiBook, FiClock, FiAward } from "react-icons/fi";
+import {allClassroomSpecificStudent} from "../../utils/authService";
 
 const DashboardHome = () => {
-  // Sample data
-  const stats = [
-    { title: "Enrolled Classes", value: 3, icon: FiBook, color: "indigo" },
-    { title: "Pending Assignments", value: 2, icon: FiClock, color: "yellow" },
-    { title: "Average Grade", value: "88.5%", icon: FiAward, color: "green" },
-  ];
+
 
   const upcomingAssignments = [
     { id: 1, title: "Algorithm Quiz", class: "CS401", due: "2023-06-10" },
@@ -20,6 +16,31 @@ const DashboardHome = () => {
     { id: 2, title: "Midterm Exam", class: "CS301", score: "92/100" },
   ];
 
+    const [joinedClassroom, setJoinedClassroom] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const studentId = localStorage.getItem("userId");
+
+    useEffect(() => {
+      fetchAllClassroomSpecificStudent();
+    }, []);
+  
+    const fetchAllClassroomSpecificStudent = async () => {
+      setIsLoading(true);
+      try {
+        const result = await allClassroomSpecificStudent(studentId);
+        if (result.success) {
+          setJoinedClassroom(result.data.data);
+          console.log(result.data.data)
+
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
   return (
     <>
       <header className="bg-white shadow-sm p-4 flex justify-between items-center">
@@ -29,24 +50,39 @@ const DashboardHome = () => {
       <div className="p-6 space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, index) => (
             <div
-              key={index}
               className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200`}
             >
               <div className="flex justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">{stat.title}</p>
-                  <p className="text-2xl font-semibold mt-1">{stat.value}</p>
+                  <p className="text-sm text-gray-500">Enrolled Classes</p>
+                  <p className="text-2xl font-semibold mt-1">{joinedClassroom?.length}</p>
                 </div>
                 <div
-                  className={`p-3 rounded-lg bg-${stat.color}-100 text-${stat.color}-600`}
+                  className={`p-3 rounded-lg bg-indigo-100 text-indigo-600`}
                 >
-                  <stat.icon className="text-xl" />
+                  <FiBook className="text-xl" />
                 </div>
               </div>
             </div>
-          ))}
+
+             <div
+              className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200`}
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Pending Assignments</p>
+                  <p className="text-2xl font-semibold mt-1">{2}</p>
+                </div>
+                <div
+                  className={`p-3 rounded-lg bg-yellow-100 text-yellow-600`}
+                >
+                  <FiClock className="text-xl" />
+                </div>
+              </div>
+            </div>
+
+
         </div>
 
         {/* Upcoming Assignments */}

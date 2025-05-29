@@ -38,6 +38,7 @@ import DashboardHome from "./pages/student/DashboardHome";
 import ClassesPageStudent from "./pages/student/ClassesPage";
 import ClassDetailPageStudent from "./pages/student/ClassDetailPage";
 import LessonPracticePage from "./pages/student/LessonPracticePage";
+import AssignmentAnswerPage from "./pages/student/AssignmentAnswerPage";
 import GradesPage from "./pages/student/GradesPage";
 
 import HomePage from "./pages/HomePage";
@@ -61,6 +62,7 @@ function App() {
             <Route path="settings" element={<AdminSettings />} />
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
+
           <Route path="/instructor" element={<InstructorLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
 
@@ -83,7 +85,6 @@ function App() {
             />
 
 
-
             <Route
               path="class/:classId/activity/:assignmentId"
               element={<AssignmentDetailPage />}
@@ -96,18 +97,21 @@ function App() {
             
           </Route>
 
+
+
           <Route path="/student" element={<StudentLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="dashboard" element={<DashboardHome />} />
             <Route path="classes" element={<ClassesPageStudent />} />
             <Route path="class/:classId" element={<ClassDetailPageStudent />} />
-            <Route
-              path="class/:classId/lesson/:lessonId/practice"
-              element={<LessonPracticePage />}
-            />
+            <Route path="class/:classId/:assignmentId/answer" element={<AssignmentAnswerPage />} />
+            <Route path="class/:classId/lesson/:lessonId/practice" element={<LessonPracticePage />} />
             <Route path="grades" element={<GradesPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
+
+
+
 
           <Route path="*" element={<NotFound />} />
         </Routes>
