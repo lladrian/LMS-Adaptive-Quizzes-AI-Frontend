@@ -73,7 +73,7 @@ const ClassDetailPage = () => {
               ...(result2.data.data || []),
               ...(result3.data.data || [])
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          )
+          )          
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -143,9 +143,9 @@ const ClassDetailPage = () => {
               Grades
             </button>
             <button
-              onClick={() => setActiveTab("classroom_details")}
+              onClick={() => setActiveTab("classroom_overview")}
               className={`px-6 py-3 font-medium ${
-                activeTab === "classroom_details"
+                activeTab === "classroom_overview"
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
@@ -281,22 +281,27 @@ const ClassDetailPage = () => {
                         <div className="border-t border-gray-200 p-4 bg-gray-50">
                           {(assignment.type === 'quiz' || assignment.type === 'exam') && (
                           <div className="mt-4 border-t pt-4">
-                            <Link
-                              to={`/student/class/${classId}/${assignment._id}/answer`}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                            >
                               {assignment.type === 'quiz' ? (
                                 <>
-                                  <FiCode className="mr-2" />
-                                  Take Quiz
+                                  <Link
+                                    to={`/student/class/${classId}/${assignment._id}/quiz/answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                      <FiCode className="mr-2" />
+                                      Take Quiz
+                                  </Link>
                                 </>
                               ) : (
                                 <>
-                                  <FiCode className="mr-2" />
-                                  Take Exam
+                                   <Link
+                                    to={`/student/class/${classId}/${assignment._id}/exam/answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                    >
+                                      <FiCode className="mr-2" />
+                                      Take Quiz
+                                  </Link>
                                 </>
                               )}
-                            </Link>
                             </div>
                           )}
 
@@ -337,51 +342,64 @@ const ClassDetailPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {answers.map((answer) => (
-                        <tr key={answer._id}>
-                          {/* <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {answer.quiz?.type || answer.exam?.type}
-                          </td> */}
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            {(() => {
-                              const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
-                              const isQuiz = type === 'QUIZ';
-                              const isExam = type === 'EXAM';
+                        {answers.map((answer) =>
+                          answer.submitted_at && (
+                            <tr key={answer._id}>
+                              {console.log(answer)}
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                {(() => {
+                                  const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
+                                  const isQuiz = type === 'QUIZ';
+                                  const isExam = type === 'EXAM';
 
-                              const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
-                              const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
+                                  const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
+                                  const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
 
-                              return (
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
-                                  {type}
-                                </span>
-                              );
-                            })()}
-                          </td>
+                                  return (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
+                                      {type}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {answer.quiz?.title || answer.exam?.title}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {(answer.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)}/
+                                {(answer.quiz?.question || answer.exam?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {answer.exam?.type === 'exam' ? (
+                                  <Link
+                                    to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                    VIEW
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    to={`/student/class/${classId}/${answer.quiz._id}/quiz/view_answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                    VIEW
+                                  </Link>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        )}
 
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {answer.quiz?.title || answer.exam?.title}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {answer.points}/{(answer.quiz?.question || answer.exam?.question)?.reduce((acc, q) => acc + (q.points || 0), 0)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button className="px-4 py-1 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition duration-150 text-xs font-semibold shadow-sm">
-                              VIEW
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
-           {activeTab === "classroom_details" && (
+           {activeTab === "classroom_overview" && (
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold">Classroom Details</h2>
 

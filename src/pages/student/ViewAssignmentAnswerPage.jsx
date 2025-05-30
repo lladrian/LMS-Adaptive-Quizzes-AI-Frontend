@@ -20,9 +20,9 @@ import {
 
 const AssignmentAnswerPage = () => {
   const { assignmentId, type } = useParams();
-  const [started, setStarted] = useState(false);
-  const [points, setPoints] = useState(0);
+
   const [code, setCode] = useState("print('Hello, World!')");
+  const [points, setPoints] = useState(0);
   const [compiler, setCompiler] = useState({
     name: "Python",
     language: "python",
@@ -34,6 +34,7 @@ const AssignmentAnswerPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [answers, setAnswers] = useState([]);
+  //const [answers2, setAnswers2] = useState([]);
 
   const studentId = localStorage.getItem("userId");
 
@@ -41,6 +42,7 @@ const AssignmentAnswerPage = () => {
   useEffect(() => {
     fetchLanguages();
     fetchAssignment();
+   // takeAssignment();
   }, []);
 
   const fetchLanguages = async () => {
@@ -70,17 +72,13 @@ const AssignmentAnswerPage = () => {
             const answers = [
               ...(result2.data?.data?.answers || []),
             ];
-            functionGetAnswers(answers, combinedQuestions);
-            setStarted(result2.success);
-            console.log(result2)
+            functionGetAnswers(answers, combinedQuestions)
        } else {
-          const result1 = await specificExamAnswer(answer_id);
-          const answers = [
-              ...(result1.data?.data?.answers || []),
-          ];
-          functionGetAnswers(answers, combinedQuestions)
-          setStarted(result1.success);
-              console.log(result1)
+            const result1 = await specificExamAnswer(answer_id);
+            const answers = [
+                ...(result1.data?.data?.answers || []),
+            ];
+            functionGetAnswers(answers, combinedQuestions)
        }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
@@ -93,15 +91,17 @@ const AssignmentAnswerPage = () => {
         return matched ? matched.line_of_code : "";
       });
 
-      
       const initialAnswersPoints = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
         return matched ? matched.points : "";
       });
 
       setAnswers(initialAnswers);
-      setCode(initialAnswers[currentIndex] || ""); // initial code display
+      setCode(initialAnswers[currentIndex] || []); // initial code display
       setPoints(initialAnswersPoints || [])
+      console.log(123)
+      console.log(initialAnswers)
+           console.log(initialAnswersPoints)
 
       // console.log(combinedQuestions)
       //   console.log(333)
@@ -123,6 +123,7 @@ const AssignmentAnswerPage = () => {
         const combinedQuestions = [
           ...(result2.data?.data?.question || []),
         ];
+
         setQuestions(combinedQuestions);
         getAnswers(combinedQuestions, result4.data?.data?._id);
       } else {
@@ -152,8 +153,10 @@ const AssignmentAnswerPage = () => {
     try {
         if(type == 'quiz') { 
             const result2 = await quizAnswer(assignmentId, studentId, answers);
+            console.log(result2);
         } else {
           const result1 = await examAnswer(assignmentId, studentId, answers);
+          console.log(result1);
         }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
@@ -221,11 +224,6 @@ const AssignmentAnswerPage = () => {
     alert("All answers submitted!");
     fetchAssignment();
   };
-  const startAssignment = async () => {
-    await takeAssignment();
-    await fetchAssignment();
-    setStarted(true);
-  };
 
   const currentQuestion = questions[currentIndex];
 
@@ -233,29 +231,15 @@ const AssignmentAnswerPage = () => {
     <div className="p-6 space-y-4">
       {currentQuestion && (
         <div className="space-y-4">
-          {!started ? (
-              <div className="text-center">
-                <h2 className="text-xl font-bold mb-4">
-                  Ready to Start the {type === "quiz" ? "Quiz" : "Exam"}?
-                </h2>
-                <button
-                  onClick={startAssignment}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
-                >
-                  Start {type === "quiz" ? "Quiz" : "Exam"}
-                </button>
-              </div>
-            ) : 
-              <div className="p-4 border rounded bg-white shadow">
-                  <h2 className="text-lg font-semibold mb-2">
-                    Question {currentIndex + 1} of {questions.length}
-                  </h2>
-                  <p className="mb-2">{currentQuestion.text}</p>
-                  <p className="text-sm text-gray-600">
-                    Points: {points[currentIndex]} / {currentQuestion.points}
-                  </p>
-                </div>
-            }
+          <div className="p-4 border rounded bg-white shadow">
+            <h2 className="text-lg font-semibold mb-2">
+              Question {currentIndex + 1} of {questions.length}
+            </h2>
+            <p className="mb-2">{currentQuestion.text}</p>
+            <p className="text-sm text-gray-600">
+              Points: {points[currentIndex]} / {currentQuestion.points}
+            </p>
+          </div>
 
           <CodeEditor
             value={code}
@@ -292,39 +276,34 @@ const AssignmentAnswerPage = () => {
           </button>
 
           
-            {!started ? (
-              null
-            ) : 
-              <div className="flex justify-between gap-4">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentIndex === 0}
-                  className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-                    currentIndex === 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gray-600 hover:bg-gray-700"
-                  }`}
-                >
-                  Previous
-                </button>
+        <div className="flex justify-between gap-4">
+          {/* Previous Button */}
+          <button
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+            className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
+              currentIndex === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+          >
+            Previous
+          </button>
 
-                {currentIndex < questions.length - 1 ? (
-                  <button
-                    onClick={handleNext}
-                    className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-3 rounded"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmitAll}
-                    className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
-                  >
-                    Submit All Answers
-                  </button>
-                )}
-              </div>
-            }
+          {/* Next Button - Disabled if at last question */}
+          <button
+            onClick={handleNext}
+            disabled={currentIndex >= questions.length - 1}
+            className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
+              currentIndex >= questions.length - 1
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+
 
           <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
             {output}
