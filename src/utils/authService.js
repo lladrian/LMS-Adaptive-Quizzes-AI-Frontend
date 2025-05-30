@@ -308,6 +308,25 @@ export const joinClassroom = async (classroom_code, student_id) => {
   }
 };
 
+export const removeStudentClassroom = async (classroom_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/remove_student_classroom/${classroom_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        "Failed to remove student from classroom",
+    };
+  }
+};
+
 export const leaveClassroom = async (classroom_id, student_id) => {
   try {
     const response = await axios.get(`

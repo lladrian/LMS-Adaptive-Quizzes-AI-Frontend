@@ -68,7 +68,7 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
               <h4 className="font-medium text-gray-900">Answers</h4>
               {activityData.question.map((question, index) => {
                 const answer = submission.answers.find(
-                  (a) => a.question_id === question._id
+                  (a) => a.questionId === question._id
                 );
                 const isCorrect = answer?.is_correct;
                 const pointsEarned = isCorrect ? question.points : 0;
@@ -94,11 +94,15 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
 
                     <div className="bg-white p-3 rounded-md border border-gray-200">
                       <p className="text-sm font-medium text-gray-700 mb-1">
-                        Student's Answer:
+                        Student's Code:
                       </p>
-                      <p className="text-gray-900">
-                        {answer ? answer.answer : "No answer provided"}
-                      </p>
+                      {answer?.line_of_code ? (
+                        <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
+                          <code>{answer.line_of_code}</code>
+                        </pre>
+                      ) : (
+                        <p className="text-gray-500 italic">No code submitted</p>
+                      )}
                     </div>
 
                     <div className="mt-3">
@@ -115,14 +119,14 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                       </div>
                     </div>
 
-                    {!isCorrect && question.correct_answer && (
+                    {!isCorrect && question.solution_code && (
                       <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-200">
                         <p className="text-sm font-medium text-gray-700 mb-1">
-                          Correct Answer:
+                          Correct Solution:
                         </p>
-                        <p className="text-gray-900">
-                          {question.correct_answer}
-                        </p>
+                        <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
+                          <code>{question.solution_code}</code>
+                        </pre>
                       </div>
                     )}
                   </div>
@@ -135,7 +139,6 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
     </div>
   );
 };
-
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
 
@@ -202,6 +205,7 @@ const AssignmentDetailPage = () => {
             total_score: answer.total_score || 0, // Add total score
           }))
         );
+        console.log(submissions);
       }
     } catch (error) {
       console.error("Error fetching data:", error);

@@ -15,8 +15,7 @@ import ConfirmationModal from "../../components/ConfirmationModal"; // New compo
 
 import {
   allClassroomSpecificInstructor,
-  hideClassroom
-  
+  hideClassroom,
 } from "../../utils/authService";
 
 import { toast } from "react-toastify";
@@ -142,18 +141,12 @@ const ClassesPage = () => {
                     <span className="flex items-center">{cls.description}</span>
                   </div>
 
-                  <div className="flex justify-between">
+                  <div className="w-full">
                     <Link
                       to={`/instructor/class/${cls._id}`}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                      className="block w-full px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm text-center"
                     >
                       View Class
-                    </Link>
-                    <Link
-                      to={`/instructor/class/${cls._id}/students`}
-                      className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      Manage Students
                     </Link>
                   </div>
                 </div>

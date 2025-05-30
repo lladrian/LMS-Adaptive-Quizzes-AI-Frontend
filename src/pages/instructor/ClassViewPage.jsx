@@ -18,6 +18,7 @@ import {
   addMaterial,
   specificMaterial,
   deleteActivity,
+  removeStudentClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
@@ -75,6 +76,43 @@ const ClassDetailPage = () => {
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
+  const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState(null);
+
+  const handleRemoveClick = (student) => {
+    setStudentToRemove(student);
+    console.log(student)
+    setShowRemoveStudentModal(true);
+  };
+
+  const confirmRemoveStudent = async () => {
+    if (studentToRemove) {
+      try {
+        const result = await removeStudentClassroom(
+          classId,
+          studentToRemove._id
+        );
+
+        if (result.success) {
+          toast.success("Student removed successfully");
+          setClassroomData((prev) => ({
+            ...prev,
+            students: prev.students.filter(
+              (s) => s._id !== studentToRemove._id
+            ),
+          }));
+        } else {
+          toast.error(result.error || "Failed to remove student");
+        }
+      } catch (error) {
+        console.error("Error removing student:", error);
+        toast.error("An error occurred while removing student");
+      } finally {
+        setShowRemoveStudentModal(false);
+        setStudentToRemove(null);
+      }
+    }
+  };
 
   const handleDeleteActivity = async (activityId, activityType) => {
     try {
@@ -346,13 +384,10 @@ const ClassDetailPage = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            to={`/instructor/students/edit/${student._id}`}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          <button
+                            onClick={() => handleRemoveClick(student)}
+                            className="cursor-pointer text-red-600 hover:text-red-900"
                           >
-                            Edit
-                          </Link>
-                          <button className="text-red-600 hover:text-red-900">
                             Remove
                           </button>
                         </td>
@@ -371,6 +406,32 @@ const ClassDetailPage = () => {
                 </tbody>
               </table>
             </div>
+
+            {showRemoveStudentModal && studentToRemove && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-lg font-medium mb-4">Confirm Removal</h3>
+                  <p className="mb-6">
+                    Are you sure you want to remove {studentToRemove.fullname} (
+                    {studentToRemove.email}) from this class?
+                  </p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => setShowRemoveStudentModal(false)}
+                      className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmRemoveStudent}
+                      className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      Remove Student
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

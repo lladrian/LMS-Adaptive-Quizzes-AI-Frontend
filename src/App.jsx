@@ -23,7 +23,7 @@ import EditStudentPage from "./pages/instructor/EditStudentPage";
 import ClassesPage from "./pages/instructor/ClassesPage";
 import CreateClassPage from "./pages/instructor/CreateClassPage";
 import ClassViewPage from "./pages/instructor/ClassViewPage";
-import ClassStudentsPage from "./pages/instructor/ClassStudentsPage";
+
 import AddStudentsToClassPage from "./pages/instructor/AddStudentsToClassPage";
 
 import AssignmentDetailPage from "./pages/instructor/AssignmentDetailPage";
@@ -71,10 +71,7 @@ function App() {
 
             <Route path="class/:classId" element={<ClassViewPage />} />
 
-            <Route
-              path="class/:classId/students"
-              element={<ClassStudentsPage />}
-            />
+       
 
             <Route
               path="class/:classId/students/add"
