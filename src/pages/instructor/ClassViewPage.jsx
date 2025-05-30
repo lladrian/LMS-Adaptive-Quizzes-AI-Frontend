@@ -445,56 +445,62 @@ const ClassDetailPage = () => {
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {activities.map((activity) => (
-                <div
-                  key={activity._id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{activity.title}</h4>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                          {activity.type}
-                        </span>
-                        {/*          <span>Description: {activity.description}</span> */}
+              {activities.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  There are no activities
+                </div>
+              ) : (
+                activities.map((activity) => (
+                  <div
+                    key={activity._id}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="text-gray-700">
+                          <strong className="font-medium">Title:</strong>{" "}
+                          {activity.title}
+                        </h4>
 
-                        {/* Description */}
                         <span className="text-gray-700">
                           <strong className="font-medium">Description:</strong>{" "}
                           {activity.description}
                         </span>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                            {activity.type}
+                          </span>
 
-                        {/* Submission Time */}
-                        <span className="text-gray-700 flex items-center">
-                          <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
-                          <strong className="font-medium mr-2">
-                            Duration:{" "}
-                          </strong>
-                          {activity.submission_time >= 60
-                            ? `${Math.floor(activity.submission_time / 60)}h ${
-                                activity.submission_time % 60
-                              }m`
-                            : `${activity.submission_time}m`}
-                        </span>
+                          <span className="text-gray-700 flex items-center">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
+                            <strong className="font-medium mr-2">
+                              Duration:{" "}
+                            </strong>
+                            {activity.submission_time >= 60
+                              ? `${Math.floor(
+                                  activity.submission_time / 60
+                                )}h ${activity.submission_time % 60}m`
+                              : `${activity.submission_time}m`}
+                          </span>
 
-                        <span className="ml-2 text-gray-700">
-                          <strong className="font-medium">Points:</strong>{" "}
-                          <span>{activity.points} </span>
-                        </span>
+                          <span className="ml-2 text-gray-700">
+                            <strong className="font-medium">Points:</strong>{" "}
+                            <span>{activity.points} </span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          to={`/instructor/class/${classId}/activity/${activity._id}`}
+                          className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                        >
+                          View
+                        </Link>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Link
-                        to={`/instructor/class/${classId}/activity/${activity._id}`}
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
-                      >
-                        View
-                      </Link>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}{" "}
             </div>
           </div>
         )}

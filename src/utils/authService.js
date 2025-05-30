@@ -621,20 +621,22 @@ export const deleteMaterial = async (materialId) => {
 
 export const addQuiz = async (
   classId,
-  questions, // Now an array of strings
+  questions, // Array of { text: string, points: number }
   timeLimit,
   title,
-  description,
-  points
+  description
 ) => {
   try {
     const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
-      classroom_id: classId,
-      question: questions, // Send as array of strings
-      time_limit: timeLimit,
+      classroom: classId, // Ensure this is a valid ObjectId string
+      question: questions.map((q) => ({
+        text: q.text,
+        points: Number(q.points), // Ensure points is a number
+      })),
+      submission_time: Number(timeLimit), // Ensure this is a number
       title,
       description,
-      points,
+      // type: "quiz" is not needed since it has a default in schema
     });
 
     return {
@@ -642,11 +644,11 @@ export const addQuiz = async (
       data: response.data,
     };
   } catch (error) {
+    console.error("API Error:", error.response?.data);
     return {
       success: false,
-      error: error.response?.data?.error || "Failed to add quiz.",
+      error:
+        error.response?.data?.error || error.message || "Failed to add quiz.",
     };
   }
 };
-
-

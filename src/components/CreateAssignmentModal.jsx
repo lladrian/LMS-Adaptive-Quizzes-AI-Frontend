@@ -3,7 +3,6 @@ import {
   FiPlus,
   FiTrash2,
   FiClock,
-  FiCalendar,
   FiX,
   FiChevronLeft,
   FiChevronRight,
@@ -19,26 +18,15 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     title: "",
     description: "",
     type: "quiz",
-    /*     dueDate: "", */
     timeLimit: 60,
-    totalPoints: 100,
+    totalPoints: 0,
     questions: [],
   });
 
   const [newQuestion, setNewQuestion] = useState({
     text: "",
-    type: "programming",
     points: 1,
-    language: "javascript",
   });
-
-  const programmingLanguages = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "python", label: "Python" },
-    /*     { value: "java", label: "Java" },
-    { value: "c", label: "C" },
-    { value: "cpp", label: "C++" }, */
-  ];
 
   const steps = [
     { id: 1, name: "Activity Details" },
@@ -67,9 +55,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     const questionToAdd = {
       id: Date.now(),
       text: newQuestion.text,
-      type: newQuestion.type,
       points: parseInt(newQuestion.points),
-      language: newQuestion.language,
     };
 
     setAssignmentData((prev) => ({
@@ -78,12 +64,9 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
       totalPoints: prev.totalPoints + parseInt(newQuestion.points),
     }));
 
-    // Reset new question form
     setNewQuestion({
       text: "",
-      type: "programming",
       points: 1,
-      language: "javascript",
     });
   };
 
@@ -100,43 +83,44 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-  
+
     if (assignmentData.questions.length === 0) {
       setError("Please add at least one question");
       setIsSubmitting(false);
       return;
     }
-  
+
     try {
-      // Prepare the questions data for API - extract just the text
-      const questionTexts = assignmentData.questions.map(q => q.text);
-  
+      const questionsForApi = assignmentData.questions.map((q) => ({
+        text: q.text,
+        points: q.points,
+      }));
+
       const result = await addQuiz(
         classId,
-        questionTexts, // Now sending array of strings
+        questionsForApi,
         assignmentData.timeLimit,
         assignmentData.title,
-        assignmentData.description,
-        assignmentData.totalPoints
+        assignmentData.description
       );
-  
+
       if (!result.success) {
         throw new Error(result.error);
       }
-  
-      console.log("Assignment created:", result.data);
+
+      console.log("Quiz created:", result.data);
       onClose();
       setAssignmentData({
         title: "",
         description: "",
         type: "quiz",
         timeLimit: 60,
-        totalPoints: 100,
+        totalPoints: 0,
         questions: [],
       });
       setCurrentStep(1);
     } catch (err) {
-      setError(err.message || "Failed to create assignment. Please try again.");
+      setError(err.message || "Failed to create quiz. Please try again.");
       console.error("Creation error:", err);
     } finally {
       setIsSubmitting(false);
@@ -145,11 +129,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
 
   const nextStep = () => {
     if (currentStep === 1) {
-      if (
-        !assignmentData.title ||
-        /*      !assignmentData.dueDate || */
-        !assignmentData.timeLimit
-      ) {
+      if (!assignmentData.title || !assignmentData.timeLimit) {
         setError("Please fill all required fields");
         return;
       }
@@ -264,23 +244,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     </select>
                   </div>
 
-                  {/*       <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Due Date *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="datetime-local"
-                        name="dueDate"
-                        value={assignmentData.dueDate}
-                        onChange={handleAssignmentChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
-                        required
-                      />
-                      <FiCalendar className="absolute left-3 top-3 text-gray-400" />
-                    </div>
-                  </div> */}
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Time Limit (minutes) *
@@ -320,10 +283,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                             <h4 className="font-medium">
                               Question {qIndex + 1} ({question.points} point
                               {question.points !== 1 ? "s" : ""})
-                              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
-                                {question.type.replace("-", " ")}
-                                {` (${question.language})`}
-                              </span>
                             </h4>
                             <button
                               type="button"
@@ -333,7 +292,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                               <FiTrash2 />
                             </button>
                           </div>
-
                           <p className="text-gray-700 mt-1">{question.text}</p>
                         </div>
                       </div>
@@ -365,40 +323,19 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Programming Language *
-                      </label>
-                      <select
-                        name="language"
-                        value={newQuestion.language}
-                        onChange={handleQuestionChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {programmingLanguages.map((lang) => (
-                          <option key={lang.value} value={lang.value}>
-                            {lang.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Points *
-                      </label>
-                      <input
-                        type="number"
-                        name="points"
-                        value={newQuestion.points}
-                        onChange={handleQuestionChange}
-                        min="1"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Points *
+                    </label>
+                    <input
+                      type="number"
+                      name="points"
+                      value={newQuestion.points}
+                      onChange={handleQuestionChange}
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
                   </div>
 
                   {error && <div className="text-red-600 text-sm">{error}</div>}
@@ -437,12 +374,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                         {assignmentData.type}
                       </p>
                     </div>
-                    {/*      <div>
-                      <p className="text-sm text-gray-500">Due Date</p>
-                      <p className="font-medium">
-                        {new Date(assignmentData.dueDate).toLocaleString()}
-                      </p>
-                    </div> */}
                     <div>
                       <p className="text-sm text-gray-500">Time Limit</p>
                       <p className="font-medium">
@@ -472,10 +403,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                           <h5 className="font-medium">
                             Question {index + 1} ({question.points} points)
                           </h5>
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
-                            {question.type.replace("-", " ")}
-                            {` (${question.language})`}
-                          </span>
                         </div>
                         <p className="text-gray-700 mt-1">{question.text}</p>
                       </div>

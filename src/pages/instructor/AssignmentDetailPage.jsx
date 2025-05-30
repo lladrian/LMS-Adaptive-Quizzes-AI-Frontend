@@ -9,11 +9,12 @@ import {
   FiBarChart2,
   FiMessageSquare,
   FiEdit2,
+  FiHelpCircle,
 } from "react-icons/fi";
 
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
-  
+
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
@@ -24,17 +25,18 @@ const AssignmentDetailPage = () => {
       // Simulated API calls
       const mockAssignment = {
         id: assignmentId,
-        title: "Sorting Algorithms Assignment",
-        description: "Implement and analyze various sorting algorithms",
-        type: "assignment",
+        title: "Sorting Algorithms Quiz",
+        description: "Test your knowledge of sorting algorithms",
+        type: "quiz", // Changed to quiz to demonstrate question display
         points: 100,
         dueDate: "2023-06-10T23:59",
-        instructions:
-          "Submit your code files along with a report analyzing the time complexity of each algorithm.",
-        attachments: [
-          { name: "Assignment Guidelines.pdf", type: "pdf", size: "2.4 MB" },
-          { name: "Sample Code.zip", type: "zip", size: "1.1 MB" },
+        question: [
+          "What is the time complexity of Bubble Sort in the worst case?",
+          "Explain how Merge Sort works",
+          "Which sorting algorithm would be most efficient for small datasets?",
+          "What is the main advantage of Quick Sort?",
         ],
+        created_at: "2023-06-01T10:00",
       };
 
       const mockSubmissions = [
@@ -44,7 +46,7 @@ const AssignmentDetailPage = () => {
           submitted: "2023-06-08 14:30",
           status: "graded",
           grade: "85/100",
-          files: ["sorting_algorithms.py", "report.pdf"],
+          files: ["quiz_answers.pdf"],
         },
         {
           id: 2,
@@ -52,7 +54,7 @@ const AssignmentDetailPage = () => {
           submitted: "2023-06-09 10:15",
           status: "graded",
           grade: "92/100",
-          files: ["assignment_code.zip"],
+          files: ["quiz_responses.docx"],
         },
         {
           id: 3,
@@ -70,7 +72,7 @@ const AssignmentDetailPage = () => {
     fetchData();
   }, [assignmentId]);
 
-  if (!assignment) return <div>Loading...</div>;
+  if (!assignment) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -167,42 +169,25 @@ const AssignmentDetailPage = () => {
               <p className="text-gray-700">{assignment.description}</p>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Instructions</h3>
-              <p className="text-gray-700 whitespace-pre-line">
-                {assignment.instructions}
-              </p>
-            </div>
-
-            {assignment.attachments.length > 0 && (
+            {/* Questions Section - Only for Quiz type */}
+            {assignment.type === "quiz" && assignment.question && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">Attachments</h3>
-                <div className="space-y-2">
-                  {assignment.attachments.map((file, index) => (
+                <h3 className="text-lg font-semibold mb-2">Questions</h3>
+                <div className="space-y-4">
+                  {assignment.question.map((question, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                      className="flex items-start p-4 bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center">
-                        <div
-                          className={`p-2 rounded-lg mr-3 ${
-                            file.type === "pdf"
-                              ? "bg-red-100 text-red-600"
-                              : file.type === "zip"
-                              ? "bg-yellow-100 text-yellow-600"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          <FiFileText />
-                        </div>
-                        <div>
-                          <p className="font-medium">{file.name}</p>
-                          <p className="text-sm text-gray-500">{file.size}</p>
-                        </div>
+                      <div className="bg-indigo-100 p-2 rounded-full mr-3">
+                        <FiHelpCircle className="text-indigo-600" />
                       </div>
-                      <button className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
-                        <FiDownload />
-                      </button>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          Question {index + 1}
+                        </p>
+                        <p className="text-gray-700 mt-1">{question}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -281,7 +266,6 @@ const AssignmentDetailPage = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4">Grade Distribution</h3>
               <div className="h-64">
-                {/* Placeholder for grade distribution chart */}
                 <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
                   <p className="text-gray-500">
                     Grade distribution chart will appear here
