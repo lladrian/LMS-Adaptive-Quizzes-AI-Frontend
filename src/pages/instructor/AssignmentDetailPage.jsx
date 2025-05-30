@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   FiFileText,
@@ -10,69 +10,213 @@ import {
   FiMessageSquare,
   FiEdit2,
   FiHelpCircle,
+  FiX,
 } from "react-icons/fi";
+import {
+  specificClassroom,
+  allAnswerSpecificQuiz,
+} from "../../utils/authService";
+import { toast } from "react-toastify";
+
+const SubmissionDetail = ({ submission, activityData, onClose }) => {
+  if (!submission || !activityData) return null;
+
+  // Calculate total possible points
+  const totalPoints =
+    activityData.question?.reduce((total, q) => total + (q.points || 0), 0) ||
+    0;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold">
+              {submission.student}'s Submission
+            </h3>
+            <div className="flex items-center mt-1">
+              <span className="text-sm font-medium text-gray-700">
+                Score: {submission.total_score || 0}/{totalPoints}
+              </span>
+              <span className="mx-2 text-gray-400">|</span>
+              <span className="text-sm text-gray-500">
+                {Math.round((submission.total_score / totalPoints) * 100)}%
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FiX className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <h4 className="font-medium text-gray-900 mb-2">
+              Submission Details
+            </h4>
+            <p className="text-sm text-gray-500">
+              Submitted on: {submission.submitted}
+            </p>
+            <p className="text-sm text-gray-500">Email: {submission.email}</p>
+          </div>
+
+          {activityData.type === "quiz" && activityData.question && (
+            <div className="space-y-6">
+              <h4 className="font-medium text-gray-900">Answers</h4>
+              {activityData.question.map((question, index) => {
+                const answer = submission.answers.find(
+                  (a) => a.question_id === question._id
+                );
+                const isCorrect = answer?.is_correct;
+                const pointsEarned = isCorrect ? question.points : 0;
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 ${
+                      isCorrect
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex justify-between mb-2">
+                      <p className="font-medium">Question {index + 1}</p>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium">
+                          {pointsEarned}/{question.points} points
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 mb-3">{question.text}</p>
+
+                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        Student's Answer:
+                      </p>
+                      <p className="text-gray-900">
+                        {answer ? answer.answer : "No answer provided"}
+                      </p>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="flex items-center">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isCorrect
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {isCorrect ? "Correct" : "Incorrect"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {!isCorrect && question.correct_answer && (
+                      <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <p className="text-sm font-medium text-gray-700 mb-1">
+                          Correct Answer:
+                        </p>
+                        <p className="text-gray-900">
+                          {question.correct_answer}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
 
-  const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [activityData, setActivityData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [classroomResult, answersResult] = await Promise.all([
+        specificClassroom(classId),
+        allAnswerSpecificQuiz(assignmentId),
+      ]);
+
+      if (classroomResult.success) {
+        const classroom = classroomResult.data.data;
+        if (!classroom) return;
+
+        const quizzes = (classroom.quizzes || []).map((q) => ({
+          ...q,
+          type: "quiz",
+        }));
+
+        const exams = (classroom.exams || []).map((e) => ({
+          ...e,
+          type: "exam",
+        }));
+
+        const combinedActivities = [...quizzes, ...exams];
+        const activity = combinedActivities.find(
+          (activity) => activity._id === assignmentId
+        );
+        setActivityData(activity || null);
+      }
+
+      if (answersResult.success) {
+        const responseData = answersResult.data;
+        let studentAnswers = [];
+
+        // Handle different possible response structures
+        if (Array.isArray(responseData)) {
+          studentAnswers = responseData;
+        } else if (Array.isArray(responseData.data)) {
+          studentAnswers = responseData.data;
+        } else if (Array.isArray(responseData.answers)) {
+          studentAnswers = responseData.answers;
+        }
+
+        // In the fetchClasses function where you setSubmissions:
+        setSubmissions(
+          studentAnswers.map((answer) => ({
+            id: answer._id,
+            student: answer.student?.fullname || "Unknown Student",
+            email: answer.student?.email || "No email",
+            submitted: answer.submitted_at
+              ? new Date(answer.submitted_at).toLocaleString()
+              : "Not submitted",
+            status: answer.submitted_at ? "submitted" : "missing",
+            grade: answer.total_score || "Not graded", // Use the total_score from the answer
+            answers: answer.answers || [],
+            total_score: answer.total_score || 0, // Add total score
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to fetch classroom or answers");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [classId, assignmentId]);
 
   useEffect(() => {
-    // Fetch assignment and submissions data
-    const fetchData = async () => {
-      // Simulated API calls
-      const mockAssignment = {
-        id: assignmentId,
-        title: "Sorting Algorithms Quiz",
-        description: "Test your knowledge of sorting algorithms",
-        type: "quiz", // Changed to quiz to demonstrate question display
-        points: 100,
-        dueDate: "2023-06-10T23:59",
-        question: [
-          "What is the time complexity of Bubble Sort in the worst case?",
-          "Explain how Merge Sort works",
-          "Which sorting algorithm would be most efficient for small datasets?",
-          "What is the main advantage of Quick Sort?",
-        ],
-        created_at: "2023-06-01T10:00",
-      };
+    fetchClasses();
+  }, [fetchClasses]);
 
-      const mockSubmissions = [
-        {
-          id: 1,
-          student: "John Doe",
-          submitted: "2023-06-08 14:30",
-          status: "graded",
-          grade: "85/100",
-          files: ["quiz_answers.pdf"],
-        },
-        {
-          id: 2,
-          student: "Jane Smith",
-          submitted: "2023-06-09 10:15",
-          status: "graded",
-          grade: "92/100",
-          files: ["quiz_responses.docx"],
-        },
-        {
-          id: 3,
-          student: "Alex Johnson",
-          submitted: "",
-          status: "missing",
-          grade: "0/100",
-          files: [],
-        },
-      ];
-
-      setAssignment(mockAssignment);
-      setSubmissions(mockSubmissions);
-    };
-    fetchData();
-  }, [assignmentId]);
-
-  if (!assignment) return <div className="p-6">Loading...</div>;
+  if (isLoading) return <div className="p-6">Loading...</div>;
+  if (!activityData) return <div className="p-6">Assignment not found</div>;
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -84,7 +228,7 @@ const AssignmentDetailPage = () => {
           >
             <FiArrowLeft />
           </Link>
-          <h2 className="text-lg font-semibold">{assignment.title}</h2>
+          <h2 className="text-lg font-semibold">{activityData.title}</h2>
         </div>
         <div className="flex space-x-2">
           <button className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
@@ -116,7 +260,7 @@ const AssignmentDetailPage = () => {
           >
             Submissions ({submissions.length})
           </button>
-          <button
+          {/*    <button
             onClick={() => setActiveTab("grades")}
             className={`px-6 py-3 font-medium ${
               activeTab === "grades"
@@ -125,7 +269,7 @@ const AssignmentDetailPage = () => {
             }`}
           >
             Grades
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -137,9 +281,13 @@ const AssignmentDetailPage = () => {
                 <div className="flex items-center">
                   <FiCalendar className="text-indigo-600 mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Due Date</p>
+                    <p className="text-sm text-gray-500">Duration</p>
                     <p className="font-medium">
-                      {new Date(assignment.dueDate).toLocaleString()}
+                      {activityData.submission_time >= 60
+                        ? `${Math.floor(activityData.submission_time / 60)}h ${
+                            activityData.submission_time % 60
+                          }m`
+                        : `${activityData.submission_time}m`}
                     </p>
                   </div>
                 </div>
@@ -149,7 +297,9 @@ const AssignmentDetailPage = () => {
                   <FiFileText className="text-indigo-600 mr-2" />
                   <div>
                     <p className="text-sm text-gray-500">Type</p>
-                    <p className="font-medium capitalize">{assignment.type}</p>
+                    <p className="font-medium capitalize">
+                      {activityData.type}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -158,7 +308,12 @@ const AssignmentDetailPage = () => {
                   <FiBarChart2 className="text-indigo-600 mr-2" />
                   <div>
                     <p className="text-sm text-gray-500">Points</p>
-                    <p className="font-medium">{assignment.points}</p>
+                    <p className="font-medium">
+                      {activityData.question?.reduce(
+                        (total, q) => total + (q.points || 0),
+                        0
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -166,15 +321,15 @@ const AssignmentDetailPage = () => {
 
             <div>
               <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700">{assignment.description}</p>
+              <p className="text-gray-700">{activityData.description}</p>
             </div>
 
             {/* Questions Section - Only for Quiz type */}
-            {assignment.type === "quiz" && assignment.question && (
+            {activityData.type === "quiz" && activityData.question && (
               <div>
                 <h3 className="text-lg font-semibold mb-2">Questions</h3>
                 <div className="space-y-4">
-                  {assignment.question.map((question, index) => (
+                  {activityData.question.map((question, index) => (
                     <div
                       key={index}
                       className="flex items-start p-4 bg-gray-50 rounded-lg"
@@ -186,7 +341,10 @@ const AssignmentDetailPage = () => {
                         <p className="font-medium text-gray-900">
                           Question {index + 1}
                         </p>
-                        <p className="text-gray-700 mt-1">{question}</p>
+                        <p className="text-gray-700 mt-1">{question.text}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Points: {question.points}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -195,7 +353,6 @@ const AssignmentDetailPage = () => {
             )}
           </div>
         )}
-
         {activeTab === "submissions" && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -205,13 +362,10 @@ const AssignmentDetailPage = () => {
                     Student
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submission
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Grade
+                    Score
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -219,43 +373,73 @@ const AssignmentDetailPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.map((submission) => (
-                  <tr key={submission.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {submission.student}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {submission.submitted || "Not submitted"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          submission.status === "graded"
-                            ? "bg-green-100 text-green-800"
-                            : submission.status === "submitted"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {submission.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {submission.grade}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {submission.status !== "missing" ? (
-                        <button className="text-indigo-600 hover:text-indigo-900">
-                          Grade
-                        </button>
-                      ) : (
-                        <button className="text-gray-400 cursor-not-allowed">
-                          -
-                        </button>
-                      )}
+                {submissions.length > 0 ? (
+                  submissions.map((submission) => {
+                    const totalPoints =
+                      activityData.question?.reduce(
+                        (total, q) => total + (q.points || 0),
+                        0
+                      ) || 0;
+                    const percentage =
+                      totalPoints > 0
+                        ? Math.round(
+                            (submission.total_score / totalPoints) * 100
+                          )
+                        : 0;
+
+                    return (
+                      <tr key={submission.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">
+                            {submission.student}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {submission.email}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              submission.status === "submitted"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {submission.status}
+                          </span>
+                          <div className="text-sm text-gray-500">
+                            {submission.submitted}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium">
+                            {submission.total_score}/{totalPoints}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {percentage}%
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => setSelectedSubmission(submission)}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="px-6 py-4 text-center text-sm text-gray-500"
+                    >
+                      No submissions yet
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -263,47 +447,19 @@ const AssignmentDetailPage = () => {
 
         {activeTab === "grades" && (
           <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Grade Distribution</h3>
-              <div className="h-64">
-                <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-                  <p className="text-gray-500">
-                    Grade distribution chart will appear here
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Grade Summary</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Average Grade</p>
-                  <p className="text-2xl font-bold">85.6/100</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Highest Grade</p>
-                  <p className="text-2xl font-bold">98/100</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Lowest Grade</p>
-                  <p className="text-2xl font-bold">72/100</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Submission Rate</p>
-                  <p className="text-2xl font-bold">86.7%</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center">
-                <FiDownload className="mr-2" /> Export Grades
-              </button>
-            </div>
+            {/* Grades content remains the same */}
+            {/* ... */}
           </div>
         )}
       </div>
+
+      {selectedSubmission && (
+        <SubmissionDetail
+          submission={selectedSubmission}
+          activityData={activityData}
+          onClose={() => setSelectedSubmission(null)}
+        />
+      )}
     </div>
   );
 };

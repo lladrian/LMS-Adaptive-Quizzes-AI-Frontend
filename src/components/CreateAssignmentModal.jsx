@@ -7,9 +7,10 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
-import { addQuiz } from "../utils/authService";
+import { addActivity } from "../utils/authService";
+import { toast } from "react-toastify";
 
-const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
+const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -84,6 +85,13 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     setIsSubmitting(true);
     setError(null);
 
+    // Validate required fields
+    if (!assignmentData.title || !assignmentData.timeLimit) {
+      setError("Title and time limit are required");
+      setIsSubmitting(false);
+      return;
+    }
+
     if (assignmentData.questions.length === 0) {
       setError("Please add at least one question");
       setIsSubmitting(false);
@@ -91,25 +99,20 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     }
 
     try {
-      const questionsForApi = assignmentData.questions.map((q) => ({
-        text: q.text,
-        points: q.points,
-      }));
-
-      const result = await addQuiz(
+      const result = await addActivity(
         classId,
-        questionsForApi,
+        assignmentData.questions,
         assignmentData.timeLimit,
         assignmentData.title,
-        assignmentData.description
+        assignmentData.description,
+        assignmentData.type
       );
 
       if (!result.success) {
         throw new Error(result.error);
       }
 
-      console.log("Quiz created:", result.data);
-      onClose();
+      // Reset form
       setAssignmentData({
         title: "",
         description: "",
@@ -118,10 +121,28 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
         totalPoints: 0,
         questions: [],
       });
+
+      // Close modal
+      onClose();
+
+      // Reset to first step
       setCurrentStep(1);
+
+      // Notify parent of successful creation
+      if (onSuccess && result.data) {
+        onSuccess({
+          ...result.data,
+          title: assignmentData.title,
+          description: assignmentData.description,
+          type: assignmentData.type,
+          submission_time: assignmentData.timeLimit,
+          points: assignmentData.totalPoints,
+          created_at: new Date().toISOString(),
+        });
+      }
     } catch (err) {
-      setError(err.message || "Failed to create quiz. Please try again.");
       console.error("Creation error:", err);
+      setError(err.message || "Failed to create activity. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +207,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+            className="cursor-pointer text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
           >
             <FiX size={20} />
           </button>
@@ -344,7 +365,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     <button
                       type="button"
                       onClick={addQuestion}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                      className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                     >
                       <FiPlus className="mr-2" /> Add Question
                     </button>
@@ -423,7 +444,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                 >
                   <FiChevronLeft className="mr-2" /> Previous
                 </button>
@@ -434,14 +455,14 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                 >
                   Next <FiChevronRight className="ml-2" />
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

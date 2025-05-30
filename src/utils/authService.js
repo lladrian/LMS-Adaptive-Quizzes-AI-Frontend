@@ -618,26 +618,44 @@ export const deleteMaterial = async (materialId) => {
 };
 
 /* ACTIVITIES */
-
-export const addQuiz = async (
+export const addActivity = async (
   classId,
-  questions, // Array of { text: string, points: number }
+  questions,
   timeLimit,
   title,
-  description
+  description,
+  type = "quiz"
 ) => {
   try {
-    const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
-      classroom: classId, // Ensure this is a valid ObjectId string
-      question: questions.map((q) => ({
-        text: q.text,
-        points: Number(q.points), // Ensure points is a number
-      })),
-      submission_time: Number(timeLimit), // Ensure this is a number
-      title,
-      description,
-      // type: "quiz" is not needed since it has a default in schema
-    });
+    let response;
+
+    if (type === "quiz") {
+      response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
+        classroom_id: classId,
+        question: questions.map((q) => ({
+          text: q.text,
+          points: Number(q.points),
+        })),
+        time_limit: Number(timeLimit),
+        title,
+        description,
+        type,
+        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
+      });
+    } else {
+      response = await axios.post(`${BASE_URL}/exams/add_exam`, {
+        classroom_id: classId,
+        question: questions.map((q) => ({
+          text: q.text,
+          points: Number(q.points),
+        })),
+        time_limit: Number(timeLimit),
+        title,
+        description,
+        type,
+        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
+      });
+    }
 
     return {
       success: true,
@@ -647,8 +665,66 @@ export const addQuiz = async (
     console.error("API Error:", error.response?.data);
     return {
       success: false,
-      error:
-        error.response?.data?.error || error.message || "Failed to add quiz.",
+      error: error.response?.data?.error || "Failed to add activity",
+    };
+  }
+};
+
+export const deleteActivity = async (activityId, activityType) => {
+  try {
+    let response;
+    if (activityType === "quiz") {
+      response = await axios.delete(
+        `${BASE_URL}/quizzes/delete_quiz/${activityId}`
+      );
+    } else {
+      response = await axios.delete(
+        `${BASE_URL}/exams/delete_exam/${activityId}`
+      );
+    }
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+/* ANSWER ACTIVITY */
+
+export const allAnswerSpecificQuiz = async (quizId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_quizzes/get_all_answer_specific_quiz/${quizId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the quiz answers",
+    };
+  }
+};
+export const allAnswerSpecificExam = async (examId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_exams/get_all_answer_specific_exam/${examId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the exam answers",
     };
   }
 };

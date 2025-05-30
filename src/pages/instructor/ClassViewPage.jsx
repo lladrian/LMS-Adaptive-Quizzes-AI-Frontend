@@ -17,11 +17,13 @@ import {
   specificClassroom,
   addMaterial,
   specificMaterial,
+  deleteActivity,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
 import EditMaterialModal from "../../components/EditMaterialModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import ActivityDeletionModal from "../../components/ActivityDeletionModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -33,24 +35,9 @@ const ClassDetailPage = () => {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState(null);
-  const assignments = [
-    {
-      id: 1,
-      title: "Sorting Algorithms",
-      type: "quiz",
-      due: "2023-05-10",
-      submissions: 18,
-      graded: 15,
-    },
-    {
-      id: 2,
-      title: "Final Project",
-      type: "project",
-      due: "2023-06-01",
-      submissions: 10,
-      graded: 2,
-    },
-  ];
+  const [showActivityDeletionModal, setShowActivityDeletionModal] =
+    useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
 
   const [ClassroomData, setClassroomData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,29 +53,92 @@ const ClassDetailPage = () => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  console.log(activities);
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await specificClassroom(classId);
       if (result.success) {
         setClassroomData(result.data.data);
-        console.log(result.data.data);
       }
+      /*  console.log(ClassroomData); */
     } catch (error) {
       console.error("Error fetching Instructor:", error);
       toast.error("Failed to fetch Instructor");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [classId, setIsLoading, setClassroomData]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
+
+  const handleDeleteActivity = async (activityId, activityType) => {
+    try {
+      // You'll need to implement this function in your authService
+      const result = await deleteActivity(activityId, activityType);
+
+      if (result.success) {
+        toast.success("Activity deleted successfully");
+        // Update the state to remove the deleted activity
+        if (activityType === "quiz") {
+          setClassroomData((prev) => ({
+            ...prev,
+            quizzes: prev.quizzes?.filter((q) => q._id !== activityId) || [],
+          }));
+        } else {
+          setClassroomData((prev) => ({
+            ...prev,
+            exams: prev.exams?.filter((e) => e._id !== activityId) || [],
+          }));
+        }
+      } else {
+        toast.error(result.error || "Failed to delete activity");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("An error occurred while deleting");
+    }
+  };
+
+  const handleActivityCreated = (newActivity) => {
+    if (!newActivity) {
+      console.error("No activity data received");
+      return;
+    }
+
+    console.log("Received new activity:", newActivity);
+
+    // Create a complete activity object with all required fields
+    const completeActivity = {
+      _id: newActivity._id || `temp-${Date.now()}`, // temporary ID if not provided
+      title: newActivity.title || "Untitled Activity",
+      description: newActivity.description || "",
+      submission_time: newActivity.submission_time || 60,
+      points: newActivity.points || 0,
+      created_at: newActivity.created_at || new Date().toISOString(),
+      type: newActivity.type || "quiz",
+      ...newActivity, // spread any additional properties
+    };
+
+    // Update the appropriate array based on activity type
+    if (completeActivity.type === "quiz") {
+      setClassroomData((prev) => ({
+        ...prev,
+        quizzes: [...(prev.quizzes || []), completeActivity],
+      }));
+    } else {
+      setClassroomData((prev) => ({
+        ...prev,
+        exams: [...(prev.exams || []), completeActivity],
+      }));
+    }
+
+    toast.success(`New ${completeActivity.type} created successfully!`);
+  };
 
   const handleUploadSuccess = () => {
     fetchClasses(); // This will refetch the classroom data including materials
@@ -279,7 +329,7 @@ const ClassDetailPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {ClassroomData.students?.length > 0 ? (
                     ClassroomData.students.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
+                      <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.fullname}
                         </td>
@@ -297,7 +347,7 @@ const ClassDetailPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Link
-                            to={`/instructor/students/edit/${student.id}`}
+                            to={`/instructor/students/edit/${student._id}`}
                             className="text-indigo-600 hover:text-indigo-900 mr-3"
                           >
                             Edit
@@ -474,7 +524,7 @@ const ClassDetailPage = () => {
                           <span className="text-gray-700 flex items-center">
                             <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
                             <strong className="font-medium mr-2">
-                              Duration:{" "}
+                              Duration:
                             </strong>
                             {activity.submission_time >= 60
                               ? `${Math.floor(
@@ -485,7 +535,12 @@ const ClassDetailPage = () => {
 
                           <span className="ml-2 text-gray-700">
                             <strong className="font-medium">Points:</strong>{" "}
-                            <span>{activity.points} </span>
+                            <span>
+                              {activity.question?.reduce(
+                                (total, q) => total + (q.points || 0),
+                                0
+                              )}
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -496,6 +551,15 @@ const ClassDetailPage = () => {
                         >
                           View
                         </Link>
+                        <button
+                          onClick={() => {
+                            setActivityToDelete(activity);
+                            setShowActivityDeletionModal(true);
+                          }}
+                          className="cursor-pointer px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -515,11 +579,25 @@ const ClassDetailPage = () => {
         />
       )}
 
+      {showActivityDeletionModal && activityToDelete && (
+        <ActivityDeletionModal
+          isOpen={showActivityDeletionModal}
+          onClose={() => setShowActivityDeletionModal(false)}
+          onConfirm={() => {
+            handleDeleteActivity(activityToDelete._id, activityToDelete.type);
+            setShowActivityDeletionModal(false);
+          }}
+          title={`Delete ${activityToDelete.type === "quiz" ? "Quiz" : "Exam"}`}
+          message={`Are you sure you want to delete "${activityToDelete.title}"? All associated data will be permanently removed.`}
+        />
+      )}
+
       {isAssignmentModalOpen && (
         <CreateAssignmentModal
           isOpen={isAssignmentModalOpen}
           onClose={() => setIsAssignmentModalOpen(false)}
           classId={classId}
+          onSuccess={handleActivityCreated} // Add this prop
         />
       )}
     </>
