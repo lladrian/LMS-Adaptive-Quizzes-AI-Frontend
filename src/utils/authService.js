@@ -303,6 +303,23 @@ export const quizAnswer = async (
   }
 };
 
+export const askAI = async (
+  ask
+) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/ai/ask`, {
+      ask
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to run code",
+    };
+  }
+};
+
 export const compilerRunCode = async (
   language,
   version,
@@ -778,6 +795,7 @@ export const specificMaterial = async (materialId) => {
     };
   }
 };
+
 export const extractMaterialData = async (materialId) => {
   try {
     const response = await axios.get(

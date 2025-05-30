@@ -43,10 +43,7 @@ const DashboardHome = () => {
 
   return (
     <>
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
-      </header>
-
+  
       <div className="p-6 space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

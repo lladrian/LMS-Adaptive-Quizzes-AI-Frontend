@@ -245,7 +245,7 @@ const AssignmentAnswerPage = () => {
             value={code}
             onChange={handleCodeChange}
             language={compiler.language}
-            height="300px"
+            height="400px"
           />
 
           <select

@@ -19,7 +19,7 @@ import {
 
 
 const AssignmentAnswerPage = () => {
-  const { assignmentId, type } = useParams();
+  const {assignmentId, type} = useParams();
   const [started, setStarted] = useState(false);
   const [points, setPoints] = useState(0);
   const [code, setCode] = useState("print('Hello, World!')");
@@ -261,7 +261,7 @@ const AssignmentAnswerPage = () => {
             value={code}
             onChange={handleCodeChange}
             language={compiler.language}
-            height="300px"
+            height="400px"
           />
 
           <select

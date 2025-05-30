@@ -38,6 +38,7 @@ import DashboardHome from "./pages/student/DashboardHome";
 import ClassesPageStudent from "./pages/student/ClassesPage";
 import ClassDetailPageStudent from "./pages/student/ClassDetailPage";
 import LessonPracticePage from "./pages/student/LessonPracticePage";
+import PracticePage from "./pages/student/PracticePage";
 import AssignmentAnswerPage from "./pages/student/AssignmentAnswerPage";
 import ViewAssignmentAnswerPage from "./pages/student/ViewAssignmentAnswerPage";
 import GradesPage from "./pages/student/GradesPage";
@@ -107,7 +108,8 @@ function App() {
             <Route path="class/:classId" element={<ClassDetailPageStudent />} />
             <Route path="class/:classId/:assignmentId/:type/answer" element={<AssignmentAnswerPage />} />
             <Route path="class/:classId/:assignmentId/:type/view_answer" element={<ViewAssignmentAnswerPage />} />
-            <Route path="class/:classId/lesson/:lessonId/practice" element={<LessonPracticePage />} />
+            <Route path="class/practice_with_ai" element={<PracticePage />} />
+            <Route path="class/:lessonId/practice_with_lesson" element={<LessonPracticePage />} />
             <Route path="grades" element={<GradesPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
