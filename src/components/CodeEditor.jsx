@@ -12,7 +12,7 @@ const CodeEditor = ({ value, onChange, language, height }) => {
     <div className="border border-gray-300 rounded-lg overflow-hidden">
       <Editor
         height={height || "300px"}
-        language={language || "javascript"}
+        language={language || "python"}
         theme="vs-dark"
         value={value}
         onChange={onChange}
