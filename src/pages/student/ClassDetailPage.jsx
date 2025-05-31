@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate  } from "react-router-dom";
 import {
   FiMessageSquare,
   FiDownload,
@@ -10,24 +10,24 @@ import {
   FiPlay,
   FiCheck,
   FiX,
+  FiLogOut, 
 } from "react-icons/fi";
 import CodeEditor from "../../components/CodeEditor";
 import {specificClassroom, 
 allAnswerExamSpecificStudentSpecificClassroom,
-allAnswerQuizSpecificStudentSpecificClassroom
+allAnswerQuizSpecificStudentSpecificClassroom,
+leaveClassroom
 } from "../../utils/authService";
 import { BASE_URL } from "../../utils/config";
+import Modal from '../../components/Modal'; // Adjust the path as necessary
+import { toast } from "react-toastify";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
+  const navigate = useNavigate(); 
   const [activeTab, setActiveTab] = useState("lessons");
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [expandedAssignment, setExpandedAssignment] = useState(null);
-  const [code, setCode] = useState("");
-  const [output, setOutput] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [examStarted, setExamStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [classroom, setClassroom] = useState(null);
   const [materials, setMaterial] = useState([]);
@@ -35,8 +35,10 @@ const ClassDetailPage = () => {
   const [answers, setAnswer] = useState([]);
   const [students, setStudent] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const studentId = localStorage.getItem("userId");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+    const studentId = localStorage.getItem("userId");
+
 
 //   not yet  // student hasn't opened the exam
 // ongoing  // student started, not yet submitted
@@ -47,7 +49,9 @@ const ClassDetailPage = () => {
   useEffect(() => {
       fetchSpecificClassroom();
   }, []);
-  
+
+
+   
   const fetchSpecificClassroom = async () => {
       setIsLoading(true);
       try {
@@ -97,6 +101,22 @@ const ClassDetailPage = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
+  const leaveClassroomFunction = async () => {
+      try {
+        const result = await leaveClassroom(classId, studentId);
+        toast.success(result.data);
+        navigate("/student/classes");
+      } catch (error) {
+        toast.error("Failed to leave classroom");
+      } 
+   };
+
+    const handleLeaveClass = () => {
+        leaveClassroomFunction();
+        // Logic to leave the classroom goes here
+        console.log("Leaving the classroom...");
+        setIsModalOpen(false); // Close the modal after confirming
+    };
 
   return (
     <>
@@ -106,7 +126,17 @@ const ClassDetailPage = () => {
         {/* Class Header */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <div className="flex justify-between items-start">
+             
             <div>
+              <div>
+                  <button 
+                    onClick={() => setIsModalOpen(true)} // Open the modal on button click
+                    className="flex items-center bg-red-200 text-black hover:text-white font-semibold py-1 px-2 rounded-lg shadow-md hover:bg-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                  >
+                    <FiLogOut className="mr-2" />
+                    Leave Class
+                  </button>
+              </div>
               <h1 className="text-4xl font-bold text-gray-800">
                 {classroom?.classroom.classroom_name}
               </h1>
@@ -125,14 +155,9 @@ const ClassDetailPage = () => {
                     >
                       {copied ? `Copied` : `${classroom?.classroom.classroom_code}`}
                     </button>
-                  {/* <span className="pl-2 font-bold italic">
-                    {classroom?.classroom.classroom_code}
-                  </span> */}
                 </p>
-             
               </div>
             </div>
-         
           </div>
         </div>
 
@@ -190,6 +215,12 @@ const ClassDetailPage = () => {
               Classroom Overview
             </button>
           </div>
+
+          <Modal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                onConfirm={handleLeaveClass} 
+          />
 
           {/* Tab Content */}
           <div className="p-6">

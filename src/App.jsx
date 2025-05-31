@@ -31,7 +31,7 @@ import MaterialsPage from "./pages/instructor/MaterialsPage";
 import UploadMaterialPage from "./pages/instructor/UploadMaterialPage";
 import EditMaterialPage from "./pages/instructor/EditMaterialPage";
 import InstructorSettings from "./pages/instructor/SettingsPage";
-import IntructorGradesPage from "./pages/instructor/GradesPage";
+import InstructorGradesPage from "./pages/instructor/GradesPage";
 
 import StudentLayout from "./pages/layouts/StudentLayout";
 import DashboardHome from "./pages/student/DashboardHome";
@@ -114,10 +114,6 @@ function App() {
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
 
-
-          <Route path="/instructor" element={<InstructorLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-
           <Route
             path="/instructor"
             element={
@@ -132,7 +128,6 @@ function App() {
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="archive" element={<ArchivePage />} />
-
             <Route path="class/:classId" element={<ClassViewPage />} />
             <Route
               path="class/:classId/activity/:assignmentId"
@@ -159,9 +154,6 @@ function App() {
             <Route path="grades" element={<GradesPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
-
-
-
 
           <Route path="*" element={<NotFound />} />
         </Routes>

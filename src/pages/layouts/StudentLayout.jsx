@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { FiHome, FiBook, FiCode, FiAward, FiLogOut } from "react-icons/fi";
+import { FiHome, FiBook, FiCode, FiAward, FiLogOut, FiBell  } from "react-icons/fi";
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const StudentLayout = () => {
