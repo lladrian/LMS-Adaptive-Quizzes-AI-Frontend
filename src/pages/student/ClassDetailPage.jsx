@@ -247,7 +247,7 @@ const ClassDetailPage = () => {
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                               >
                                 <FiCode className="mr-2" /> 
-                                Start Practice Exercises 1
+                                Start Practice Exercises
                               </Link>
                             </div>
                           )}
@@ -275,7 +275,6 @@ const ClassDetailPage = () => {
             <option value="all">All</option>
             <option value="not yet">Not Yet</option>
             <option value="ongoing">Ongoing</option>
-            <option value="pending">Pending</option>
             <option value="completed">Completed</option>
           </select>
         </div>
