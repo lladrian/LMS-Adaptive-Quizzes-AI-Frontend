@@ -16,6 +16,7 @@ import {specificClassroom,
 allAnswerExamSpecificStudentSpecificClassroom,
 allAnswerQuizSpecificStudentSpecificClassroom
 } from "../../utils/authService";
+import { BASE_URL } from "../../utils/config";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -71,12 +72,12 @@ const ClassDetailPage = () => {
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
           );
 
-          console.log( 
-            [
-              ...(result2.data.data || []),
-              ...(result3.data.data || [])
-            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          )          
+          // console.log( 
+          //   [
+          //     ...(result2.data.data || []),
+          //     ...(result3.data.data || [])
+          //   ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          // )          
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -230,9 +231,13 @@ const ClassDetailPage = () => {
                           <div className="mb-4">
                             <h4 className="font-medium mb-2">Lesson Content</h4>
                             <p className="text-gray-700">{material.description}</p>
-                            <button className="mt-2 px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm">
-                              <FiDownload className="mr-2" /> Download Materials
-                            </button>
+                            <Link
+                                to={`${BASE_URL}/uploads/${material.material}`}
+                            >
+                              <button className="mt-2 px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm">
+                                <FiDownload className="mr-2" /> Download Materials
+                              </button>
+                            </Link>
                           </div>
 
                           {material && (
@@ -242,7 +247,7 @@ const ClassDetailPage = () => {
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                               >
                                 <FiCode className="mr-2" /> 
-                                Start Practice Exercises
+                                Start Practice Exercises 1
                               </Link>
                             </div>
                           )}
