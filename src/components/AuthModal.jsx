@@ -214,7 +214,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                   <button
                     type="submit"
                     disabled={loadingLogin}
-                    className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                    className={`cursor-pointer w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                       loadingLogin
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-indigo-600 hover:bg-indigo-700"
@@ -322,7 +322,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                         onClick={() =>
                           setFormData({ ...formData, role: "student" })
                         }
-                        className={`w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                        className={`cursor-pointer w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
                           formData.role === "student"
                             ? "bg-indigo-600 text-white border-transparent"
                             : "bg-white text-gray-700 border-gray-300"
@@ -337,7 +337,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                         onClick={() =>
                           setFormData({ ...formData, role: "instructor" })
                         }
-                        className={`w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                        className={`cursor-pointer w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
                           formData.role === "instructor"
                             ? "bg-indigo-600 text-white border-transparent"
                             : "bg-white text-gray-700 border-gray-300"
@@ -352,7 +352,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                   <button
                     type="submit"
                     disabled={loadingRegister}
-                    className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                    className={`cursor-pointer w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                       loadingRegister
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-indigo-600 hover:bg-indigo-700"

@@ -2,33 +2,30 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiBook,
-  FiPlus,
   FiUsers,
   FiFileText,
   FiEdit2,
   FiTrash2,
   FiArchive,
+  FiRotateCcw,
 } from "react-icons/fi";
-import CreateClassModal from "../../components/CreateClassModal";
 import EditClassModal from "../../components/EditClassModal";
-import ConfirmationModal from "../../components/ConfirmationModal"; // New component
-
+import ConfirmationModal from "../../components/ConfirmationModal";
 import {
   allClassroomSpecificInstructor,
-  hideClassroom,
+  unHideClassroom,
 } from "../../utils/authService";
-
 import { toast } from "react-toastify";
 
-const ClassesPage = () => {
-  const [showCreateModal, setShowCreateModal] = useState(false);
+const ArchivePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
-  const [showArchiveModal, setShowArchiveModal] = useState(false); // New state
+  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
   const [classData, setClassData] = useState(null);
-  const [Classes, setClasses] = useState([]);
-  const [classToArchive, setClassToArchive] = useState(null); // New state
+  const [classes, setClasses] = useState([]);
+  const [classToUnarchive, setClassToUnarchive] = useState(null);
   const instructorId = localStorage.getItem("userId");
+
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -37,9 +34,11 @@ const ClassesPage = () => {
     setIsLoading(true);
     try {
       const result = await allClassroomSpecificInstructor(instructorId);
+      console.log(result);
       if (result.success) {
-        setClasses(result.data?.data.unhide_classrooms);
-        console.log(result.data?.data);
+       
+
+        setClasses(result.data?.data.hidden_classrooms);
       } else {
         toast.error(result.error);
       }
@@ -51,43 +50,37 @@ const ClassesPage = () => {
     }
   };
 
-  const handleArchive = async (id) => {
+  const handleUnarchive = async (id) => {
     try {
-      const response = await hideClassroom(id);
+      const response = await unHideClassroom(id);
       if (response.success) {
-        setClasses(Classes.filter((cls) => cls._id !== id));
-        toast.success("Class archived successfully");
-        setShowArchiveModal(false);
+        setClasses(classes.filter((cls) => cls._id !== id));
+        toast.success("Class unarchived successfully");
+        setShowUnarchiveModal(false);
       } else {
         toast.error(response.error);
       }
     } catch (error) {
-      console.error("Error archiving class:", error);
-      toast.error("Failed to archive class");
+      console.error("Error unarchiving class:", error);
+      toast.error("Failed to unarchive class");
     }
   };
 
   const handleClassUpdate = (updatedClass) => {
     setClasses(
-      Classes.map((cls) => (cls._id === updatedClass._id ? updatedClass : cls))
+      classes.map((cls) => (cls._id === updatedClass._id ? updatedClass : cls))
     );
   };
 
-  const openArchiveConfirmation = (cls) => {
-    setClassToArchive(cls);
-    setShowArchiveModal(true);
+  const openUnarchiveConfirmation = (cls) => {
+    setClassToUnarchive(cls);
+    setShowUnarchiveModal(true);
   };
 
   return (
     <>
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Class Management</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
-        >
-          <FiPlus className="mr-2" /> Create Class
-        </button>
+        <h1 className="text-2xl font-bold text-gray-800">Archived Classes</h1>
       </div>
 
       <div className="py-4">
@@ -95,9 +88,13 @@ const ClassesPage = () => {
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
+        ) : classes.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No archived classes found</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Classes.map((cls) => (
+            {classes.map((cls) => (
               <div
                 key={cls._id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden"
@@ -122,19 +119,12 @@ const ClassesPage = () => {
                         <FiEdit2 />
                       </button>
                       <button
-                        onClick={() => openArchiveConfirmation(cls)}
-                        className="cursor-pointer text-yellow-600 hover:text-yellow-800"
-                        title="Archive"
+                        onClick={() => openUnarchiveConfirmation(cls)}
+                        className="cursor-pointer text-green-600 hover:text-green-800"
+                        title="Restore"
                       >
-                        <FiArchive />
+                        <FiRotateCcw />
                       </button>
-                      {/*      <button
-                        onClick={() => handleDelete(cls._id)}
-                        className="cursor-pointer text-red-600 hover:text-red-800"
-                        title="Delete"
-                      >
-                        <FiTrash2 />
-                      </button> */}
                     </div>
                   </div>
 
@@ -157,16 +147,6 @@ const ClassesPage = () => {
         )}
       </div>
 
-      {showCreateModal && (
-        <CreateClassModal
-          onClose={() => setShowCreateModal(false)}
-          onClassCreated={() => {
-            setShowCreateModal(false);
-            fetchClasses();
-          }}
-        />
-      )}
-
       {showEditClassModal && classData && (
         <EditClassModal
           showEditClassModal={showEditClassModal}
@@ -176,20 +156,20 @@ const ClassesPage = () => {
         />
       )}
 
-      {/* Archive Confirmation Modal */}
-      {showArchiveModal && classToArchive && (
+      {/* Unarchive Confirmation Modal */}
+      {showUnarchiveModal && classToUnarchive && (
         <ConfirmationModal
-          isOpen={showArchiveModal}
-          onClose={() => setShowArchiveModal(false)}
-          onConfirm={() => handleArchive(classToArchive._id)}
-          title="Archive Classroom"
-          message={`Are you sure you want to archive "${classToArchive.classroom_name}"?`}
-          confirmText="Archive"
-          confirmColor="yellow"
+          isOpen={showUnarchiveModal}
+          onClose={() => setShowUnarchiveModal(false)}
+          onConfirm={() => handleUnarchive(classToUnarchive._id)}
+          title="Restore Classroom"
+          message={`Are you sure you want to restore "${classToUnarchive.classroom_name}"?`}
+          confirmText="Restore"
+          confirmColor="green"
         />
       )}
     </>
   );
 };
 
-export default ClassesPage;
+export default ArchivePage;

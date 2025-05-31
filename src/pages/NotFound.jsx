@@ -34,7 +34,7 @@ const NotFound = () => {
         </Link>
 
         {/* Secondary Options */}
-        <div className="border-t border-gray-100 pt-6">
+    {/*     <div className="border-t border-gray-100 pt-6">
           <p className="text-sm text-gray-500 mb-4">
             Try one of these instead:
           </p>
@@ -54,7 +54,7 @@ const NotFound = () => {
               <span className="text-sm text-gray-600">Explore</span>
             </Link>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

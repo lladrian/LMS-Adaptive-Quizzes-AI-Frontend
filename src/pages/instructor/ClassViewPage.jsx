@@ -81,7 +81,7 @@ const ClassDetailPage = () => {
 
   const handleRemoveClick = (student) => {
     setStudentToRemove(student);
-    console.log(student)
+    console.log(student);
     setShowRemoveStudentModal(true);
   };
 
@@ -339,12 +339,12 @@ const ClassDetailPage = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Students</h3>
-              <Link
+              {/*      <Link
                 to={`/instructor/class/${classId}/students/add`}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
               >
                 <FiPlus className="mr-2" /> Add Students
-              </Link>
+              </Link> */}
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
