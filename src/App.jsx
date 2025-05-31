@@ -42,18 +42,67 @@ import GradesPage from "./pages/student/GradesPage";
 
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
+import ArchivePage from "./pages/instructor/ArchivePage";
+
+// Protected Route Component
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role");
+
+  if (!userId || !role) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredRole && role !== requiredRole) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Redirect if already logged in
+const PublicRoute = ({ children }) => {
+  const userId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role");
+
+  if (userId && role) {
+    switch (role) {
+      case "admin":
+        return <Navigate to="/admin/dashboard" replace />;
+      case "instructor":
+        return <Navigate to="/instructor/dashboard" replace />;
+      case "student":
+        return <Navigate to="/student/dashboard" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
+  }
+
+  return children;
+};
 
 function App() {
   return (
     <>
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          {/* <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/instructors" element={<Instructors />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <HomePage />
+              </PublicRoute>
+            }
+          />
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="instructors" element={<Instructors />} />
@@ -61,35 +110,37 @@ function App() {
             <Route path="settings" element={<AdminSettings />} />
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
-          <Route path="/instructor" element={<InstructorLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
 
+          <Route
+            path="/instructor"
+            element={
+              <ProtectedRoute requiredRole="instructor">
+                <InstructorLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<InstructorDashboard />} />
             <Route path="students/add" element={<AddStudentPage />} />
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
+            <Route path="archive" element={<ArchivePage />} />
 
             <Route path="class/:classId" element={<ClassViewPage />} />
-
-       
-
-            <Route
-              path="class/:classId/students/add"
-              element={<AddStudentsToClassPage />}
-            />
-
             <Route
               path="class/:classId/activity/:assignmentId"
               element={<AssignmentDetailPage />}
             />
-            <Route path="materials" element={<MaterialsPage />} />
-            <Route path="materials/upload" element={<UploadMaterialPage />} />
-            <Route path="materials/edit/:id" element={<EditMaterialPage />} />
-            <Route path="grades" element={<IntructorGradesPage />} />
-            <Route path="settings" element={<InstructorSettings />} />
           </Route>
 
-          <Route path="/student" element={<StudentLayout />}>
+          <Route
+            path="/student"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <StudentLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardHome />} />
             <Route path="dashboard" element={<DashboardHome />} />
             <Route path="classes" element={<ClassesPageStudent />} />
@@ -106,7 +157,6 @@ function App() {
         </Routes>
       </Router>
 
-      {/* ✅ Toast container (place once globally) */}
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </>
   );
