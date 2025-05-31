@@ -3,14 +3,14 @@ import {
   FiPlus,
   FiTrash2,
   FiClock,
-  FiCalendar,
   FiX,
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
-import { addQuiz } from "../utils/authService";
+import { addActivity } from "../utils/authService";
+import { toast } from "react-toastify";
 
-const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
+const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,26 +19,15 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     title: "",
     description: "",
     type: "quiz",
-    /*     dueDate: "", */
     timeLimit: 60,
-    totalPoints: 100,
+    totalPoints: 0,
     questions: [],
   });
 
   const [newQuestion, setNewQuestion] = useState({
     text: "",
-    type: "programming",
     points: 1,
-    language: "javascript",
   });
-
-  const programmingLanguages = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "python", label: "Python" },
-    /*     { value: "java", label: "Java" },
-    { value: "c", label: "C" },
-    { value: "cpp", label: "C++" }, */
-  ];
 
   const steps = [
     { id: 1, name: "Activity Details" },
@@ -67,9 +56,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     const questionToAdd = {
       id: Date.now(),
       text: newQuestion.text,
-      type: newQuestion.type,
       points: parseInt(newQuestion.points),
-      language: newQuestion.language,
     };
 
     setAssignmentData((prev) => ({
@@ -78,12 +65,9 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
       totalPoints: prev.totalPoints + parseInt(newQuestion.points),
     }));
 
-    // Reset new question form
     setNewQuestion({
       text: "",
-      type: "programming",
       points: 1,
-      language: "javascript",
     });
   };
 
@@ -100,44 +84,65 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-  
+
+    // Validate required fields
+    if (!assignmentData.title || !assignmentData.timeLimit) {
+      setError("Title and time limit are required");
+      setIsSubmitting(false);
+      return;
+    }
+
     if (assignmentData.questions.length === 0) {
       setError("Please add at least one question");
       setIsSubmitting(false);
       return;
     }
-  
+
     try {
-      // Prepare the questions data for API - extract just the text
-      const questionTexts = assignmentData.questions.map(q => q.text);
-  
-      const result = await addQuiz(
+      const result = await addActivity(
         classId,
-        questionTexts, // Now sending array of strings
+        assignmentData.questions,
         assignmentData.timeLimit,
         assignmentData.title,
         assignmentData.description,
-        assignmentData.totalPoints
+        assignmentData.type
       );
-  
+
       if (!result.success) {
         throw new Error(result.error);
       }
-  
-      console.log("Assignment created:", result.data);
-      onClose();
+
+      // Reset form
       setAssignmentData({
         title: "",
         description: "",
         type: "quiz",
         timeLimit: 60,
-        totalPoints: 100,
+        totalPoints: 0,
         questions: [],
       });
+
+      // Close modal
+      onClose();
+
+      // Reset to first step
       setCurrentStep(1);
+
+      // Notify parent of successful creation
+      if (onSuccess && result.data) {
+        onSuccess({
+          ...result.data,
+          title: assignmentData.title,
+          description: assignmentData.description,
+          type: assignmentData.type,
+          submission_time: assignmentData.timeLimit,
+          points: assignmentData.totalPoints,
+          created_at: new Date().toISOString(),
+        });
+      }
     } catch (err) {
-      setError(err.message || "Failed to create assignment. Please try again.");
       console.error("Creation error:", err);
+      setError(err.message || "Failed to create activity. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -145,11 +150,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
 
   const nextStep = () => {
     if (currentStep === 1) {
-      if (
-        !assignmentData.title ||
-        /*      !assignmentData.dueDate || */
-        !assignmentData.timeLimit
-      ) {
+      if (!assignmentData.title || !assignmentData.timeLimit) {
         setError("Please fill all required fields");
         return;
       }
@@ -206,7 +207,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+            className="cursor-pointer text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
           >
             <FiX size={20} />
           </button>
@@ -264,23 +265,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     </select>
                   </div>
 
-                  {/*       <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Due Date *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="datetime-local"
-                        name="dueDate"
-                        value={assignmentData.dueDate}
-                        onChange={handleAssignmentChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
-                        required
-                      />
-                      <FiCalendar className="absolute left-3 top-3 text-gray-400" />
-                    </div>
-                  </div> */}
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Time Limit (minutes) *
@@ -320,10 +304,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                             <h4 className="font-medium">
                               Question {qIndex + 1} ({question.points} point
                               {question.points !== 1 ? "s" : ""})
-                              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
-                                {question.type.replace("-", " ")}
-                                {` (${question.language})`}
-                              </span>
                             </h4>
                             <button
                               type="button"
@@ -333,7 +313,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                               <FiTrash2 />
                             </button>
                           </div>
-
                           <p className="text-gray-700 mt-1">{question.text}</p>
                         </div>
                       </div>
@@ -365,40 +344,19 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Programming Language *
-                      </label>
-                      <select
-                        name="language"
-                        value={newQuestion.language}
-                        onChange={handleQuestionChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        {programmingLanguages.map((lang) => (
-                          <option key={lang.value} value={lang.value}>
-                            {lang.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Points *
-                      </label>
-                      <input
-                        type="number"
-                        name="points"
-                        value={newQuestion.points}
-                        onChange={handleQuestionChange}
-                        min="1"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Points *
+                    </label>
+                    <input
+                      type="number"
+                      name="points"
+                      value={newQuestion.points}
+                      onChange={handleQuestionChange}
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
                   </div>
 
                   {error && <div className="text-red-600 text-sm">{error}</div>}
@@ -407,7 +365,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                     <button
                       type="button"
                       onClick={addQuestion}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                      className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                     >
                       <FiPlus className="mr-2" /> Add Question
                     </button>
@@ -437,12 +395,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                         {assignmentData.type}
                       </p>
                     </div>
-                    {/*      <div>
-                      <p className="text-sm text-gray-500">Due Date</p>
-                      <p className="font-medium">
-                        {new Date(assignmentData.dueDate).toLocaleString()}
-                      </p>
-                    </div> */}
                     <div>
                       <p className="text-sm text-gray-500">Time Limit</p>
                       <p className="font-medium">
@@ -472,10 +424,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                           <h5 className="font-medium">
                             Question {index + 1} ({question.points} points)
                           </h5>
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize">
-                            {question.type.replace("-", " ")}
-                            {` (${question.language})`}
-                          </span>
                         </div>
                         <p className="text-gray-700 mt-1">{question.text}</p>
                       </div>
@@ -496,7 +444,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                 >
                   <FiChevronLeft className="mr-2" /> Previous
                 </button>
@@ -507,14 +455,14 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId }) => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                 >
                   Next <FiChevronRight className="ml-2" />
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

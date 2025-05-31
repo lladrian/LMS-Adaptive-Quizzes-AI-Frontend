@@ -23,7 +23,7 @@ import EditStudentPage from "./pages/instructor/EditStudentPage";
 import ClassesPage from "./pages/instructor/ClassesPage";
 import CreateClassPage from "./pages/instructor/CreateClassPage";
 import ClassViewPage from "./pages/instructor/ClassViewPage";
-import ClassStudentsPage from "./pages/instructor/ClassStudentsPage";
+
 import AddStudentsToClassPage from "./pages/instructor/AddStudentsToClassPage";
 
 import AssignmentDetailPage from "./pages/instructor/AssignmentDetailPage";
@@ -72,20 +72,15 @@ function App() {
             <Route path="students/add" element={<AddStudentPage />} />
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
-           
+
             <Route path="class/:classId" element={<ClassViewPage />} />
 
-            <Route
-              path="class/:classId/students"
-              element={<ClassStudentsPage />}
-            />
-
+       
 
             <Route
               path="class/:classId/students/add"
               element={<AddStudentsToClassPage />}
             />
-
 
             <Route
               path="class/:classId/activity/:assignmentId"
@@ -96,7 +91,6 @@ function App() {
             <Route path="materials/edit/:id" element={<EditMaterialPage />} />
             <Route path="grades" element={<IntructorGradesPage />} />
             <Route path="settings" element={<InstructorSettings />} />
-            
           </Route>
 
 

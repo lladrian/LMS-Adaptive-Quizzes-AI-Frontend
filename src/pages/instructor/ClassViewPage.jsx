@@ -17,11 +17,14 @@ import {
   specificClassroom,
   addMaterial,
   specificMaterial,
+  deleteActivity,
+  removeStudentClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
 import EditMaterialModal from "../../components/EditMaterialModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import ActivityDeletionModal from "../../components/ActivityDeletionModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -33,24 +36,9 @@ const ClassDetailPage = () => {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState(null);
-  const assignments = [
-    {
-      id: 1,
-      title: "Sorting Algorithms",
-      type: "quiz",
-      due: "2023-05-10",
-      submissions: 18,
-      graded: 15,
-    },
-    {
-      id: 2,
-      title: "Final Project",
-      type: "project",
-      due: "2023-06-01",
-      submissions: 10,
-      graded: 2,
-    },
-  ];
+  const [showActivityDeletionModal, setShowActivityDeletionModal] =
+    useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
 
   const [ClassroomData, setClassroomData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,29 +54,129 @@ const ClassDetailPage = () => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  console.log(activities);
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await specificClassroom(classId);
       if (result.success) {
         setClassroomData(result.data.data);
-        console.log(result.data.data);
       }
+      /*  console.log(ClassroomData); */
     } catch (error) {
       console.error("Error fetching Instructor:", error);
       toast.error("Failed to fetch Instructor");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [classId, setIsLoading, setClassroomData]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
+  const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState(null);
+
+  const handleRemoveClick = (student) => {
+    setStudentToRemove(student);
+    console.log(student)
+    setShowRemoveStudentModal(true);
+  };
+
+  const confirmRemoveStudent = async () => {
+    if (studentToRemove) {
+      try {
+        const result = await removeStudentClassroom(
+          classId,
+          studentToRemove._id
+        );
+
+        if (result.success) {
+          toast.success("Student removed successfully");
+          setClassroomData((prev) => ({
+            ...prev,
+            students: prev.students.filter(
+              (s) => s._id !== studentToRemove._id
+            ),
+          }));
+        } else {
+          toast.error(result.error || "Failed to remove student");
+        }
+      } catch (error) {
+        console.error("Error removing student:", error);
+        toast.error("An error occurred while removing student");
+      } finally {
+        setShowRemoveStudentModal(false);
+        setStudentToRemove(null);
+      }
+    }
+  };
+
+  const handleDeleteActivity = async (activityId, activityType) => {
+    try {
+      // You'll need to implement this function in your authService
+      const result = await deleteActivity(activityId, activityType);
+
+      if (result.success) {
+        toast.success("Activity deleted successfully");
+        // Update the state to remove the deleted activity
+        if (activityType === "quiz") {
+          setClassroomData((prev) => ({
+            ...prev,
+            quizzes: prev.quizzes?.filter((q) => q._id !== activityId) || [],
+          }));
+        } else {
+          setClassroomData((prev) => ({
+            ...prev,
+            exams: prev.exams?.filter((e) => e._id !== activityId) || [],
+          }));
+        }
+      } else {
+        toast.error(result.error || "Failed to delete activity");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("An error occurred while deleting");
+    }
+  };
+
+  const handleActivityCreated = (newActivity) => {
+    if (!newActivity) {
+      console.error("No activity data received");
+      return;
+    }
+
+    console.log("Received new activity:", newActivity);
+
+    // Create a complete activity object with all required fields
+    const completeActivity = {
+      _id: newActivity._id || `temp-${Date.now()}`, // temporary ID if not provided
+      title: newActivity.title || "Untitled Activity",
+      description: newActivity.description || "",
+      submission_time: newActivity.submission_time || 60,
+      points: newActivity.points || 0,
+      created_at: newActivity.created_at || new Date().toISOString(),
+      type: newActivity.type || "quiz",
+      ...newActivity, // spread any additional properties
+    };
+
+    // Update the appropriate array based on activity type
+    if (completeActivity.type === "quiz") {
+      setClassroomData((prev) => ({
+        ...prev,
+        quizzes: [...(prev.quizzes || []), completeActivity],
+      }));
+    } else {
+      setClassroomData((prev) => ({
+        ...prev,
+        exams: [...(prev.exams || []), completeActivity],
+      }));
+    }
+
+    toast.success(`New ${completeActivity.type} created successfully!`);
+  };
 
   const handleUploadSuccess = () => {
     fetchClasses(); // This will refetch the classroom data including materials
@@ -279,7 +367,7 @@ const ClassDetailPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {ClassroomData.students?.length > 0 ? (
                     ClassroomData.students.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
+                      <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.fullname}
                         </td>
@@ -296,13 +384,10 @@ const ClassDetailPage = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            to={`/instructor/students/edit/${student.id}`}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          <button
+                            onClick={() => handleRemoveClick(student)}
+                            className="cursor-pointer text-red-600 hover:text-red-900"
                           >
-                            Edit
-                          </Link>
-                          <button className="text-red-600 hover:text-red-900">
                             Remove
                           </button>
                         </td>
@@ -321,6 +406,32 @@ const ClassDetailPage = () => {
                 </tbody>
               </table>
             </div>
+
+            {showRemoveStudentModal && studentToRemove && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-lg font-medium mb-4">Confirm Removal</h3>
+                  <p className="mb-6">
+                    Are you sure you want to remove {studentToRemove.fullname} (
+                    {studentToRemove.email}) from this class?
+                  </p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => setShowRemoveStudentModal(false)}
+                      className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmRemoveStudent}
+                      className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      Remove Student
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -445,56 +556,76 @@ const ClassDetailPage = () => {
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {activities.map((activity) => (
-                <div
-                  key={activity._id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{activity.title}</h4>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                          {activity.type}
-                        </span>
-                        {/*          <span>Description: {activity.description}</span> */}
+              {activities.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  There are no activities
+                </div>
+              ) : (
+                activities.map((activity) => (
+                  <div
+                    key={activity._id}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="text-gray-700">
+                          <strong className="font-medium">Title:</strong>{" "}
+                          {activity.title}
+                        </h4>
 
-                        {/* Description */}
                         <span className="text-gray-700">
                           <strong className="font-medium">Description:</strong>{" "}
                           {activity.description}
                         </span>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                            {activity.type}
+                          </span>
 
-                        {/* Submission Time */}
-                        <span className="text-gray-700 flex items-center">
-                          <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
-                          <strong className="font-medium mr-2">
-                            Duration:{" "}
-                          </strong>
-                          {activity.submission_time >= 60
-                            ? `${Math.floor(activity.submission_time / 60)}h ${
-                                activity.submission_time % 60
-                              }m`
-                            : `${activity.submission_time}m`}
-                        </span>
+                          <span className="text-gray-700 flex items-center">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
+                            <strong className="font-medium mr-2">
+                              Duration:
+                            </strong>
+                            {activity.submission_time >= 60
+                              ? `${Math.floor(
+                                  activity.submission_time / 60
+                                )}h ${activity.submission_time % 60}m`
+                              : `${activity.submission_time}m`}
+                          </span>
 
-                        <span className="ml-2 text-gray-700">
-                          <strong className="font-medium">Points:</strong>{" "}
-                          <span>{activity.points} </span>
-                        </span>
+                          <span className="ml-2 text-gray-700">
+                            <strong className="font-medium">Points:</strong>{" "}
+                            <span>
+                              {activity.question?.reduce(
+                                (total, q) => total + (q.points || 0),
+                                0
+                              )}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link
+                          to={`/instructor/class/${classId}/activity/${activity._id}`}
+                          className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                        >
+                          View
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setActivityToDelete(activity);
+                            setShowActivityDeletionModal(true);
+                          }}
+                          className="cursor-pointer px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Link
-                        to={`/instructor/class/${classId}/activity/${activity._id}`}
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
-                      >
-                        View
-                      </Link>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}{" "}
             </div>
           </div>
         )}
@@ -509,11 +640,25 @@ const ClassDetailPage = () => {
         />
       )}
 
+      {showActivityDeletionModal && activityToDelete && (
+        <ActivityDeletionModal
+          isOpen={showActivityDeletionModal}
+          onClose={() => setShowActivityDeletionModal(false)}
+          onConfirm={() => {
+            handleDeleteActivity(activityToDelete._id, activityToDelete.type);
+            setShowActivityDeletionModal(false);
+          }}
+          title={`Delete ${activityToDelete.type === "quiz" ? "Quiz" : "Exam"}`}
+          message={`Are you sure you want to delete "${activityToDelete.title}"? All associated data will be permanently removed.`}
+        />
+      )}
+
       {isAssignmentModalOpen && (
         <CreateAssignmentModal
           isOpen={isAssignmentModalOpen}
           onClose={() => setIsAssignmentModalOpen(false)}
           classId={classId}
+          onSuccess={handleActivityCreated} // Add this prop
         />
       )}
     </>

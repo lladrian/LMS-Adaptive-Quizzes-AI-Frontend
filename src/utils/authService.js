@@ -577,6 +577,25 @@ export const joinClassroom = async (classroom_code, student_id) => {
   }
 };
 
+export const removeStudentClassroom = async (classroom_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/remove_student_classroom/${classroom_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        "Failed to remove student from classroom",
+    };
+  }
+};
+
 export const leaveClassroom = async (classroom_id, student_id) => {
   try {
     const response = await axios.get(`
@@ -888,24 +907,87 @@ export const deleteMaterial = async (materialId) => {
 };
 
 /* ACTIVITIES */
-
-export const addQuiz = async (
+export const addActivity = async (
   classId,
-  questions, // Now an array of strings
+  questions,
   timeLimit,
   title,
   description,
-  points
+  type = "quiz"
 ) => {
   try {
-    const response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
-      classroom_id: classId,
-      question: questions, // Send as array of strings
-      time_limit: timeLimit,
-      title,
-      description,
-      points,
-    });
+    let response;
+
+    if (type === "quiz") {
+      response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
+        classroom_id: classId,
+        question: questions.map((q) => ({
+          text: q.text,
+          points: Number(q.points),
+        })),
+        time_limit: Number(timeLimit),
+        title,
+        description,
+        type,
+        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
+      });
+    } else {
+      response = await axios.post(`${BASE_URL}/exams/add_exam`, {
+        classroom_id: classId,
+        question: questions.map((q) => ({
+          text: q.text,
+          points: Number(q.points),
+        })),
+        time_limit: Number(timeLimit),
+        title,
+        description,
+        type,
+        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
+      });
+    }
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("API Error:", error.response?.data);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to add activity",
+    };
+  }
+};
+
+export const deleteActivity = async (activityId, activityType) => {
+  try {
+    let response;
+    if (activityType === "quiz") {
+      response = await axios.delete(
+        `${BASE_URL}/quizzes/delete_quiz/${activityId}`
+      );
+    } else {
+      response = await axios.delete(
+        `${BASE_URL}/exams/delete_exam/${activityId}`
+      );
+    }
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
+
+/* ANSWER ACTIVITY */
+
+export const allAnswerSpecificQuiz = async (quizId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_quizzes/get_all_answer_specific_quiz/${quizId}`
+    );
 
     return {
       success: true,
@@ -914,9 +996,24 @@ export const addQuiz = async (
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || "Failed to add quiz.",
+      error: error.response?.data?.error || "Failed to get the quiz answers",
     };
   }
 };
+export const allAnswerSpecificExam = async (examId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_exams/get_all_answer_specific_exam/${examId}`
+    );
 
-
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the exam answers",
+    };
+  }
+};
