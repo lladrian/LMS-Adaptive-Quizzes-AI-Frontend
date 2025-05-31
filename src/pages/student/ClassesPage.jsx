@@ -109,10 +109,10 @@ const ClassesPage = () => {
                   {classroom?.classroom_code} • {classroom.instructor?.fullname}
                 </p>
 
-                <div className="flex justify-between text-sm text-gray-500 mb-4">
+                {/* <div className="flex justify-between text-sm text-gray-500 mb-4">
                   <span>12 Lessons</span>
                   <span>3 Assignments</span>
-                </div>
+                </div> */}
 
                 <div className="flex justify-between w-full">
                   <Link
