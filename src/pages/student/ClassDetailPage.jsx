@@ -115,19 +115,20 @@ const ClassDetailPage = () => {
               <p className="mt-2 text-gray-700">{classroom?.classroom.description}</p>
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-gray-700">
-                  <span className="italic">                    
-                    Classroom Code: 
-                  </span>
-                  <span className="pl-2 font-bold italic">
+                    <span className="italic">                    
+                      Classroom Code: 
+                    </span>
+                     <button
+                      onClick={handleCopy}
+                      className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
+                    >
+                      {copied ? `Copied` : `${classroom?.classroom.classroom_code}`}
+                    </button>
+                  {/* <span className="pl-2 font-bold italic">
                     {classroom?.classroom.classroom_code}
-                  </span>
+                  </span> */}
                 </p>
-                <button
-                  onClick={handleCopy}
-                  className="text-sm bg-blue-100 hover:bg-blue-400 text-blue-800 px-2 py-1 rounded"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
+             
               </div>
             </div>
          
