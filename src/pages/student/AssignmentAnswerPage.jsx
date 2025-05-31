@@ -256,10 +256,13 @@ const AssignmentAnswerPage = () => {
           // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
           // please do consider to give more points especially if code is beginner`;
 
-          let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language, the output is ->${output_result}<-.
+          let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
+           the output is ->${output_result}<-.
           Please provide a correction for the question ->${questions[currentIndex].text}<-.
-          Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does not accept input data or pause for input. 
-          Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. Please consider that the code is for beginners. 
+          Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
+          not accept input data or pause for input. 
+          Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
+          Please consider that the code is for beginners. 
           Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
 
           let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
@@ -268,7 +271,6 @@ const AssignmentAnswerPage = () => {
           Please respond with just a number, without any newlines. Stick to the output from the given code. 
           Note that the compiler API does not accept input data or pause for input. 
           Strictly respond with points only, and consider giving more points, especially for beginner code.`;
-
 
   
           const result = await askAI(askForCorrection);

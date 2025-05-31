@@ -21,7 +21,7 @@ const EditClassModal = ({
     if (showEditClassModal && data) {
       setFormData({
         name: data.classroom_name || "",
-        code: data.classroom_code || "",
+        code: data.subject_code || "",
         description: data.description || "",
       });
     }
@@ -60,6 +60,7 @@ const EditClassModal = ({
           ...data,
           classroom_name: formData.name,
           description: formData.description,
+          subject_code: formData.code,
         };
 
         onUpdate?.(updatedClass);
@@ -120,15 +121,16 @@ const EditClassModal = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Class Code
+                Subject Code
               </label>
               <input
                 type="text"
                 name="code"
                 value={formData.code}
                 onChange={handleChange}
+                required
+                disabled={isSubmitting}
                 className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                disabled
               />
             </div>
 

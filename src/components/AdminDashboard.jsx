@@ -1,14 +1,19 @@
 // pages/admin/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import { FiUsers, FiBook, FiUserPlus, FiTrendingUp } from "react-icons/fi";
-import { getAllInstructors, getAllAdmins } from "../utils/authService";
+import { FiUsers, FiBook, FiUserPlus, FiTrendingUp, FiXCircle, FiCheckCircle, FiBookOpen, FiShield} from "react-icons/fi";
+import { getAllInstructors, getAllAdmins, allClassrooms  } from "../utils/authService";
 import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
   const [Instructors, setInstructors] = useState([]);
   const [Admins, setAdmins] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [hiddenClassrooms, setHiddenClassrooms] = useState([]);
+  const [unhiddenClassrooms, setUnHiddenClassrooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const adminFullname = localStorage.getItem("fullname");
+
 
   // Stats for growth changes
   const [instructorStats, setInstructorStats] = useState({
@@ -23,7 +28,21 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
+    fetchClassroom();
   }, []);
+
+  
+  const fetchClassroom = async () => {
+    const result = await allClassrooms();
+    const all = result.data.data || [];
+
+    const hidden = all.filter(item => item.is_hidden === 1);
+    const unhidden = all.filter(item => item.is_hidden === 0);
+
+    setHiddenClassrooms(hidden);
+    setUnHiddenClassrooms(unhidden);
+    setClassrooms(all); // This holds all classrooms
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -139,31 +158,46 @@ const AdminDashboard = () => {
       trend: instructorStats.trend,
     },
     {
+      title: "Total Classrooms",
+      value: classrooms.length.toString(),
+      icon: FiBookOpen, // 🟢 Represents all classrooms
+      change: "+5%",
+      trend: "up",
+    },
+
+    {
       title: "Active Classrooms",
-      value: "56", // Static for now
-      icon: FiBook,
+      value: unhiddenClassrooms.length.toString(),
+      icon: FiCheckCircle, // ✅ More semantic than user icon
+      change: "+5%",
+      trend: "up",
+    },
+     { 
+      title: "Inactive Classrooms",
+      value: hiddenClassrooms.length.toString(),
+      icon: FiXCircle, // ❌ Represents inactive status
       change: "+5%",
       trend: "up",
     },
     {
       title: "Admins",
       value: Admins.length.toString(),
-      icon: FiUserPlus,
+      icon: FiShield,
       change: adminStats.change,
       trend: adminStats.trend,
     },
-    {
-      title: "Student Engagement",
-      value: "78%",
-      icon: FiTrendingUp,
-      change: "+8%",
-      trend: "up",
-    },
+    // {
+    //   title: "Student Engagement",
+    //   value: "78%",
+    //   icon: FiTrendingUp,
+    //   change: "+8%",
+    //   trend: "up",
+    // },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Welcome back, Gerald</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Welcome back, {adminFullname}</h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -185,13 +219,13 @@ const AdminDashboard = () => {
                 <stat.icon className="text-lg" />
               </div>
             </div>
-            <p
+            {/* <p
               className={`mt-3 text-sm font-medium ${
                 stat.trend === "up" ? "text-green-600" : "text-red-600"
               }`}
             >
-              {stat.change} from this month
-            </p>
+              {stat.change} from this month1
+            </p> */}
           </div>
         ))}
       </div>

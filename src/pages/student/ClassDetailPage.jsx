@@ -96,7 +96,7 @@ const ClassDetailPage = () => {
     return assignment.status === selectedStatus;
   };
 
-    const handleCopy = () => {
+  const handleCopy = () => {
     navigator.clipboard.writeText(classroom?.classroom.classroom_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
@@ -149,7 +149,7 @@ const ClassDetailPage = () => {
                     <span className="italic">                    
                       Classroom Code: 
                     </span>
-                     <button
+                    <button
                       onClick={handleCopy}
                       className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
                     >
@@ -520,7 +520,7 @@ const ClassDetailPage = () => {
                 </div> 
               </div>
 
-              <div>
+              {/* <div>
                 <h3 className="text-lg font-semibold mb-2">Students</h3>
                 <ul className="bg-white border rounded-lg divide-y">
                   {students.map((student) => (
@@ -529,16 +529,96 @@ const ClassDetailPage = () => {
                     </li>
                   ))}
                 </ul>
-              </div>
- 
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Instructor</h3>
-                <ul className="bg-white border rounded-lg divide-y">
-                    <li className="p-2">
-                      {classroom.classroom.instructor.fullname}
-                    </li>
-                </ul>
-              </div> 
+              </div> */}
+
+              <div className="overflow-x-auto">
+              <h3 className="text-lg font-semibold mb-2">Students</h3>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {students?.length > 0 ? (
+                    students.map((student) => (
+                      <tr key={student._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {student.fullname}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+              bg-green-100 text-green-800
+            `}
+                          >
+                            active
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        No students in this classroom
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="overflow-x-auto">
+              <h3 className="text-lg font-semibold mb-2">Instructor</h3>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {classroom.classroom.instructor.fullname}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {classroom.classroom.instructor.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+              bg-green-100 text-green-800
+            `}
+                          >
+                            active
+                          </span>
+                        </td>
+                      </tr>
+                </tbody>
+              </table>
+            </div>
             </div>
           )}
 

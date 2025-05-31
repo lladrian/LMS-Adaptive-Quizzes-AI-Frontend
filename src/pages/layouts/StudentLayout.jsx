@@ -7,6 +7,7 @@ const StudentLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const studentFullname = localStorage.getItem("fullname");
   const navItems = [
     { path: "/student/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/student/classes", icon: FiBook, label: "My Classes" },
@@ -108,7 +109,7 @@ const StudentLayout = () => {
                 </div>
                 {sidebarOpen && (
                   <span className="ml-2 text-sm font-medium text-gray-700">
-                    Gerald
+                    {studentFullname}
                   </span>
                 )}
               </div>

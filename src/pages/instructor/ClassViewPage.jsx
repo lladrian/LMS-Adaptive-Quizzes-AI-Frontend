@@ -8,6 +8,8 @@ import {
   FiPlus,
   FiDownload,
   FiEdit2,
+  FiEdit3,
+  FiClipboard
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
@@ -41,6 +43,8 @@ const ClassDetailPage = () => {
   const [activityToDelete, setActivityToDelete] = useState(null);
 
   const [ClassroomData, setClassroomData] = useState([]);
+    const [copied, setCopied] = useState(false);
+  
   const [isLoading, setIsLoading] = useState(false);
 
   /* const activities = ClassroomData.exams; */
@@ -215,6 +219,12 @@ const ClassDetailPage = () => {
     }
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(ClassroomData?.classroom.classroom_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -224,8 +234,15 @@ const ClassDetailPage = () => {
             {ClassroomData.classroom?.subject_code})
           </h1>
           <p className="mt-1">
-            Class code: {ClassroomData.classroom?.classroom_code}
+            Classroom Code:   <button
+                      onClick={handleCopy}
+                      className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
+                    >
+                      {copied ? `Copied` : `${ClassroomData.classroom?.classroom_code}`}
+                    </button>
           </p>
+
+         
         </div>
 
         <button
@@ -325,6 +342,36 @@ const ClassDetailPage = () => {
                           (ClassroomData.exams?.length || 0);
                         return `${total} ${
                           total <= 1 ? "Activity" : "Activities"
+                        }`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+                 <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiEdit3 className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {(() => {
+                        const total =
+                          (ClassroomData.quizzes?.length || 0) +
+                          (0);
+                        return `${total} ${
+                          total <= 1 ? "Quiz" : "Quizzes"
+                        }`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+                 <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiClipboard className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {(() => {
+                        const total =
+                          (0) +
+                          (ClassroomData.exams?.length || 0);
+                        return `${total} ${
+                          total <= 1 ? "Exam" : "Exams"
                         }`;
                       })()}
                     </span>
