@@ -698,6 +698,23 @@ export const allClassroomSpecificInstructor = async (instructorId) => {
   }
 };
 
+export const classroomOverviewSpecificInstructor = async (instructorId) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/classrooms/get_all_classroom_overview_specific_instructor/${instructorId}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch all classroom",
+    };
+  }
+};
+
 export const updateClassroom = async (
   roomId,
   classroom_name,
@@ -955,6 +972,30 @@ export const addActivity = async (
     return {
       success: false,
       error: error.response?.data?.error || "Failed to add activity",
+    };
+  }
+};
+
+export const updateActivity = async (activityId, activityType, data) => {
+  try {
+    let response;
+    if (activityType === "quiz") {
+      response = await axios.put(
+        `${BASE_URL}/quizzes/update_quiz/${activityId}`,
+        data
+      );
+    } else {
+      response = await axios.put(
+        `${BASE_URL}/exams/update_exam/${activityId}`,
+        data
+      );
+    }
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
     };
   }
 };

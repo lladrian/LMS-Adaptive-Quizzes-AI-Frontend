@@ -1,18 +1,24 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { FiHome, FiBook, FiCode, FiAward, FiLogOut, FiBell, } from "react-icons/fi";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { FiHome, FiBook, FiCode, FiAward, FiLogOut } from "react-icons/fi";
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const StudentLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  const navigate = useNavigate();
   const navItems = [
     { path: "/student/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/student/classes", icon: FiBook, label: "My Classes" },
     { path: "/student/grades", icon: FiAward, label: "Grades" },
   ];
 
+  const handleLogout = () => {
+    navigate("/");
+    localStorage.removeItem("role");
+    localStorage.removeItem("fullname");
+    localStorage.removeItem("userId");
+  };
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -59,7 +65,10 @@ const StudentLayout = () => {
 
         {/* Logout Button at Bottom */}
         <div className="p-4 border-t border-gray-200">
-          <button className="flex items-center text-gray-600 hover:text-red-500 w-full p-2 rounded-lg hover:bg-gray-100">
+          <button
+            onClick={handleLogout}
+            className="cursor-pointer flex items-center text-gray-600 hover:text-red-500 w-full p-2 rounded-lg hover:bg-gray-100"
+          >
             <FiLogOut />
             {sidebarOpen && <span className="ml-3">Logout</span>}
           </button>
