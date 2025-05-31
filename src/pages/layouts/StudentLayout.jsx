@@ -10,7 +10,7 @@ const StudentLayout = () => {
   const navItems = [
     { path: "/student/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/student/classes", icon: FiBook, label: "My Classes" },
-    { path: "/student/grades", icon: FiAward, label: "Grades" },
+    // { path: "/student/grades", icon: FiAward, label: "Grades" },
   ];
 
   return (
