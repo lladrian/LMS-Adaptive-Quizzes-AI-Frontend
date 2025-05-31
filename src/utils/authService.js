@@ -303,6 +303,23 @@ export const quizAnswer = async (
   }
 };
 
+export const askAI = async (
+  ask
+) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/ai/ask`, {
+      ask
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to run code",
+    };
+  }
+};
+
 export const compilerRunCode = async (
   language,
   version,
@@ -323,7 +340,6 @@ export const compilerRunCode = async (
     };
   }
 };
-//get_specific_answer
 
 export const specificExamAnswer = async (answer_id) => {
   try {
@@ -415,6 +431,40 @@ export const specificQuiz = async (quiz_id) => {
   try {
     const response = await axios.get(`
       ${BASE_URL}/quizzes/get_specific_quiz/${quiz_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get specific quiz",
+    };
+  }
+};
+
+export const specificExamSpecificAnswer = async (exam_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/exams/get_specific_exam_specific_answer/${exam_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get specific quiz",
+    };
+  }
+};
+
+export const specificQuizSpecificAnswer = async (quiz_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/quizzes/get_specific_quiz_specific_answer/${quiz_id}/${student_id}`);
 
     return {
       success: true,
@@ -745,6 +795,7 @@ export const specificMaterial = async (materialId) => {
     };
   }
 };
+
 export const extractMaterialData = async (materialId) => {
   try {
     const response = await axios.get(

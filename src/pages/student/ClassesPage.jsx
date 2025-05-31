@@ -117,7 +117,7 @@ const ClassesPage = () => {
                 <div className="flex justify-between w-full">
                   <Link
                     to={`/student/class/${classroom?._id}`}
-                    className="px-3 py-1 bg-indigo-600 text-white w-full text-center text-2xl rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="px-3 py-1 bg-indigo-600 text-white w-full text-center text-xl rounded-lg hover:bg-indigo-700 transition-colors"
                   >
                     View Class
                   </Link>

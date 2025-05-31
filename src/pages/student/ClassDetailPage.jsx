@@ -33,7 +33,10 @@ const ClassDetailPage = () => {
   const [assignments, setAssignment] = useState([]);
   const [answers, setAnswer] = useState([]);
   const [students, setStudent] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const studentId = localStorage.getItem("userId");
+  const [copied, setCopied] = useState(false);
+
 //   not yet  // student hasn't opened the exam
 // ongoing  // student started, not yet submitted
 // pending  // student submitted, not yet graded
@@ -73,7 +76,7 @@ const ClassDetailPage = () => {
               ...(result2.data.data || []),
               ...(result3.data.data || [])
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          )
+          )          
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -83,14 +86,20 @@ const ClassDetailPage = () => {
       }
     };
 
+  const filterAssignments = (assignment) => {
+    if (selectedStatus === 'all') return true;
+    return assignment.status === selectedStatus;
+  };
+
+    const handleCopy = () => {
+    navigator.clipboard.writeText(classroom?.classroom.classroom_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
 
   return (
     <>
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-gray-800">
-          {classroom?.classroom.classroom_name}
-        </h2>
-      </header>
+      
 
       <div className="p-6 space-y-6">
         {/* Class Header */}
@@ -104,6 +113,23 @@ const ClassDetailPage = () => {
                 {classroom?.classroom.subject_code} • {classroom?.classroom.instructor.fullname}
               </p>
               <p className="mt-2 text-gray-700">{classroom?.classroom.description}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-gray-700">
+                    <span className="italic">                    
+                      Classroom Code: 
+                    </span>
+                     <button
+                      onClick={handleCopy}
+                      className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
+                    >
+                      {copied ? `Copied` : `${classroom?.classroom.classroom_code}`}
+                    </button>
+                  {/* <span className="pl-2 font-bold italic">
+                    {classroom?.classroom.classroom_code}
+                  </span> */}
+                </p>
+             
+              </div>
             </div>
          
           </div>
@@ -142,15 +168,25 @@ const ClassDetailPage = () => {
             >
               Grades
             </button>
-            <button
-              onClick={() => setActiveTab("classroom_details")}
+             <button
+              onClick={() => setActiveTab("practice_with_ai")}
               className={`px-6 py-3 font-medium ${
-                activeTab === "classroom_details"
+                activeTab === "practice_with_ai"
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              Classroom Details
+              Practice With AI
+            </button>
+            <button
+              onClick={() => setActiveTab("classroom_overview")}
+              className={`px-6 py-3 font-medium ${
+                activeTab === "classroom_overview"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Classroom Overview
             </button>
           </div>
 
@@ -202,14 +238,15 @@ const ClassDetailPage = () => {
                           {material && (
                             <div className="mt-4 border-t pt-4">
                               <Link
-                                to={`/student/class/${classId}/lesson/${material._id}/practice`}
+                                to={`/student/class/${material._id}/practice_with_lesson`}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                               >
-                                <FiCode className="mr-2" /> Start Practice
-                                Exercises
+                                <FiCode className="mr-2" /> 
+                                Start Practice Exercises
                               </Link>
                             </div>
                           )}
+
                         </div>
                       )}  
                     </div>
@@ -219,94 +256,97 @@ const ClassDetailPage = () => {
             )}
 
             {activeTab === "assignments" && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Assignments</h2>
-                <div>
-                  {assignments.map((assignment) => (
-                    <div
-                      key={assignment._id}
-                      className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow w-full"
+                <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Assignments</h2>
+
+        {/* Filter Dropdown */}
+        <div className="mb-4">
+          {/* <label className="mr-2 font-medium">Filter:</label> */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1"
+          >
+            <option value="all">All</option>
+            <option value="not yet">Not Yet</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div>
+          {assignments.filter(filterAssignments).map((assignment) => (
+            <div
+              key={assignment._id}
+              className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow w-full"
+            >
+              <div
+                className="p-4 cursor-pointer hover:bg-gray-50"
+                onClick={() =>
+                  setExpandedAssignment(
+                    expandedAssignment === assignment._id ? null : assignment._id
+                  )
+                }
+              >
+                <div className="flex justify-center items-center w-full">
+                  <div className="flex-2 overflow-hidden">
+                    <span
+                      className={`pl-2 py-2 pr-4 rounded-full text-xs capitalize 
+                        ${assignment.type === 'quiz' ? 'bg-yellow-100 text-yellow-800' : ''}
+                        ${assignment.type === 'exam' ? 'bg-green-100 text-green-800' : ''}
+                      `}
                     >
-                      <div
-                        className="p-4 cursor-pointer hover:bg-gray-50"
-                        onClick={() =>
-                          setExpandedAssignment(
-                            expandedAssignment === assignment._id ? null : assignment._id
-                          )
-                        }
-                      >
-
-              
-
-                        <div className="flex justify-center items-center w-full">
-                            <div className="flex-2 overflow-hidden">
-                              <span
-                                className={`pl-2 py-2 pr-4 rounded-full text-xs capitalize 
-                                  ${assignment.type === 'quiz' ? 'bg-yellow-100 text-yellow-800' : ''}
-                                  ${assignment.type === 'exam' ? 'bg-green-100 text-green-800 ' : ''}
-                                `}
-                              >
-                                {assignment.type}
-                              </span>
-                              <h3 className="font-medium text-base">
-                                {assignment.title}
-                              </h3>
-                              <div className="mt-1">
-                                <p className="text-sm italic text-gray-700 whitespace-pre-wrap break-words">
-                                  {assignment.description} 
-                                </p>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-500 mt-2">
-                                <FiClock  />
-                                <span className="ml-3">
-                                  Submission Time: {assignment.submission_time} minutes
-                                </span>
-                              </div>
-                              <div>
-                                 <span>Posted: {assignment.created_at}</span>
-                              </div>
-                            </div>
-
-                            <div className="ml-4 mt-1 shrink-0">
-                              {expandedAssignment === assignment._id ? (
-                                <FiChevronUp className="text-gray-500" />
-                              ) : (
-                                <FiChevronDown className="text-gray-500" />
-                              )}
-                            </div>
-                          </div>
-                      </div>
-
-                        {expandedAssignment === assignment._id && (
-                        <div className="border-t border-gray-200 p-4 bg-gray-50">
-                          {(assignment.type === 'quiz' || assignment.type === 'exam') && (
-                          <div className="mt-4 border-t pt-4">
-                            <Link
-                              to={`/student/class/${classId}/${assignment._id}/answer`}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                            >
-                              {assignment.type === 'quiz' ? (
-                                <>
-                                  <FiCode className="mr-2" />
-                                  Take Quiz
-                                </>
-                              ) : (
-                                <>
-                                  <FiCode className="mr-2" />
-                                  Take Exam
-                                </>
-                              )}
-                            </Link>
-                            </div>
-                          )}
-
-                        </div>
-                      )}  
-
+                      {assignment.type}
+                    </span>
+                    <h3 className="font-medium text-base">{assignment.title}</h3>
+                    <div className="mt-1">
+                      <p className="text-sm italic text-gray-700 whitespace-pre-wrap break-words">
+                        {assignment.description}
+                      </p>
                     </div>
-                  ))}
+                    <div className="flex items-center text-sm text-gray-500 mt-2">
+                      <FiClock />
+                      <span className="ml-3">
+                        Submission Time: {assignment.submission_time} minutes
+                      </span>
+                    </div>
+                    <div>
+                      <span>Posted: {assignment.created_at}</span>
+                    </div>
+                  </div>
+
+                  <div className="ml-4 mt-1 shrink-0">
+                    {expandedAssignment === assignment._id ? (
+                      <FiChevronUp className="text-gray-500" />
+                    ) : (
+                      <FiChevronDown className="text-gray-500" />
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {expandedAssignment === assignment._id && (
+                <div className="border-t border-gray-200 p-4 bg-gray-50">
+                  {(assignment.type === 'quiz' || assignment.type === 'exam') && (
+                    <div className="mt-4 border-t pt-4">
+                      <Link
+                        to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                      >
+                        <FiCode className="mr-2" />
+                        {assignment.type === 'quiz' ? 'Take Quiz' : 'Take Exam'}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+              
+                
             )}
 
 
@@ -337,53 +377,84 @@ const ClassDetailPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {answers.map((answer) => (
-                        <tr key={answer._id}>
-                          {/* <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {answer.quiz?.type || answer.exam?.type}
-                          </td> */}
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            {(() => {
-                              const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
-                              const isQuiz = type === 'QUIZ';
-                              const isExam = type === 'EXAM';
+                        {answers.map((answer) =>
+                          answer.submitted_at && (
+                            <tr key={answer._id}>
+                              {console.log(answer)}
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                {(() => {
+                                  const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
+                                  const isQuiz = type === 'QUIZ';
+                                  const isExam = type === 'EXAM';
 
-                              const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
-                              const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
+                                  const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
+                                  const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
 
-                              return (
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
-                                  {type}
-                                </span>
-                              );
-                            })()}
-                          </td>
+                                  return (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
+                                      {type}
+                                    </span>
+                                  );
+                                })()}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {answer.quiz?.title || answer.exam?.title}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {(answer.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)}/
+                                {(answer.quiz?.question || answer.exam?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {answer.exam?.type === 'exam' ? (
+                                  <Link
+                                    to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                    VIEW
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    to={`/student/class/${classId}/${answer.quiz._id}/quiz/view_answer`}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                    VIEW
+                                  </Link>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        )}
 
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {answer.quiz?.title || answer.exam?.title}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {answer.points}/{(answer.quiz?.question || answer.exam?.question)?.reduce((acc, q) => acc + (q.points || 0), 0)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button className="px-4 py-1 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition duration-150 text-xs font-semibold shadow-sm">
-                              VIEW
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
-           {activeTab === "classroom_details" && (
+            {activeTab === "practice_with_ai" && (
+              <div className="space-y-6">
+                {/* <h2 className="text-2xl font-semibold">Practice With AI</h2> */}
+                <div className="w-full">
+                  <Link
+                      to={`/student/class/practice_with_ai`}
+                  >
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700  text-white font-medium w-full py-2 px-4 rounded"
+                      >
+                          Practice with AI
+                      </button>      
+                  </Link>
+                </div>
+              </div>
+            )}
+
+
+           {activeTab === "classroom_overview" && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold">Classroom Details</h2>
+              <h2 className="text-2xl font-semibold">Classroom Overview</h2>
 
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

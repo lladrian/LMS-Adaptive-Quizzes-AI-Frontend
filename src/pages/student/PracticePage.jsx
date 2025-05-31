@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CodeEditor from "../../components/CodeEditor";
 import {
   compilerRunCode,
   allLanguage,
-  askAI,
-  extractMaterialData
+  askAI
 } from "../../utils/authService";
 import renderFormattedTextGemini from "../../components/GeminiTextFormatter";
 
 
-const LessonPracticePage = () => {
-  const { classId, lessonId } = useParams();
+const PracticePage = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [practiceData, setPracticeData] = useState([]);
   const [code, setCode] = useState("print('Hello, World!')");
   const [output, setOutput] = useState("");
   const [solution, setSolution] = useState("");
-  const [material, setMaterial] = useState("");
   const [compiler, setCompiler] = useState({
       name: "Python",
       language: "python",
@@ -28,33 +25,17 @@ const LessonPracticePage = () => {
   
 
   useEffect(() => {
-    fetchMaterialData();
+    fetchQuiz();
   }, []);
 
-  // extractMaterialData materialId
-
-    const fetchMaterialData = async () => {
+     const fetchQuiz = async () => {
       try {
-        const result = await extractMaterialData(lessonId);
-        setMaterial(result.data.data);
-        fetchQuiz(result.data.data);
-      } catch (error) {
-        console.error("Error fetching question:", error);
-      }
-    };
-
-     const fetchQuiz = async (material) => {
-      try {
-        let ask = `Give me one simple programming quiz using ${compiler.name} programming.
-        strictly use this -> ${material} <- as reference for the quiz questions.  
+        let ask = `Give me one simple programming quiz using ${compiler.name} programming. 
         Do not give any solutions and instructions, just problems only. 
         make it unique quiz to practice. Put also sample result for easy to 
-        understand especially for beginner. strictly no more to say.. 
-        strictly no more input related problem or question. 
-        strictly one problem or question only`;
+        understand especially for beginner. strictly no more to say.. no more input related quiz`;
 
         const result = await askAI(ask);
-        console.log(ask)
 
         setPracticeData([
           {
@@ -142,7 +123,7 @@ const LessonPracticePage = () => {
       {currentQuestion && (
         <div className="space-y-4">
           <div className="p-4 border rounded bg-white shadow">
-                {renderFormattedTextGemini(currentQuestion.text)}
+               {renderFormattedTextGemini(currentQuestion.text)}
           </div>
 
           {solution && (
@@ -211,4 +192,4 @@ const LessonPracticePage = () => {
   );
 };
 
-export default LessonPracticePage;;
+export default PracticePage;
