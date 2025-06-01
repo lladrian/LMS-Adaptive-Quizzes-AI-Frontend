@@ -174,21 +174,31 @@ const AssignmentAnswerPage = () => {
     }
   };
 
+
+  const startingCode = async () => {
+    const updatedAnswers = [...answers];
+    updatedAnswers[currentIndex] = compiler.starting_code || "";
+
+    setAnswers(updatedAnswers); // ✅ You need to set the answers array
+    setCode(compiler.starting_code || ""); // ✅ Also update the code shown to the user
+  };
+
   const handleCompilerChange = (e) => {
     const selected = JSON.parse(e.target.value);
-    const updatedAnswers = [...answers];
+    //const updatedAnswers = [...answers];
    // const updatedPoints = [...points];    
    // const updatedCorrect = [...correct];
 
-    updatedAnswers[currentIndex] = selected.starting_code || "";
+    //updatedAnswers[currentIndex] = selected.starting_code || "";
    // updatedPoints[currentIndex]  = 0;
    // updatedCorrect[currentIndex] = 0;
 
     setCompiler(selected);
-    setCode(selected.starting_code || "");
-    setAnswers(updatedAnswers);
+   // setCode(selected.starting_code || "");
+   // setAnswers(updatedAnswers);
    // setPoints(updatedPoints);
     //setCorrect(updatedCorrect);
+  
   };
 
   const handleCodeChange = (newCode) => {
@@ -392,6 +402,13 @@ const AssignmentAnswerPage = () => {
             className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
           >
             Run Code
+          </button>
+
+          <button
+            onClick={startingCode}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
+          >
+            Starting Code
           </button>
 
           
