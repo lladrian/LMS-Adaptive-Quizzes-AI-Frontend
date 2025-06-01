@@ -167,7 +167,7 @@ const AssignmentAnswerPage = () => {
         code
       );
       setOutput(result.data.data.run.output);
-      askAIFunction(result.data.data.run.output);
+      askAIFunction(result.data.data.run.output, questions[currentIndex].points);
     } catch (error) {
       console.error(error);
       setOutput("Error running code.");
@@ -177,18 +177,18 @@ const AssignmentAnswerPage = () => {
   const handleCompilerChange = (e) => {
     const selected = JSON.parse(e.target.value);
     const updatedAnswers = [...answers];
-    const updatedPoints = [...points];    
-    const updatedCorrect = [...correct];
+   // const updatedPoints = [...points];    
+   // const updatedCorrect = [...correct];
 
     updatedAnswers[currentIndex] = selected.starting_code || "";
-    updatedPoints[currentIndex]  = 0;
-    updatedCorrect[currentIndex] = 0;
+   // updatedPoints[currentIndex]  = 0;
+   // updatedCorrect[currentIndex] = 0;
 
     setCompiler(selected);
     setCode(selected.starting_code || "");
     setAnswers(updatedAnswers);
-    setPoints(updatedPoints);
-    setCorrect(updatedCorrect);
+   // setPoints(updatedPoints);
+    //setCorrect(updatedCorrect);
   };
 
   const handleCodeChange = (newCode) => {
@@ -239,7 +239,7 @@ const AssignmentAnswerPage = () => {
     setStarted(true);
   };
 
-  const askAIFunction = async (output_result) => {
+  const askAIFunction = async (output_result, question_points) => {
         try {
           // let askForCorrection = `in this code ->${code}<- using ${compiler.name} programming language with this output ->${output}<- .
           // . please do correction with this question ->${questions[currentIndex].text}<-. 
@@ -256,21 +256,46 @@ const AssignmentAnswerPage = () => {
           // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
           // please do consider to give more points especially if code is beginner`;
 
+    
+
+          // let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
+          // how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
+          // ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
+          // Please respond with just a number, without any newlines. Stick to the output from the given code. 
+          // Note that the compiler API does not accept input data or pause for input. 
+          // Strictly respond with points only, and consider giving more points, especially for beginner code.`;
+
+        //   let askForPoints = `From a total of ->${question_points}<- points maximum, 
+        //   how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
+        //   ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
+        //   Please respond with just a number, without any newlines. Stick to the output from the given code. 
+        //   Note that the compiler API does not accept input data or pause for input. 
+        //   Strictly look for the valid question to give points and the given code and output of the code.
+        //   Strictly respond with points only, and consider giving more points, especially for beginner code.
+        //  `;
+
           let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
-           the output is ->${output_result}<-.
+          the output is ->${output_result}<-.
           Please provide a correction for the question ->${questions[currentIndex].text}<-.
           Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
           not accept input data or pause for input. 
           Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
           Please consider that the code is for beginners. 
           Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
-
-          let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
-          how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
-          ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
-          Please respond with just a number, without any newlines. Stick to the output from the given code. 
-          Note that the compiler API does not accept input data or pause for input. 
-          Strictly respond with points only, and consider giving more points, especially for beginner code.`;
+          
+          
+          let askForPoints = `You are grading a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Maximum possible points: ->${question_points}<-
+          Evaluate how well the code matches the question and produces the expected output.
+          Stricly if the code does not answer the question or the output is unrelated, respond with 0.
+          If the code is partially correct or attempts to solve the question reasonably, assign partial points.
+          Only respond with a number (0 to ${question_points}), with no newlines, explanations, or symbols.
+          Note: Input is not supported by the compiler. Do not penalize for that.
+          `;
 
   
           const result = await askAI(askForCorrection);
@@ -279,17 +304,12 @@ const AssignmentAnswerPage = () => {
           const updatedPoints = [...points];    
           const updatedCorrect = [...correct];
 
-          // console.log(askForCorrection)
+          //console.log(askForCorrection)
           //console.log(askForPoints)
           // console.log(result)
           // console.log(result.data.data)
           // console.log(result2)
           // console.log(result2.data.data)
-
-          // if (typeof result.data.data === 'string' || typeof result2.data.data === 'string') {
-          //     updatedCorrect[currentIndex] = 0; // Return 0 if the data is text
-          //     updatedPoints[currentIndex] = 0;   // Return 0 if the data is text
-          // } 
 
           updatedCorrect[currentIndex] = result.data.data; // Assign the value if it's not text
           updatedPoints[currentIndex] = result2.data.data; // Assign the value if it's not text

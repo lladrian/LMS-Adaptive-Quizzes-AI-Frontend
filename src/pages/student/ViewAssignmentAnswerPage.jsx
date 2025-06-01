@@ -10,10 +10,9 @@ import {
   quizAnswer,
   specificExamAnswer,
   specificQuizAnswer,
-  takeExam,
-  takeQuiz,
   specificExamSpecificAnswer,
-  specificQuizSpecificAnswer
+  specificQuizSpecificAnswer,
+  askAI,
 } from "../../utils/authService";
 
 
@@ -34,6 +33,8 @@ const AssignmentAnswerPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [answers, setAnswers] = useState([]);
+  const [correct, setCorrect] = useState([]);
+  //const [points, setPoints] = useState([]);
   //const [answers2, setAnswers2] = useState([]);
 
   const studentId = localStorage.getItem("userId");
@@ -42,7 +43,6 @@ const AssignmentAnswerPage = () => {
   useEffect(() => {
     fetchLanguages();
     fetchAssignment();
-   // takeAssignment();
   }, []);
 
   const fetchLanguages = async () => {
@@ -53,17 +53,71 @@ const AssignmentAnswerPage = () => {
       console.error("Failed to fetch languages:", error);
     }
   };
-  const takeAssignment = async () => {
-    try {
-      if(type == 'quiz') {
-        const result2 = await takeQuiz(assignmentId, studentId);
-      } else {
-        const result1 = await takeExam(assignmentId, studentId);
-      }
-    } catch (error) {
-      console.error("Failed to fetch assignments:", error);
-    }
-  };
+
+  
+    const askAIFunction = async (output_result) => {
+          try {
+            // let askForCorrection = `in this code ->${code}<- using ${compiler.name} programming language with this output ->${output}<- .
+            // . please do correction with this question ->${questions[currentIndex].text}<-. 
+            // strictly just answer 1 or 0. remove the newline. please take note and have consideration that the compiler API used
+            // doesnt accept any input data like to pause and wait for input. no more any other to say just 0 or 1 only. 
+            // note that it is okay to give 1 if its partially correct. please do consider if code is beginner.
+            // strictly give answer and stick to the output from the given code. do stricly give 0 if out of nowhere code and results`;
+  
+            // let askForPoints = `From this total points ->${questions[currentIndex].points} <- as maximum. 
+            // what can you give points from this code ->${code}<- using ${compiler.name} programming language with this question
+            // ->${questions[currentIndex].text}<- with this output ->${output}<- from the given code give result 
+            // just number only remove the newline. by giving points please stick to the output from the given code
+            // please take note and have consideration that the compiler API used
+            // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
+            // please do consider to give more points especially if code is beginner`;
+  
+            let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
+             the output is ->${output_result}<-.
+            Please provide a correction for the question ->${questions[currentIndex].text}<-.
+            Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
+            not accept input data or pause for input. 
+            Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
+            Please consider that the code is for beginners. 
+            Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
+  
+            let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
+            how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
+            ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
+            Please respond with just a number, without any newlines. Stick to the output from the given code. 
+            Note that the compiler API does not accept input data or pause for input. 
+            Strictly respond with points only, and consider giving more points, especially for beginner code.`;
+  
+    
+            const result = await askAI(askForCorrection);
+            const result2 = await askAI(askForPoints);
+  
+            const updatedPoints = [...points];    
+            const updatedCorrect = [...correct];
+  
+            // console.log(askForCorrection)
+            //console.log(askForPoints)
+            // console.log(result)
+            // console.log(result.data.data)
+            // console.log(result2)
+            // console.log(result2.data.data)
+  
+            // if (typeof result.data.data === 'string' || typeof result2.data.data === 'string') {
+            //     updatedCorrect[currentIndex] = 0; // Return 0 if the data is text
+            //     updatedPoints[currentIndex] = 0;   // Return 0 if the data is text
+            // } 
+  
+            updatedCorrect[currentIndex] = result.data.data; // Assign the value if it's not text
+            updatedPoints[currentIndex] = result2.data.data; // Assign the value if it's not text
+          
+            // Update state with the new arrays
+            setPoints(updatedPoints);
+            setCorrect(updatedCorrect);
+          } catch (error) {
+            console.error("Error fetching question:", error);
+          }
+        };
+
 
   const getAnswers = async (combinedQuestions, answer_id) => {
     try {
@@ -171,19 +225,29 @@ const AssignmentAnswerPage = () => {
         code
       );
       setOutput(result.data.data.run.output);
+      askAIFunction(result.data.data.run.output);
     } catch (error) {
       console.error(error);
       setOutput("Error running code.");
     }
   };
 
+  
   const handleCompilerChange = (e) => {
     const selected = JSON.parse(e.target.value);
+    const updatedAnswers = [...answers];
+    const updatedPoints = [...points];    
+    const updatedCorrect = [...correct];
+
+    updatedAnswers[currentIndex] = selected.starting_code || "";
+    updatedPoints[currentIndex]  = 0;
+    updatedCorrect[currentIndex] = 0;
+
     setCompiler(selected);
     setCode(selected.starting_code || "");
-    const updatedAnswers = [...answers];
-    updatedAnswers[currentIndex] = selected.starting_code || "";
     setAnswers(updatedAnswers);
+    setPoints(updatedPoints);
+    setCorrect(updatedCorrect);
   };
 
   const handleCodeChange = (newCode) => {
