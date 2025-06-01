@@ -76,12 +76,19 @@ const ClassDetailPage = () => {
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
           );
 
-          // console.log( 
-          //   [
-          //     ...(result2.data.data || []),
-          //     ...(result3.data.data || [])
-          //   ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          // )          
+          console.log( 
+           [
+              ...(result2.data.data || []),
+              ...(result3.data.data || [])
+            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          ) 
+
+          console.log( 
+             [
+              ...(result.data.data.exams || []),
+              ...(result.data.data.quizzes || [])
+            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
+          )          
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -91,9 +98,23 @@ const ClassDetailPage = () => {
       }
     };
 
-  const filterAssignments = (assignment) => {
-    if (selectedStatus === 'all') return true;
-    return assignment.status === selectedStatus;
+  const filterAssignments = () => {
+    return assignments.filter((assignment) => {
+      const isAnswered = answers.some(
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans.submitted_at
+      );
+
+      const isOngoing= answers.some(
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans.opened_at
+      );
+
+      if (selectedStatus === 'all') return true;
+      if (selectedStatus === 'not yet') return !isAnswered && !isOngoing;
+      if (selectedStatus === 'ongoing') return isOngoing && !isAnswered;
+      if (selectedStatus === 'completed') return isAnswered;
+
+      return true;
+    });
   };
 
   const handleCopy = () => {
@@ -311,7 +332,9 @@ const ClassDetailPage = () => {
         </div>
 
         <div>
-          {assignments.filter(filterAssignments).map((assignment) => (
+          
+          {/* {assignments.map((assignment) => ( */}
+          {filterAssignments().map((assignment) => (
             <div
               key={assignment._id}
               className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow w-full"
