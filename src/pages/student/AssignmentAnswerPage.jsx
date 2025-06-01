@@ -274,14 +274,19 @@ const AssignmentAnswerPage = () => {
         //   Strictly respond with points only, and consider giving more points, especially for beginner code.
         //  `;
 
-          let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
-          the output is ->${output_result}<-.
-          Please provide a correction for the question ->${questions[currentIndex].text}<-.
-          Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
-          not accept input data or pause for input. 
-          Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
-          Please consider that the code is for beginners. 
-          Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
+          let askForCorrection = `You are evaluating a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Determine if the code correctly answers the question based on its output.
+          Respond with:
+            - 1 if the code is fully or partially correct.
+            - 0 if the code and output do not relate to the question.
+          Only respond with a single number (0 or 1). No newlines, explanations, or symbols.
+          Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.
+          Note: The compiler does not support input(), so do not penalize for input handling.
+          `;
           
           
           let askForPoints = `You are grading a beginner's code submission.

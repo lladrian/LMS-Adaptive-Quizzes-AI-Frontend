@@ -55,7 +55,7 @@ const AssignmentAnswerPage = () => {
   };
 
   
-    const askAIFunction = async (output_result) => {
+    const askAIFunction = async (output_result, question_points) => {
           try {
             // let askForCorrection = `in this code ->${code}<- using ${compiler.name} programming language with this output ->${output}<- .
             // . please do correction with this question ->${questions[currentIndex].text}<-. 
@@ -72,21 +72,51 @@ const AssignmentAnswerPage = () => {
             // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
             // please do consider to give more points especially if code is beginner`;
   
-            let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
-             the output is ->${output_result}<-.
-            Please provide a correction for the question ->${questions[currentIndex].text}<-.
-            Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
-            not accept input data or pause for input. 
-            Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
-            Please consider that the code is for beginners. 
-            Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
+            // let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
+            //  the output is ->${output_result}<-.
+            // Please provide a correction for the question ->${questions[currentIndex].text}<-.
+            // Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
+            // not accept input data or pause for input. 
+            // Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
+            // Please consider that the code is for beginners. 
+            // Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
   
-            let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
-            how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
-            ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
-            Please respond with just a number, without any newlines. Stick to the output from the given code. 
-            Note that the compiler API does not accept input data or pause for input. 
-            Strictly respond with points only, and consider giving more points, especially for beginner code.`;
+            // let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
+            // how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
+            // ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
+            // Please respond with just a number, without any newlines. Stick to the output from the given code. 
+            // Note that the compiler API does not accept input data or pause for input. 
+            // Strictly respond with points only, and consider giving more points, especially for beginner code.`;
+
+
+          let askForCorrection = `You are evaluating a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Determine if the code correctly answers the question based on its output.
+          Respond with:
+            - 1 if the code is fully or partially correct and relate to the question.
+            - 0 if the code and output do not relate to the question.
+          Only respond with a single number (0 or 1). No newlines, explanations, or symbols.
+          Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.
+          Note: The compiler does not support input(), so do not penalize for input handling.
+          `;
+          
+          
+          let askForPoints = `You are grading a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Maximum possible points: ->${question_points}<-
+          Evaluate how well the code matches the question and produces the expected output.
+          Stricly if the code does not answer the question or the output is unrelated, respond with 0.
+          If the code is partially correct or attempts to solve the question reasonably, assign partial points.
+          Only respond with a number (0 to ${question_points}), with no newlines, explanations, or symbols.
+          Note: Input is not supported by the compiler. Do not penalize for that.
+          `;
+
   
     
             const result = await askAI(askForCorrection);
@@ -139,30 +169,27 @@ const AssignmentAnswerPage = () => {
     }
   };
 
-  const functionGetAnswers = async (answers, combinedQuestions) => {
+   const functionGetAnswers = async (answers, combinedQuestions) => {
       const initialAnswers = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
         return matched ? matched.line_of_code : "";
       });
 
+      
       const initialAnswersPoints = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
         return matched ? matched.points : "";
       });
 
-      setAnswers(initialAnswers);
-      setCode(initialAnswers[currentIndex] || []); // initial code display
-      setPoints(initialAnswersPoints || [])
-      console.log(123)
-      console.log(initialAnswers)
-           console.log(initialAnswersPoints)
+      const initialAnswersCorrect = combinedQuestions.map((question) => {
+        const matched = answers.find((ans) => ans.questionId == question._id);
+        return matched ? matched.is_correct : "";
+      });
 
-      // console.log(combinedQuestions)
-      //   console.log(333)
-      // console.log(answers)
-      //    console.log(321)
-      // console.log(initialAnswers)
-      //  console.log(222)
+      setCode(initialAnswers[currentIndex] || ""); // initial code display
+      setAnswers(initialAnswers);
+      setPoints(initialAnswersPoints)
+      setCorrect(initialAnswersCorrect)
   };
 
 
@@ -225,7 +252,7 @@ const AssignmentAnswerPage = () => {
         code
       );
       setOutput(result.data.data.run.output);
-      askAIFunction(result.data.data.run.output);
+      askAIFunction(result.data.data.run.output, questions[currentIndex].points);
     } catch (error) {
       console.error(error);
       setOutput("Error running code.");
@@ -236,18 +263,18 @@ const AssignmentAnswerPage = () => {
   const handleCompilerChange = (e) => {
     const selected = JSON.parse(e.target.value);
     const updatedAnswers = [...answers];
-    const updatedPoints = [...points];    
-    const updatedCorrect = [...correct];
+    //const updatedPoints = [...points];    
+    //const updatedCorrect = [...correct];
 
     updatedAnswers[currentIndex] = selected.starting_code || "";
-    updatedPoints[currentIndex]  = 0;
-    updatedCorrect[currentIndex] = 0;
+    //updatedPoints[currentIndex]  = 0;
+    //updatedCorrect[currentIndex] = 0;
 
     setCompiler(selected);
-    setCode(selected.starting_code || "");
+   // setCode(selected.starting_code || "");
     setAnswers(updatedAnswers);
-    setPoints(updatedPoints);
-    setCorrect(updatedCorrect);
+   // setPoints(updatedPoints);
+   // setCorrect(updatedCorrect);
   };
 
   const handleCodeChange = (newCode) => {
@@ -302,6 +329,9 @@ const AssignmentAnswerPage = () => {
             <p className="mb-2">{currentQuestion.text}</p>
             <p className="text-sm text-gray-600">
               Points: {points[currentIndex]} / {currentQuestion.points}
+            </p>
+            <p className="text-sm">
+              Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
             </p>
           </div>
 
