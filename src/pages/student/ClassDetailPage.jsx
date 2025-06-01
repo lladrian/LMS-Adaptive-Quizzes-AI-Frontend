@@ -76,19 +76,7 @@ const ClassDetailPage = () => {
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
           );
 
-          console.log( 
-           [
-              ...(result2.data.data || []),
-              ...(result3.data.data || [])
-            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          ) 
-
-          console.log( 
-             [
-              ...(result.data.data.exams || []),
-              ...(result.data.data.quizzes || [])
-            ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
-          )          
+        
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
