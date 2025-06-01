@@ -98,7 +98,7 @@ const AssignmentAnswerPage = () => {
       
       const initialAnswersPoints = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
-        return matched ? matched.points : "";
+        return matched ? matched.points : 0;
       });
 
       const initialAnswersCorrect = combinedQuestions.map((question) => {
@@ -153,6 +153,11 @@ const AssignmentAnswerPage = () => {
             toast.error(result2.error);
         } else {
           const result1 = await examAnswer(assignmentId, studentId, answers);
+          if(result1.success){
+              toast.success(result1?.data?.message);
+              setAnswers(questions.map(() => "")); 
+          }
+          toast.error(result1.error);
         }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
@@ -230,8 +235,8 @@ const AssignmentAnswerPage = () => {
     const submitted = questions.map((q, i) => ({
       questionId: q._id,
       line_of_code: answers[i] || "",
-      points: points[i] || "",
-      is_correct: correct[i] || "",
+      points: points[i] || 0,
+      is_correct: correct[i] || 0,
     }));
 
     submitAnswers(submitted); 
