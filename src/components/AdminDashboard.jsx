@@ -164,7 +164,6 @@ const AdminDashboard = () => {
       change: "+5%",
       trend: "up",
     },
-
     {
       title: "Active Classrooms",
       value: unhiddenClassrooms.length.toString(),

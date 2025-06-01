@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiBook, FiClock, FiAward } from "react-icons/fi";
+import { FiBook, FiClock, FiAward, FiBookOpen, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import {allClassroomSpecificStudent} from "../../utils/authService";
 
 const DashboardHome = () => {
-
+  const [hiddenClassrooms, setHiddenClassrooms] = useState([]);
+  const [unhiddenClassrooms, setUnHiddenClassrooms] = useState([]);
+  const [joinedClassroom, setJoinedClassroom] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const studentId = localStorage.getItem("userId");
 
   const upcomingAssignments = [
     { id: 1, title: "Algorithm Quiz", class: "CS401", due: "2023-06-10" },
@@ -16,9 +20,7 @@ const DashboardHome = () => {
     { id: 2, title: "Midterm Exam", class: "CS301", score: "92/100" },
   ];
 
-    const [joinedClassroom, setJoinedClassroom] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const studentId = localStorage.getItem("userId");
+
 
     useEffect(() => {
       fetchAllClassroomSpecificStudent();
@@ -29,9 +31,14 @@ const DashboardHome = () => {
       try {
         const result = await allClassroomSpecificStudent(studentId);
         if (result.success) {
-          setJoinedClassroom(result.data.data);
-          console.log(result.data.data)
+          const all = result.data.data || [];
 
+          const hidden = all.filter(item => item.is_hidden === 1);
+          const unhidden = all.filter(item => item.is_hidden === 0);
+
+          setHiddenClassrooms(hidden);
+          setUnHiddenClassrooms(unhidden);
+          setJoinedClassroom(all);
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -52,18 +59,50 @@ const DashboardHome = () => {
             >
               <div className="flex justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Enrolled Classes</p>
+                  <p className="text-sm text-gray-500">Total Enrolled Classes</p>
                   <p className="text-2xl font-semibold mt-1">{joinedClassroom?.length}</p>
                 </div>
                 <div
                   className={`p-3 rounded-lg bg-indigo-100 text-indigo-600`}
                 >
-                  <FiBook className="text-xl" />
+                  <FiBookOpen className="text-xl" />
+                </div>
+              </div>
+            </div>
+  
+              <div
+              className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200`}
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Active Enrolled Classes</p>
+                  <p className="text-2xl font-semibold mt-1">{unhiddenClassrooms?.length}</p>
+                </div>
+                <div
+                  className={`p-3 rounded-lg bg-indigo-100 text-indigo-600`}
+                >
+                  <FiCheckCircle className="text-xl" />
                 </div>
               </div>
             </div>
 
-             <div
+              <div
+              className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200`}
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Inactive Enrolled Classes</p>
+                  <p className="text-2xl font-semibold mt-1">{hiddenClassrooms?.length}</p>
+                </div>
+                <div
+                  className={`p-3 rounded-lg bg-indigo-100 text-indigo-600`}
+                >
+                  <FiXCircle className="text-xl" />
+                </div>
+              </div>
+            </div>
+
+             {/* <div
               className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200`}
             >
               <div className="flex justify-between">
@@ -77,12 +116,12 @@ const DashboardHome = () => {
                   <FiClock className="text-xl" />
                 </div>
               </div>
-            </div>
+            </div> */}
 
 
         </div>
+{/* 
 
-        {/* Upcoming Assignments */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold">Upcoming Assignments</h3>
@@ -113,9 +152,9 @@ const DashboardHome = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
-        {/* Recent Grades */}
+{/*   
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold">Recent Grades</h3>
@@ -145,7 +184,8 @@ const DashboardHome = () => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
+
       </div>
     </>
   );

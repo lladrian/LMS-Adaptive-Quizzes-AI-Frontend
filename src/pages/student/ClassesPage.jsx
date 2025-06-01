@@ -18,10 +18,14 @@ const ClassesPage = () => {
   const fetchAllClassroomSpecificStudent = async () => {
     setIsLoading(true);
     try {
-      const result = await allClassroomSpecificStudent(studentId);
-      if (result.success) {
-        setJoinedClassroom(result.data.data);
-      }
+        const result = await allClassroomSpecificStudent(studentId);
+        if (result.success) {
+          const all = result.data.data || [];
+         // const hidden = all.filter(item => item.is_hidden === 1);
+          const unhidden = all.filter(item => item.is_hidden === 0);
+
+          setJoinedClassroom(unhidden);
+        }
     } catch (error) {
       console.error("Error fetching classes:", error);
       toast.error("Failed to fetch classes");
@@ -40,7 +44,7 @@ const ClassesPage = () => {
         setShowModal(false);
         fetchAllClassroomSpecificStudent();
       } else {
-        toast.error("Failed to join class");
+        toast.error(result.error);
       }
     } catch (error) {
       console.error("Error joining class:", error);
@@ -50,15 +54,16 @@ const ClassesPage = () => {
 
   return (
     <>
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">My Classes</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Join New Class
-        </button>
-      </header>
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-800">My Classes</h1>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Join New Class
+            </button>
+          </div>
+
 
       {/* Modal */}
       {showModal && (
