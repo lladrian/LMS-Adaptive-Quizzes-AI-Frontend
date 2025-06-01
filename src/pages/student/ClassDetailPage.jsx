@@ -89,11 +89,11 @@ const ClassDetailPage = () => {
   const filterAssignments = () => {
     return assignments.filter((assignment) => {
       const isAnswered = answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans.submitted_at
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.submitted_at
       );
 
       const isOngoing= answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans.opened_at
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.opened_at
       );
 
       if (selectedStatus === 'all') return true;
