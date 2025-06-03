@@ -36,8 +36,12 @@ const AssignmentAnswerPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [answers, setAnswers] = useState([]);
+  const [answersData, setAnswersData] = useState([]);
   const [correct, setCorrect] = useState([]);
   const [points, setPoints] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [duration, setDuration] = useState(0); // optional: store original duration
+
 
   const studentId = localStorage.getItem("userId");
 
@@ -46,6 +50,38 @@ const AssignmentAnswerPage = () => {
     fetchLanguages();
     fetchAssignment();
   }, []);
+
+
+  useEffect(() => {
+ // const countdownFrom = 120; // 2 minutes in seconds.
+  //const openedAt = new Date(); // Initialize openedAt when useEffect runs
+ // const openedAt = answersData.opened_at; // 2025-06-03 12:00:34
+    const countdownFrom = (answersData?.quiz?.submission_time || answersData?.exam?.submission_time) * 60;
+    const openedAt = new Date(answersData?.opened_at?.replace(' ', 'T')); // e.g. "2025-06-03T12:00:34"
+
+    const updateCountdown = () => {
+    const now = new Date();
+    const elapsed = Math.floor((now - openedAt) / 1000);
+    const remaining = countdownFrom - elapsed;
+
+    setTimeLeft(remaining > 0 ? remaining : 0);
+  };
+
+  updateCountdown(); // initial call
+
+  const timer = setInterval(updateCountdown, 1000);
+  return () => clearInterval(timer);
+}, [answersData]);
+
+  
+
+
+    const formatTime = (seconds) => {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
 
   const fetchLanguages = async () => {
     try {
@@ -74,6 +110,7 @@ const AssignmentAnswerPage = () => {
             const answers = [
               ...(result2.data?.data?.answers || []),
             ];
+     
             functionGetAnswers(answers, combinedQuestions);
             setStarted(result2.success);
        } else {
@@ -124,6 +161,7 @@ const AssignmentAnswerPage = () => {
         const combinedQuestions = [
           ...(result2.data?.data?.question || []),
         ];
+        setAnswersData(result4.data.data)
         setQuestions(combinedQuestions);
         getAnswers(combinedQuestions, result4.data?.data?._id);
       } else {
@@ -134,6 +172,7 @@ const AssignmentAnswerPage = () => {
         const combinedQuestions = [
           ...(result1.data?.data?.question || []),
         ];
+        setAnswersData(result3.data.data)
         setQuestions(combinedQuestions);
         getAnswers(combinedQuestions, result3.data?.data?._id);
       }
@@ -359,6 +398,9 @@ const AssignmentAnswerPage = () => {
                 >
                   Start {type === "quiz" ? "Quiz" : "Exam"}
                 </button>
+                <div>
+                  <p>Time Left: {formatTime(timeLeft)}</p>
+                </div>
               </div>
             ) : 
               <div className="p-4 border rounded bg-white shadow">
@@ -372,7 +414,11 @@ const AssignmentAnswerPage = () => {
                    <p className="text-sm">
                     Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
                   </p>
+                  <div>
+                    <p>Time Left: {formatTime(timeLeft)}</p>
+                  </div>
                 </div>
+             
             }
 
           <CodeEditor
