@@ -27,6 +27,10 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
     activityData.question?.reduce((total, q) => total + (q.points || 0), 0) ||
     0;
 
+    console.log(submission)
+  //const totalScore = (activityData.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
+  const totalScore = (submission.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -37,11 +41,11 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
             </h3>
             <div className="flex items-center mt-1">
               <span className="text-sm font-medium text-gray-700">
-                Score: {submission.total_score || 0}/{totalPoints}
+                Score: {totalScore || 0}/{totalPoints}
               </span>
               <span className="mx-2 text-gray-400">|</span>
               <span className="text-sm text-gray-500">
-                {Math.round((submission.total_score / totalPoints) * 100)}%
+                {Math.round((totalScore / totalPoints) * 100)}%
               </span>
             </div>
           </div>
@@ -77,11 +81,10 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                 return (
                   <div
                     key={index}
-                    className={`border rounded-lg p-4 ${
-                      isCorrect
-                        ? "border-green-200 bg-green-50"
-                        : "border-red-200 bg-red-50"
-                    }`}
+                    className={`border rounded-lg p-4 ${isCorrect
+                      ? "border-green-200 bg-green-50"
+                      : "border-red-200 bg-red-50"
+                      }`}
                   >
                     <div className="flex justify-between mb-2">
                       <p className="font-medium">Question {index + 1}</p>
@@ -111,11 +114,10 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                     <div className="mt-3">
                       <div className="flex items-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isCorrect
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isCorrect
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                            }`}
                         >
                           {isCorrect ? "Correct" : "Incorrect"}
                         </span>
@@ -211,6 +213,7 @@ const AssignmentDetailPage = () => {
             total_score: answer.total_score || 0,
           }))
         );
+         console.log(answersResult.data.data[0].answers[0].points);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -291,21 +294,19 @@ const AssignmentDetailPage = () => {
         <div className="flex">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-6 py-3 font-medium ${
-              activeTab === "overview"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
+            className={`px-6 py-3 font-medium ${activeTab === "overview"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab("submissions")}
-            className={`px-6 py-3 font-medium ${
-              activeTab === "submissions"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
+            className={`px-6 py-3 font-medium ${activeTab === "submissions"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             Submissions ({submissions.length})
           </button>
@@ -323,9 +324,8 @@ const AssignmentDetailPage = () => {
                     <p className="text-sm text-gray-500">Duration</p>
                     <p className="font-medium">
                       {activityData.submission_time >= 60
-                        ? `${Math.floor(activityData.submission_time / 60)}h ${
-                            activityData.submission_time % 60
-                          }m`
+                        ? `${Math.floor(activityData.submission_time / 60)}h ${activityData.submission_time % 60
+                        }m`
                         : `${activityData.submission_time}m`}
                     </p>
                   </div>
@@ -418,12 +418,14 @@ const AssignmentDetailPage = () => {
                         (total, q) => total + (q.points || 0),
                         0
                       ) || 0;
-                    const percentage =
-                      totalPoints > 0
-                        ? Math.round(
-                            (submission.total_score / totalPoints) * 100
+
+                      const totalScore = (submission.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
+                      const percentage =
+                        totalPoints > 0
+                          ? Math.round(
+                            (totalScore / totalPoints) * 100
                           )
-                        : 0;
+                          : 0;
 
                     return (
                       <tr key={submission.id} className="hover:bg-gray-50">
@@ -437,11 +439,10 @@ const AssignmentDetailPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              submission.status === "submitted"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${submission.status === "submitted"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {submission.status}
                           </span>
@@ -451,7 +452,7 @@ const AssignmentDetailPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium">
-                            {submission.total_score}/{totalPoints}
+                            {totalScore}/{totalPoints}
                           </div>
                           <div className="text-sm text-gray-500">
                             {percentage}%
