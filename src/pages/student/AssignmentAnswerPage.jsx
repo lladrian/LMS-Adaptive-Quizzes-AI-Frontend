@@ -40,7 +40,6 @@ const AssignmentAnswerPage = () => {
   const [correct, setCorrect] = useState([]);
   const [points, setPoints] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
-  const [duration, setDuration] = useState(0); // optional: store original duration
 
 
   const studentId = localStorage.getItem("userId");
@@ -398,9 +397,6 @@ const AssignmentAnswerPage = () => {
                 >
                   Start {type === "quiz" ? "Quiz" : "Exam"}
                 </button>
-                <div>
-                  <p>Time Left: {formatTime(timeLeft)}</p>
-                </div>
               </div>
             ) : 
               <div className="p-4 border rounded bg-white shadow">
@@ -417,8 +413,7 @@ const AssignmentAnswerPage = () => {
                   <div>
                     <p>Time Left: {formatTime(timeLeft)}</p>
                   </div>
-                </div>
-             
+              </div>
             }
 
           <CodeEditor
