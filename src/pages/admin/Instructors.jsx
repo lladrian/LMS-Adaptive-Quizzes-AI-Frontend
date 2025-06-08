@@ -342,7 +342,7 @@ const Instructors = () => {
                       })
                     }
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                 </div>
                 <div className="mb-6">

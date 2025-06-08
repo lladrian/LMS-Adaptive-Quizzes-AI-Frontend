@@ -61,6 +61,7 @@ const AdminDashboard = () => {
       if (adminResult.success) {
         const admins = adminResult.data.data;
         setAdmins(admins);
+        console.log(admins)
         setAdminStats(calculateGrowth(admins, "created_at"));
       }
 

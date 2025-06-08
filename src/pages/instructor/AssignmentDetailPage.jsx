@@ -15,6 +15,7 @@ import {
 import {
   specificClassroom,
   allAnswerSpecificQuiz,
+  allAnswerSpecificExam,
   updateActivity,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
@@ -148,7 +149,7 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
 
-  const [submissions, setSubmissions] = useState([]);
+  const [submissionsQuiz, setSubmissionsQuiz] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [activityData, setActivityData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,11 +161,11 @@ const AssignmentDetailPage = () => {
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [classroomResult, answersResult] = await Promise.all([
-        specificClassroom(classId),
-        allAnswerSpecificQuiz(assignmentId),
-      ]);
+      const classroomResult = await specificClassroom(classId);
+      const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
+      const answersExamResult = await allAnswerSpecificExam(assignmentId);
 
+      
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
         if (!classroom) return;
@@ -180,14 +181,15 @@ const AssignmentDetailPage = () => {
         }));
 
         const combinedActivities = [...quizzes, ...exams];
+
         const activity = combinedActivities.find(
           (activity) => activity._id === assignmentId
         );
         setActivityData(activity || null);
       }
 
-      if (answersResult.success) {
-        const responseData = answersResult.data;
+      if (answersQuizResult.success || answersExamResult.success) {
+        const responseData = answersQuizResult.data || answersExamResult.data;
         let studentAnswers = [];
 
         // Handle different possible response structures
@@ -198,8 +200,8 @@ const AssignmentDetailPage = () => {
         } else if (Array.isArray(responseData.answers)) {
           studentAnswers = responseData.answers;
         }
-
-        setSubmissions(
+        
+        setSubmissionsQuiz(
           studentAnswers.map((answer) => ({
             id: answer._id,
             student: answer.student?.fullname || "Unknown Student",
@@ -213,7 +215,6 @@ const AssignmentDetailPage = () => {
             total_score: answer.total_score || 0,
           }))
         );
-         console.log(answersResult.data.data[0].answers[0].points);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -308,7 +309,7 @@ const AssignmentDetailPage = () => {
               : "text-gray-600 hover:bg-gray-50"
               }`}
           >
-            Submissions ({submissions.length})
+            Submissions ({submissionsQuiz.length})
           </button>
         </div>
       </div>
@@ -363,7 +364,7 @@ const AssignmentDetailPage = () => {
               <p className="text-gray-700">{activityData.description}</p>
             </div>
 
-            {activityData.type === "quiz" && activityData.question && (
+            {activityData.question && (
               <div>
                 <h3 className="text-lg font-semibold mb-2">Questions</h3>
                 <div className="space-y-4">
@@ -411,8 +412,8 @@ const AssignmentDetailPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.length > 0 ? (
-                  submissions.map((submission) => {
+                {submissionsQuiz.length > 0 ? (
+                  submissionsQuiz.map((submission) => {
                     const totalPoints =
                       activityData.question?.reduce(
                         (total, q) => total + (q.points || 0),

@@ -62,8 +62,8 @@ const AdminsManagement = () => {
 
   const filteredAdmins = admins.filter(
     (admin) =>
-      admin.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      admin.email.toLowerCase().includes(searchTerm.toLowerCase())
+      admin?.fullname?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      admin?.email?.toLowerCase()?.includes(searchTerm.toLowerCase())
   );
 
   const handleAddAdmin = async (e) => {
@@ -214,7 +214,7 @@ const AdminsManagement = () => {
                   </tr>
                 ) : (
                   filteredAdmins.map((admin) => (
-                    <tr key={admin.id} className="hover:bg-gray-50">
+                    <tr key={admin._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-3">
@@ -324,7 +324,7 @@ const AdminsManagement = () => {
                       setNewAdmin({ ...newAdmin, password: e.target.value })
                     }
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                 </div>
                 <div className="mb-6">
