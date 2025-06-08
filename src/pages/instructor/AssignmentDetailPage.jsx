@@ -69,7 +69,7 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
             <p className="text-sm text-gray-500">Email: {submission.email}</p>
           </div>
 
-          {activityData.type === "quiz" && activityData.question && (
+          {activityData.question && (
             <div className="space-y-6">
               <h4 className="font-medium text-gray-900">Answers</h4>
               {activityData.question.map((question, index) => {
