@@ -149,7 +149,7 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
 const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
 
-  const [submissionsQuiz, setSubmissionsQuiz] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [activityData, setActivityData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -201,7 +201,7 @@ const AssignmentDetailPage = () => {
           studentAnswers = responseData.answers;
         }
         
-        setSubmissionsQuiz(
+        setSubmissions(
           studentAnswers.map((answer) => ({
             id: answer._id,
             student: answer.student?.fullname || "Unknown Student",
@@ -309,7 +309,7 @@ const AssignmentDetailPage = () => {
               : "text-gray-600 hover:bg-gray-50"
               }`}
           >
-            Submissions ({submissionsQuiz.length})
+            Submissions ({submissions.length})
           </button>
         </div>
       </div>
@@ -412,8 +412,8 @@ const AssignmentDetailPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissionsQuiz.length > 0 ? (
-                  submissionsQuiz.map((submission) => {
+                {submissions.length > 0 ? (
+                  submissions.map((submission) => {
                     const totalPoints =
                       activityData.question?.reduce(
                         (total, q) => total + (q.points || 0),
