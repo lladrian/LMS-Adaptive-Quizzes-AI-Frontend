@@ -4,6 +4,9 @@ import {
   loginUser,
   registerInstructor,
   registerStudent,
+  sendOTP,
+  verifyEmailOTP,
+  recoveryOTP,
 } from "../utils/authService";
 import { useNavigate } from "react-router-dom";
 
@@ -11,16 +14,27 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    student_id_number: 0,
     name: "",
     role: "student",
   });
+  const [otp, setOtp] = useState("");
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [verificationData, setVerificationData] = useState(null);
+  const [loadingOtp, setLoadingOtp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loadingForgotPassword, setLoadingForgotPassword] = useState(false);
   const navigate = useNavigate();
+
   // Reset form when tab changes
   useEffect(() => {
     setFormData({
       email: "",
       password: "",
       name: "",
+      student_id_number: 0,
       role: "student",
     });
   }, [activeTab]);
@@ -38,26 +52,28 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
       return;
     }
 
-    setLoadingLogin(true); // Start loading
+    setLoadingLogin(true);
 
     try {
       const result = await loginUser({ email, password });
 
       if (result.success) {
-        toast.success(`Welcome, ${result.data.data.fullname}!`);
-        onClose(); // Close modal after login
-
-        localStorage.setItem("userId", result.data.data._id);
-        localStorage.setItem("role", result.data.data.role);
-        localStorage.setItem("fullname", result.data.data.fullname);
-        
-        
-        if (result.data.data.role === "student") {
-          navigate("/student/dashboard");
-        } else if (result.data.data.role === "instructor") {
-          navigate("/instructor/dashboard");
+        // Check user status
+        if (result.data.data.status === "unverified") {
+          // Show OTP verification modal
+          setVerificationData({
+            user_id: result.data.data._id,
+            user_type: result.data.data.role,
+            email: result.data.data.email,
+            isPasswordReset: false,
+          });
+          setShowOtpModal(true);
+          // Send OTP automatically
+          await sendOTP(result.data.data.email);
+          toast.info("OTP sent to your email for verification");
         } else {
-          navigate("/admin/dashboard");
+          // User is verified, proceed with login
+          completeLogin(result.data.data);
         }
       } else {
         toast.error(result.error);
@@ -65,7 +81,133 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     } catch (error) {
       toast.error("An error occurred during login");
     } finally {
-      setLoadingLogin(false); // End loading
+      setLoadingLogin(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setLoadingOtp(true);
+
+    try {
+      const result = await verifyEmailOTP(otp, verificationData.email);
+
+      if (result.success) {
+        toast.success("Email verified successfully!");
+        // Get user data again or use the existing data to complete login
+        const loginResult = await loginUser({
+          email: verificationData.email,
+          password: formData.password,
+        });
+
+        if (loginResult.success) {
+          completeLogin(loginResult.data.data);
+          setShowOtpModal(false);
+        } else {
+          toast.error("Failed to complete login after verification");
+        }
+      } else {
+        toast.error(result.error || "Invalid OTP");
+      }
+    } catch (error) {
+      toast.error("An error occurred during verification");
+    } finally {
+      setLoadingOtp(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setVerificationData({
+      email: formData.email,
+      isPasswordReset: true,
+    });
+
+    setLoadingForgotPassword(true);
+
+    try {
+      await sendOTP(formData.email);
+
+      setShowOtpModal(true);
+      setShowForgotPassword(false);
+      toast.info("OTP sent to your email for password reset");
+    } catch (error) {
+      toast.error("An error occurred while processing your request");
+    } finally {
+      setLoadingForgotPassword(false);
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+
+    if (!newPassword || !confirmPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setLoadingOtp(true);
+
+    try {
+      const result = await recoveryOTP(
+        otp,
+        verificationData.email,
+        newPassword
+      );
+
+      if (result.success) {
+        toast.success("Password reset successfully!");
+        setShowOtpModal(false);
+        setActiveTab("login");
+        setOtp("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(result.error || "Failed to reset password");
+      }
+    } catch (error) {
+      toast.error("An error occurred during password reset");
+    } finally {
+      setLoadingOtp(false);
+    }
+  };
+
+  const completeLogin = (userData) => {
+    toast.success(`Welcome, ${userData.fullname}!`);
+    onClose();
+
+    localStorage.setItem("userId", userData._id);
+    localStorage.setItem("role", userData.role);
+    localStorage.setItem("fullname", userData.fullname);
+    localStorage.setItem("status", userData.status);
+
+    if (userData.role === "student") {
+      navigate("/student/dashboard");
+    } else if (userData.role === "instructor") {
+      navigate("/instructor/dashboard");
+    } else {
+      navigate("/admin/dashboard");
     }
   };
 
@@ -76,14 +218,20 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
       return;
     }
 
-    setLoadingRegister(true); // Start loading
+    if (formData.role === "student" && !formData.student_id_number) {
+      toast.error("Please enter your student ID number");
+      return;
+    }
+
+    setLoadingRegister(true);
 
     try {
       if (formData.role === "student") {
         const result = await registerStudent(
           formData.name,
           formData.email,
-          formData.password
+          formData.password,
+          formData.student_id_number
         );
         if (result.success) {
           toast.success(`Account created for ${formData.name}!`);
@@ -107,7 +255,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     } catch (error) {
       toast.error("An error occurred during registration");
     } finally {
-      setLoadingRegister(false); // Stop loading in both success/failure
+      setLoadingRegister(false);
     }
   };
 
@@ -210,6 +358,32 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                     required
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="remember-me"
+                      className="ml-2 block text-sm text-gray-900"
+                    >
+                      Remember me
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setActiveTab("login");
+                    }}
+                    className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-500"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div>
                   <button
                     type="submit"
@@ -293,6 +467,28 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                     required
                   />
                 </div>
+
+                {/* Student ID field - only shown when role is student */}
+                {formData.role === "student" && (
+                  <div>
+                    <label
+                      htmlFor="student-id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Student ID Number
+                    </label>
+                    <input
+                      type="number"
+                      id="student-id"
+                      name="student_id_number"
+                      value={formData.student_id_number}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Enter your student ID"
+                      required={formData.role === "student"}
+                    />
+                  </div>
+                )}
                 <div>
                   <label
                     htmlFor="register-password"
@@ -312,6 +508,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                     minLength={8}
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     I am a
@@ -393,6 +590,237 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
           )}
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                Reset Password
+              </h3>
+              <button
+                onClick={() => setShowForgotPassword(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleForgotPassword}>
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Enter your email address and we'll send you a verification
+                    code to reset your password.
+                  </p>
+                  <div>
+                    <label
+                      htmlFor="forgot-email"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Email address
+                    </label>
+                    <input
+                      type="email"
+                      id="forgot-email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={loadingForgotPassword}
+                      className={`cursor-pointer w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                        loadingForgotPassword
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-indigo-600 hover:bg-indigo-700"
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    >
+                      {loadingForgotPassword
+                        ? "Sending..."
+                        : "Send Verification Code"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                {verificationData?.isPasswordReset
+                  ? "Reset Password"
+                  : "Verify Your Email"}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setOtp("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <form
+                onSubmit={
+                  verificationData?.isPasswordReset
+                    ? handlePasswordReset
+                    : handleVerifyOtp
+                }
+              >
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    {verificationData?.isPasswordReset ? (
+                      "Enter the verification code we sent to your email and your new password."
+                    ) : (
+                      <>
+                        We've sent a 6-digit verification code to{" "}
+                        <span className="font-semibold">
+                          {verificationData?.email || formData.email}
+                        </span>
+                        . Please enter it below.
+                      </>
+                    )}
+                  </p>
+
+                  <div>
+                    <label
+                      htmlFor="otp-code"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      id="otp-code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="123456"
+                      maxLength={6}
+                      required
+                    />
+                  </div>
+
+                  {verificationData?.isPasswordReset && (
+                    <>
+                      <div>
+                        <label
+                          htmlFor="new-password"
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          id="new-password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="••••••••"
+                          required
+                          minLength={8}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="confirm-password"
+                          className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          id="confirm-password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="••••••••"
+                          required
+                          minLength={8}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await sendOTP(verificationData.email);
+                          toast.info("New OTP sent to your email");
+                        } catch (error) {
+                          toast.error("Failed to resend OTP");
+                        }
+                      }}
+                      className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-500"
+                    >
+                      Resend OTP
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loadingOtp}
+                      className={`cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                        loadingOtp
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-indigo-600 hover:bg-indigo-700"
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    >
+                      {loadingOtp
+                        ? verificationData?.isPasswordReset
+                          ? "Resetting..."
+                          : "Verifying..."
+                        : verificationData?.isPasswordReset
+                        ? "Reset Password"
+                        : "Verify"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

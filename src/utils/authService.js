@@ -33,12 +33,18 @@ export const loginUser = async ({ email, password }) => {
 
 /* STUDENT */
 
-export const registerStudent = async (fullname, email, password) => {
+export const registerStudent = async (
+  fullname,
+  email,
+  password,
+  student_id_number
+) => {
   try {
     const response = await axios.post(`${BASE_URL}/students/add_student`, {
       fullname,
       email,
       password,
+      student_id_number,
     });
 
     return { success: true, data: response.data };
@@ -263,16 +269,14 @@ export const deleteAdmin = async (id) => {
   }
 };
 
-
-export const examAnswer = async (
-  exam_id,
-  student_id,
-  array_answers
-) => {
+export const examAnswer = async (exam_id, student_id, array_answers) => {
   try {
-    const response = await axios.post(`${BASE_URL}/answer_exams/add_answer/${exam_id}/${student_id}`, {
-      array_answers
-    });
+    const response = await axios.post(
+      `${BASE_URL}/answer_exams/add_answer/${exam_id}/${student_id}`,
+      {
+        array_answers,
+      }
+    );
 
     return { success: true, data: response.data };
   } catch (error) {
@@ -283,16 +287,14 @@ export const examAnswer = async (
   }
 };
 
-
-export const quizAnswer = async (
-  quiz_id,
-  student_id,
-  array_answers
-) => {
+export const quizAnswer = async (quiz_id, student_id, array_answers) => {
   try {
-    const response = await axios.post(`${BASE_URL}/answer_quizzes/add_answer/${quiz_id}/${student_id}`, {
-      array_answers
-    });
+    const response = await axios.post(
+      `${BASE_URL}/answer_quizzes/add_answer/${quiz_id}/${student_id}`,
+      {
+        array_answers,
+      }
+    );
 
     return { success: true, data: response.data };
   } catch (error) {
@@ -303,12 +305,10 @@ export const quizAnswer = async (
   }
 };
 
-export const askAI = async (
-  ask
-) => {
+export const askAI = async (ask) => {
   try {
     const response = await axios.post(`${BASE_URL}/ai/ask`, {
-      ask
+      ask,
     });
 
     return { success: true, data: response.data };
@@ -320,16 +320,12 @@ export const askAI = async (
   }
 };
 
-export const compilerRunCode = async (
-  language,
-  version,
-  code
-) => {
+export const compilerRunCode = async (language, version, code) => {
   try {
     const response = await axios.post(`${BASE_URL}/compilers/run_code`, {
       language,
       version,
-      code
+      code,
     });
 
     return { success: true, data: response.data };
@@ -426,7 +422,6 @@ export const specificExam = async (exam_id) => {
   }
 };
 
-
 export const specificQuiz = async (quiz_id) => {
   try {
     const response = await axios.get(`
@@ -478,7 +473,6 @@ export const specificQuizSpecificAnswer = async (quiz_id, student_id) => {
   }
 };
 
-
 export const allLanguage = async () => {
   try {
     const response = await axios.get(`
@@ -496,8 +490,10 @@ export const allLanguage = async () => {
   }
 };
 
-
-export const allAnswerQuizSpecificStudentSpecificClassroom = async (classroom_id, student_id) => {
+export const allAnswerQuizSpecificStudentSpecificClassroom = async (
+  classroom_id,
+  student_id
+) => {
   try {
     const response = await axios.get(`
       ${BASE_URL}/answer_quizzes/get_all_answer_specific_user_specific_classroom/${classroom_id}/${student_id}`);
@@ -514,7 +510,10 @@ export const allAnswerQuizSpecificStudentSpecificClassroom = async (classroom_id
   }
 };
 
-export const allAnswerExamSpecificStudentSpecificClassroom = async (classroom_id, student_id) => {
+export const allAnswerExamSpecificStudentSpecificClassroom = async (
+  classroom_id,
+  student_id
+) => {
   try {
     const response = await axios.get(`
       ${BASE_URL}/answer_exams/get_all_answer_specific_user_specific_classroom/${classroom_id}/${student_id}`);
@@ -537,7 +536,8 @@ export const addClassroom = async (
   subject_code,
   instructor,
   classroom_code,
-  description
+  description,
+  programming_language
 ) => {
   try {
     const response = await axios.post(`${BASE_URL}/classrooms/add_classroom`, {
@@ -546,6 +546,7 @@ export const addClassroom = async (
       instructor,
       classroom_code,
       description,
+      programming_language,
     });
 
     return { success: true, data: response.data };
@@ -556,8 +557,6 @@ export const addClassroom = async (
     };
   }
 };
-
-
 
 export const joinClassroom = async (classroom_code, student_id) => {
   try {
@@ -715,12 +714,14 @@ export const classroomOverviewSpecificInstructor = async (instructorId) => {
     };
   }
 };
- 
+
 export const updateClassroom = async (
   roomId,
   classroom_name,
   subject_code,
-  description
+  description,
+  programming_language,
+  grading_system
 ) => {
   try {
     const response = await axios.put(
@@ -730,6 +731,8 @@ export const updateClassroom = async (
         classroom_name,
         subject_code,
         description,
+        programming_language,
+        grading_system,
       }
     );
 
@@ -1056,6 +1059,69 @@ export const allAnswerSpecificExam = async (examId) => {
     return {
       success: false,
       error: error.response?.data?.error || "Failed to get the exam answers",
+    };
+  }
+};
+
+/* OTP */
+
+export const sendOTP = async (email) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/otp/add_otp`, {
+      email,
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to join classroom",
+    };
+  }
+};
+export const verifyEmailOTP = async (otp_code, email) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/otp/otp_verification_email_verification`,
+      {
+        otp_code,
+        email,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to join classroom",
+    };
+  }
+};
+export const recoveryOTP = async (otp_code, email, password) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/otp/otp_verification_password`,
+      {
+        otp_code,
+        email,
+        password,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to join classroom",
     };
   }
 };

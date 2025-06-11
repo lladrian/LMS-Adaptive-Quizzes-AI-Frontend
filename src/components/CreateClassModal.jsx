@@ -10,8 +10,30 @@ const CreateClassModal = ({ onClose, onClassCreated }) => {
     classroom_name: "",
     subject_code: "",
     description: "",
+    programming_language: "python", // Default to Python
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // List of popular programming languages
+  const programmingLanguages = [
+    { value: "python", label: "Python" },
+    { value: "javascript", label: "JavaScript" },
+    { value: "java", label: "Java" },
+    { value: "c", label: "C" },
+    { value: "cpp", label: "C++" },
+    { value: "csharp", label: "C#" },
+    { value: "php", label: "PHP" },
+    { value: "ruby", label: "Ruby" },
+    { value: "swift", label: "Swift" },
+    { value: "kotlin", label: "Kotlin" },
+    { value: "go", label: "Go" },
+    { value: "rust", label: "Rust" },
+    { value: "typescript", label: "TypeScript" },
+    { value: "r", label: "R" },
+    { value: "scala", label: "Scala" },
+    { value: "other", label: "Other" },
+  ];
 
   const generateClassCode = () => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -48,7 +70,8 @@ const CreateClassModal = ({ onClose, onClassCreated }) => {
         classData.subject_code,
         classData.instructor,
         classData.classroom_code,
-        classData.description
+        classData.description,
+        classData.programming_language
       );
 
       if (response.success) {
@@ -114,6 +137,25 @@ const CreateClassModal = ({ onClose, onClassCreated }) => {
                 required
                 disabled={isSubmitting}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Programming Language
+              </label>
+              <select
+                name="programming_language"
+                value={formData.programming_language}
+                onChange={handleChange}
+                className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+                disabled={isSubmitting}
+              >
+                {programmingLanguages.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
