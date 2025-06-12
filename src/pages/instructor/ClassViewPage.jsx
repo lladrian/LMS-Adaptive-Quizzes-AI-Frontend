@@ -64,6 +64,7 @@ const ClassDetailPage = () => {
       const result = await specificClassroom(classId);
       if (result.success) {
         setClassroomData(result.data.data);
+        /* console.log(result.data.data) */
       }
       /*  console.log(ClassroomData); */
     } catch (error) {
@@ -152,11 +153,9 @@ const ClassDetailPage = () => {
       return;
     }
 
-    console.log("Received new activity:", newActivity);
-
     // Create a complete activity object with all required fields
     const completeActivity = {
-      _id: newActivity._id || `temp-${Date.now()}`, // temporary ID if not provided
+      _id: newActivity._id, // temporary ID if not provided
       title: newActivity.title || "Untitled Activity",
       description: newActivity.description || "",
       submission_time: newActivity.submission_time || 60,
@@ -706,7 +705,8 @@ const ClassDetailPage = () => {
           isOpen={isAssignmentModalOpen}
           onClose={() => setIsAssignmentModalOpen(false)}
           classId={classId}
-          onSuccess={handleActivityCreated} // Add this prop
+          onSuccess={handleUploadSuccess} // Add this prop
+          progLanguage={ClassroomData?.classroom.programming_language}
         />
       )}
     </>

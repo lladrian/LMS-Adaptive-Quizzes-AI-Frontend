@@ -91,7 +91,7 @@ const StudentLayout = () => {
 
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="px-6 py-4 flex justify-between items-center">
+          <div className="px-6 py-3 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-800">
               {(() => {
                 const segments = location.pathname.split("/").filter(Boolean);

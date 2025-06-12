@@ -11,26 +11,29 @@ import {
   FiEdit2,
   FiHelpCircle,
   FiX,
+  FiMail,
 } from "react-icons/fi";
 import {
   specificClassroom,
   allAnswerSpecificQuiz,
   allAnswerSpecificExam,
   updateActivity,
+  allStudentMissingAnswerSpecificQuiz,
+  allStudentMissingAnswerSpecificExam,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
 const SubmissionDetail = ({ submission, activityData, onClose }) => {
   if (!submission || !activityData) return null;
 
-  // Calculate total possible points
   const totalPoints =
     activityData.question?.reduce((total, q) => total + (q.points || 0), 0) ||
     0;
 
-    console.log(submission)
-  //const totalScore = (activityData.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
-  const totalScore = (submission.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
+  const totalScore = (submission.answers || []).reduce(
+    (acc, q) => acc + (q.points || 0),
+    0
+  );
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -77,15 +80,17 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                   (a) => a.questionId === question._id
                 );
                 const isCorrect = answer?.is_correct;
-                const pointsEarned = isCorrect ? question.points : 0;
+                const pointsEarned = answer?.points || 0;
+                const isMultipleChoice = question.answer_type === "options";
 
                 return (
                   <div
                     key={index}
-                    className={`border rounded-lg p-4 ${isCorrect
-                      ? "border-green-200 bg-green-50"
-                      : "border-red-200 bg-red-50"
-                      }`}
+                    className={`border rounded-lg p-4 ${
+                      isCorrect
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
                   >
                     <div className="flex justify-between mb-2">
                       <p className="font-medium">Question {index + 1}</p>
@@ -97,42 +102,88 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                     </div>
                     <p className="text-gray-700 mb-3">{question.text}</p>
 
-                    <div className="bg-white p-3 rounded-md border border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-1">
-                        Student's Code:
-                      </p>
-                      {answer?.line_of_code ? (
-                        <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
-                          <code>{answer.line_of_code}</code>
-                        </pre>
-                      ) : (
-                        <p className="text-gray-500 italic">
-                          No code submitted
-                        </p>
-                      )}
-                    </div>
+                    {isMultipleChoice ? (
+                      <div className="space-y-2">
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Student's Answer:
+                          </p>
+                          <p className="font-mono bg-gray-100 p-2 rounded">
+                            {answer?.selected_option || "No answer provided"}
+                          </p>
+                        </div>
 
-                    <div className="mt-3">
-                      <div className="flex items-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isCorrect
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {isCorrect ? "Correct" : "Incorrect"}
-                        </span>
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Correct Answer:
+                          </p>
+                          <p className="font-mono bg-gray-100 p-2 rounded">
+                            {question.correct_option}
+                          </p>
+                        </div>
+
+                        <div className="mt-2">
+                          <div className="flex items-center">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isCorrect
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {isCorrect ? "Correct" : "Incorrect"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Student's Code:
+                          </p>
+                          {answer?.line_of_code ? (
+                            <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
+                              <code>{answer.line_of_code}</code>
+                            </pre>
+                          ) : (
+                            <p className="text-gray-500 italic">
+                              No code submitted
+                            </p>
+                          )}
+                        </div>
 
-                    {!isCorrect && question.solution_code && (
-                      <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <p className="text-sm font-medium text-gray-700 mb-1">
-                          Correct Solution:
-                        </p>
-                        <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
-                          <code>{question.solution_code}</code>
-                        </pre>
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Expected Output:
+                          </p>
+                          <p className="font-mono bg-gray-100 p-2 rounded">
+                            {question.expected_output}
+                          </p>
+                        </div>
+
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Student's Output:
+                          </p>
+                          <p className="font-mono bg-gray-100 p-2 rounded">
+                            {answer?.output || "No output"}
+                          </p>
+                        </div>
+
+                        <div className="mt-2">
+                          <div className="flex items-center">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isCorrect
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {isCorrect ? "Correct" : "Incorrect"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -150,13 +201,14 @@ const AssignmentDetailPage = () => {
   const { classId, assignmentId } = useParams();
 
   const [submissions, setSubmissions] = useState([]);
+  const [missingStudents, setMissingStudents] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [activityData, setActivityData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState(null);
+  const [viewFilter, setViewFilter] = useState("all"); // 'all', 'submitted', 'missing'
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -164,8 +216,13 @@ const AssignmentDetailPage = () => {
       const classroomResult = await specificClassroom(classId);
       const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
       const answersExamResult = await allAnswerSpecificExam(assignmentId);
+      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(
+        assignmentId
+      );
+      const missingExamResult = await allStudentMissingAnswerSpecificExam(
+        assignmentId
+      );
 
-      
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
         if (!classroom) return;
@@ -192,7 +249,6 @@ const AssignmentDetailPage = () => {
         const responseData = answersQuizResult.data || answersExamResult.data;
         let studentAnswers = [];
 
-        // Handle different possible response structures
         if (Array.isArray(responseData)) {
           studentAnswers = responseData;
         } else if (Array.isArray(responseData.data)) {
@@ -200,7 +256,7 @@ const AssignmentDetailPage = () => {
         } else if (Array.isArray(responseData.answers)) {
           studentAnswers = responseData.answers;
         }
-        
+
         setSubmissions(
           studentAnswers.map((answer) => ({
             id: answer._id,
@@ -215,6 +271,13 @@ const AssignmentDetailPage = () => {
             total_score: answer.total_score || 0,
           }))
         );
+      }
+
+      // Set missing students
+      if (missingQuizResult.success) {
+        setMissingStudents(missingQuizResult.data.data || []);
+      } else if (missingExamResult.success) {
+        setMissingStudents(missingExamResult.data.data || []);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -253,7 +316,7 @@ const AssignmentDetailPage = () => {
         toast.success("Activity updated successfully");
         setActivityData(activityToEdit);
         setShowEditModal(false);
-        fetchClasses(); // Refresh the data
+        fetchClasses();
       } else {
         toast.error(result.error || "Failed to update activity");
       }
@@ -262,6 +325,16 @@ const AssignmentDetailPage = () => {
       toast.error("An error occurred while updating");
     }
   };
+
+  const filteredSubmissions = submissions.filter((sub) => {
+    if (viewFilter === "all") return true;
+    if (viewFilter === "submitted") return sub.status === "submitted";
+    if (viewFilter === "missing") return sub.status === "missing";
+    return true;
+  });
+
+  const filteredMissingStudents =
+    viewFilter === "all" || viewFilter === "missing" ? missingStudents : [];
 
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!activityData) return <div className="p-6">Assignment not found</div>;
@@ -295,21 +368,23 @@ const AssignmentDetailPage = () => {
         <div className="flex">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-6 py-3 font-medium ${activeTab === "overview"
-              ? "text-indigo-600 border-b-2 border-indigo-600"
-              : "text-gray-600 hover:bg-gray-50"
-              }`}
+            className={`px-6 py-3 font-medium ${
+              activeTab === "overview"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab("submissions")}
-            className={`px-6 py-3 font-medium ${activeTab === "submissions"
-              ? "text-indigo-600 border-b-2 border-indigo-600"
-              : "text-gray-600 hover:bg-gray-50"
-              }`}
+            className={`px-6 py-3 font-medium ${
+              activeTab === "submissions"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
           >
-            Submissions ({submissions.length})
+            Submissions ({submissions.length + missingStudents.length})
           </button>
         </div>
       </div>
@@ -325,8 +400,9 @@ const AssignmentDetailPage = () => {
                     <p className="text-sm text-gray-500">Duration</p>
                     <p className="font-medium">
                       {activityData.submission_time >= 60
-                        ? `${Math.floor(activityData.submission_time / 60)}h ${activityData.submission_time % 60
-                        }m`
+                        ? `${Math.floor(activityData.submission_time / 60)}h ${
+                            activityData.submission_time % 60
+                          }m`
                         : `${activityData.submission_time}m`}
                     </p>
                   </div>
@@ -392,96 +468,195 @@ const AssignmentDetailPage = () => {
             )}
           </div>
         )}
-        {activeTab === "submissions" && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.length > 0 ? (
-                  submissions.map((submission) => {
-                    const totalPoints =
-                      activityData.question?.reduce(
-                        (total, q) => total + (q.points || 0),
-                        0
-                      ) || 0;
 
-                      const totalScore = (submission.answers || []).reduce((acc, q) => acc + (q.points || 0), 0);
+        {activeTab === "submissions" && (
+          <div>
+            <div className="mb-4 flex justify-between items-center">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewFilter("all")}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    viewFilter === "all"
+                      ? "bg-indigo-100 text-indigo-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  All ({submissions.length + missingStudents.length})
+                </button>
+                <button
+                  onClick={() => setViewFilter("submitted")}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    viewFilter === "submitted"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  Submitted (
+                  {submissions.filter((s) => s.status === "submitted").length})
+                </button>
+                <button
+                  onClick={() => setViewFilter("missing")}
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    viewFilter === "missing"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  Missing (
+                  {missingStudents.length +
+                    submissions.filter((s) => s.status === "missing").length}
+                  )
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {/* Submitted answers */}
+                  {filteredSubmissions.length > 0 &&
+                    filteredSubmissions.map((submission) => {
+                      const totalPoints =
+                        activityData.question?.reduce(
+                          (total, q) => total + (q.points || 0),
+                          0
+                        ) || 0;
+
+                      const totalScore = (submission.answers || []).reduce(
+                        (acc, q) => acc + (q.points || 0),
+                        0
+                      );
                       const percentage =
                         totalPoints > 0
-                          ? Math.round(
-                            (totalScore / totalPoints) * 100
-                          )
+                          ? Math.round((totalScore / totalPoints) * 100)
                           : 0;
 
-                    return (
-                      <tr key={submission.id} className="hover:bg-gray-50">
+                      return (
+                        <tr key={submission.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900">
+                              {submission.student}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {submission.email}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                submission.status === "submitted"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {submission.status}
+                            </span>
+                            <div className="text-sm text-gray-500">
+                              {submission.submitted}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium">
+                              {totalScore}/{totalPoints}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {percentage}%
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {submission.status === "submitted" ? (
+                              <button
+                                onClick={() =>
+                                  setSelectedSubmission(submission)
+                                }
+                                className="cursor-pointer text-indigo-600 hover:text-indigo-900"
+                              >
+                                View Details
+                              </button>
+                            ) : null}
+                            {/*    <a
+                              href={`mailto:${submission.email}`}
+                              className="text-gray-600 hover:text-gray-900 flex items-center justify-end"
+                            >
+                              <FiMail className="mr-1" /> Remind
+                            </a> */}
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                  {/* Missing students */}
+                  {filteredMissingStudents.length > 0 &&
+                    filteredMissingStudents.map((student) => (
+                      <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">
-                            {submission.student}
+                            {student.fullname}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {submission.email}
+                            {student.email}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${submission.status === "submitted"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-red-100 text-red-800"
-                              }`}
-                          >
-                            {submission.status}
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Missing
                           </span>
                           <div className="text-sm text-gray-500">
-                            {submission.submitted}
+                            Not submitted
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium">
-                            {totalScore}/{totalPoints}
+                            -/
+                            {activityData.question?.reduce(
+                              (total, q) => total + (q.points || 0),
+                              0
+                            ) || 0}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {percentage}%
-                          </div>
+                          <div className="text-sm text-gray-500">-</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => setSelectedSubmission(submission)}
-                            className="cursor-pointer  text-indigo-600 hover:text-indigo-900"
+                       {/*  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <a
+                            href={`mailto:${student.email}`}
+                            className="text-gray-600 hover:text-gray-900 flex items-center justify-end"
                           >
-                            View Details
-                          </button>
+                            <FiMail className="mr-1" /> Remind
+                          </a>
+                        </td> */}
+                      </tr>
+                    ))}
+
+                  {filteredSubmissions.length === 0 &&
+                    filteredMissingStudents.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
+                          No {viewFilter === "all" ? "" : viewFilter}{" "}
+                          submissions found
                         </td>
                       </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="px-6 py-4 text-center text-sm text-gray-500"
-                    >
-                      No submissions yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -503,7 +678,7 @@ const AssignmentDetailPage = () => {
               </h3>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="cursor-pointer  text-gray-500 hover:text-gray-700"
+                className="cursor-pointer text-gray-500 hover:text-gray-700"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -618,13 +793,13 @@ const AssignmentDetailPage = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="cursor-pointer  px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEditActivity}
-                  className="cursor-pointer  px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
                   Save Changes
                 </button>

@@ -1026,8 +1026,21 @@ export const addActivity = async (
         classroom_id: classId,
         question: questions.map((q) => ({
           text: q.text,
-          expected_output: q.expectedOutput,
+          options:
+            q.type === "multiple_choice"
+              ? {
+                  option_1: q.options[0]?.text || "",
+                  option_2: q.options[1]?.text || "",
+                  option_3: q.options[2]?.text || "",
+                  option_4: q.options[3]?.text || "",
+                }
+              : undefined,
+          correct_option:
+            q.type === "multiple_choice"
+              ? q.options.find((opt) => opt.letter === q.answer)?.text || ""
+              : undefined,
           points: Number(q.points),
+          answer_type: q.type === "multiple_choice" ? "options" : "programming",
         })),
         time_limit: Number(timeLimit),
         title,
@@ -1039,7 +1052,21 @@ export const addActivity = async (
         question: questions.map((q) => ({
           text: q.text,
           expected_output: q.expectedOutput,
+          options:
+            q.type === "multiple_choice"
+              ? {
+                  option_1: q.options[0]?.text || "",
+                  option_2: q.options[1]?.text || "",
+                  option_3: q.options[2]?.text || "",
+                  option_4: q.options[3]?.text || "",
+                }
+              : undefined,
+          correct_option:
+            q.type === "multiple_choice"
+              ? q.options.find((opt) => opt.letter === q.answer)?.text || ""
+              : undefined,
           points: Number(q.points),
+          answer_type: q.type === "multiple_choice" ? "options" : "programming",
         })),
         time_limit: Number(timeLimit),
         title,
@@ -1108,6 +1135,46 @@ export const deleteActivity = async (activityId, activityType) => {
 };
 
 /* ANSWER ACTIVITY */
+
+export const allStudentMissingAnswerSpecificQuiz = async (quizId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_quizzes/get_all_student_missing_answer_specific_quiz/${quizId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        "Failed to get the students missing quiz answers",
+    };
+  }
+};
+
+export const allStudentMissingAnswerSpecificExam = async (examId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_exams/get_all_student_missing_answer_specific_exam/${examId}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        "Failed to get the students missing exam answers",
+    };
+  }
+};
 
 export const allAnswerSpecificQuiz = async (quizId) => {
   try {

@@ -12,7 +12,13 @@ import {
 import { addActivity } from "../utils/authService";
 import AIPromptModal from "./AIPromptModal";
 
-const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
+const CreateAssignmentModal = ({
+  isOpen,
+  onClose,
+  classId,
+  onSuccess,
+  progLanguage,
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -33,6 +39,9 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
     text: "",
     points: 1,
     expectedOutput: "",
+    options: [],
+    answer: "",
+    type: "multiple_choice", // default to multiple choice
   });
 
   const steps = [
@@ -44,6 +53,16 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
   const handleAssignmentChange = (e) => {
     const { name, value } = e.target;
     setAssignmentData((prev) => ({ ...prev, [name]: value }));
+
+    // Reset question type when activity type changes
+    if (name === "type") {
+      setNewQuestion((prev) => ({
+        ...prev,
+        type: value === "programming" ? "programming" : "multiple_choice",
+        options: value === "programming" ? [] : prev.options,
+        answer: value === "programming" ? "" : prev.answer,
+      }));
+    }
   };
 
   const handleQuestionChange = (e) => {
@@ -51,9 +70,76 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
     setNewQuestion((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleOptionChange = (index, value) => {
+    const updatedOptions = [...newQuestion.options];
+    updatedOptions[index].text = value;
+    setNewQuestion((prev) => ({
+      ...prev,
+      options: updatedOptions,
+    }));
+  };
+
+  const handleAnswerChange = (letter) => {
+    setNewQuestion((prev) => ({
+      ...prev,
+      answer: letter,
+    }));
+  };
+
+  const addOption = () => {
+    if (newQuestion.options.length >= 4) return;
+    const letter = String.fromCharCode(65 + newQuestion.options.length);
+    setNewQuestion((prev) => ({
+      ...prev,
+      options: [...prev.options, { letter, text: "" }],
+    }));
+  };
+
+  const removeOption = (index) => {
+    const updatedOptions = [...newQuestion.options];
+    updatedOptions.splice(index, 1);
+
+    // Reassign letters and adjust answer if needed
+    const reletteredOptions = updatedOptions.map((opt, idx) => ({
+      letter: String.fromCharCode(65 + idx),
+      text: opt.text,
+    }));
+
+    let updatedAnswer = newQuestion.answer;
+
+    // If we deleted the correct answer, clear it
+    if (newQuestion.answer === String.fromCharCode(65 + index)) {
+      updatedAnswer = "";
+    }
+    // If we deleted an option before the correct answer, adjust the answer letter
+    else if (newQuestion.answer > String.fromCharCode(65 + index)) {
+      updatedAnswer = String.fromCharCode(newQuestion.answer.charCodeAt(0) - 1);
+    }
+
+    setNewQuestion((prev) => ({
+      ...prev,
+      options: reletteredOptions,
+      answer: updatedAnswer,
+    }));
+  };
+
   const addQuestion = () => {
     if (!newQuestion.text) {
       setError("Question text is required");
+      return;
+    }
+
+    if (newQuestion.type === "multiple_choice") {
+      if (newQuestion.options.length < 2) {
+        setError("Please add at least 2 options");
+        return;
+      }
+      if (!newQuestion.answer) {
+        setError("Please select the correct answer");
+        return;
+      }
+    } else if (!newQuestion.expectedOutput) {
+      setError("Expected output is required for programming questions");
       return;
     }
 
@@ -63,7 +149,18 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
       id: Date.now(),
       text: newQuestion.text,
       points: parseInt(newQuestion.points),
-      expectedOutput: newQuestion.expectedOutput,
+      type: newQuestion.type,
+      ...(newQuestion.type === "programming"
+        ? {
+            expectedOutput: newQuestion.expectedOutput,
+            options: [], // Ensure no options are saved for programming questions
+            answer: "", // Ensure no answer is saved for programming questions
+          }
+        : {
+            options: newQuestion.options,
+            answer: newQuestion.answer,
+            expectedOutput: "", // Ensure no expected output for multiple choice
+          }),
     };
 
     setAssignmentData((prev) => ({
@@ -76,7 +173,14 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
       text: "",
       points: 1,
       expectedOutput: "",
+      options: [],
+      answer: "",
+      type:
+        assignmentData.type === "programming"
+          ? "programming"
+          : "multiple_choice",
     });
+
     setEditingQuestionId(null);
     setShowAIPromptModal(false);
   };
@@ -138,15 +242,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
       setCurrentStep(1);
 
       if (onSuccess && result.data) {
-        onSuccess({
-          ...result.data,
-          title: assignmentData.title,
-          description: assignmentData.description,
-          type: assignmentData.type,
-          submission_time: assignmentData.timeLimit,
-          points: assignmentData.totalPoints,
-          created_at: new Date().toISOString(),
-        });
+        onSuccess();
       }
     } catch (err) {
       console.error("Creation error:", err);
@@ -166,12 +262,19 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
         setError("Please select grading breakdown for exams");
         return;
       }
-    } else if (currentStep === 2 && assignmentData.questions.length === 0) {
-      setError("Please add at least one question");
-      return;
+    } else if (currentStep === 2) {
+      if (assignmentData.questions.length === 0) {
+        setError("Please add at least one question");
+        return;
+      }
     }
+
     setError(null);
-    setCurrentStep(currentStep + 1);
+
+    // Only proceed if there are more steps
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
   };
 
   const prevStep = () => {
@@ -179,9 +282,282 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleOutputSelect = (output) => {
-    setNewQuestion((prev) => ({ ...prev, expectedOutput: output }));
+  const handleQuestionSelect = (question) => {
+    setNewQuestion({
+      text: question.text || "",
+      points: 1, // Reset points to default
+      expectedOutput: question.expectedOutput || "",
+      options: question.options
+        ? question.options.map((opt, idx) => ({
+            letter: String.fromCharCode(65 + idx), // Ensure proper lettering
+            text: opt.text || "",
+          }))
+        : [],
+      answer: question.answer || "",
+      type:
+        question.type ||
+        (assignmentData.type === "programming"
+          ? "programming"
+          : "multiple_choice"),
+    });
     setShowAIPromptModal(false);
+  };
+
+  const renderQuestionForm = () => {
+    if (newQuestion.type === "multiple_choice") {
+      return (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Question Text *
+            </label>
+            <textarea
+              name="text"
+              value={newQuestion.text}
+              onChange={handleQuestionChange}
+              rows="3"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Enter your question here"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Options *
+            </label>
+            <div className="space-y-2">
+              {newQuestion.options.map((option, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="correctAnswer"
+                    checked={newQuestion.answer === option.letter}
+                    onChange={() => handleAnswerChange(option.letter)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <input
+                    type="text"
+                    value={option.text}
+                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder={`Option ${option.letter}`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeOption(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              ))}
+              {newQuestion.options.length < 4 && (
+                <button
+                  type="button"
+                  onClick={addOption}
+                  className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 mt-1"
+                >
+                  <FiPlus className="mr-1" size={14} />
+                  Add Option
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Problem Statement *
+            </label>
+            <textarea
+              name="text"
+              value={newQuestion.text}
+              onChange={handleQuestionChange}
+              rows="3"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Example: Write a function to calculate the sum of even numbers in a list"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Expected Output *
+            </label>
+            <textarea
+              name="expectedOutput"
+              value={newQuestion.expectedOutput}
+              onChange={handleQuestionChange}
+              rows="2"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Example: For input [1, 2, 3, 4, 5], the output should be 6"
+              required
+            />
+          </div>
+        </div>
+      );
+    }
+  };
+
+  const renderQuestionPreview = (question) => {
+    if (question.type === "multiple_choice") {
+      return (
+        <div className="w-full">
+          <div className="flex justify-between items-start w-full">
+            <h4 className="font-medium">
+              {question.text} ({question.points} point
+              {question.points !== 1 ? "s" : ""})
+            </h4>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewQuestion({
+                    text: question.text,
+                    points: question.points,
+                    options: [], // Always empty for programming questions
+                    answer: "", // Always empty for programming questions
+                    type: "programming", // Always programming for programming questions
+                  });
+                  setEditingQuestionId(question.id);
+                }}
+                className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+                title="Edit question"
+              >
+                <FiEdit2 size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeQuestion(question.id)}
+                className="cursor-pointer text-red-600 hover:text-red-800 p-1"
+                title="Delete question"
+              >
+                <FiTrash2 size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2 mt-2">
+            {question.options.map((option, idx) => (
+              <div
+                key={idx}
+                className={`p-2 border rounded ${
+                  question.answer === option.letter
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200"
+                }`}
+              >
+                <span className="font-medium mr-2">{option.letter})</span>
+                {option.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="w-full">
+          <div className="flex justify-between items-start w-full">
+            <h4 className="font-medium">
+              {question.text} ({question.points} point
+              {question.points !== 1 ? "s" : ""})
+            </h4>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewQuestion({
+                    text: question.text,
+                    points: question.points,
+                    expectedOutput: question.expectedOutput,
+                    options: [],
+                    answer: "",
+                    type: "programming",
+                  });
+                  setEditingQuestionId(question.id);
+                }}
+                className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+                title="Edit question"
+              >
+                <FiEdit2 size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeQuestion(question.id)}
+                className="cursor-pointer text-red-600 hover:text-red-800 p-1"
+                title="Delete question"
+              >
+                <FiTrash2 size={16} />
+              </button>
+            </div>
+          </div>
+          <p className="text-gray-700 mt-1">{question.text}</p>
+          {question.expectedOutput && (
+            <>
+              <h5 className="font-medium mt-2 text-sm">Expected Output:</h5>
+              <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
+                {question.expectedOutput}
+              </pre>
+            </>
+          )}
+        </div>
+      );
+    }
+  };
+
+  const renderReviewQuestion = (question, index) => {
+    if (question.type === "multiple_choice") {
+      return (
+        <div
+          key={question.id}
+          className="border border-gray-200 rounded-lg p-4"
+        >
+          <h5 className="font-medium">
+            Question {index + 1} ({question.points} points)
+          </h5>
+          <p className="text-gray-700 mt-1">{question.text}</p>
+          <div className="space-y-2 mt-3">
+            {question.options.map((option, idx) => (
+              <div
+                key={idx}
+                className={`p-2 border rounded ${
+                  question.answer === option.letter
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200"
+                }`}
+              >
+                <span className="font-medium mr-2">{option.letter})</span>
+                {option.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div
+          key={question.id}
+          className="border border-gray-200 rounded-lg p-4"
+        >
+          <h5 className="font-medium">
+            Question {index + 1} ({question.points} points)
+          </h5>
+          <p className="text-gray-700 mt-1">{question.text}</p>
+          {question.expectedOutput && (
+            <>
+              <h6 className="font-medium mt-2 text-sm">Expected Output:</h6>
+              <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
+                {question.expectedOutput}
+              </pre>
+            </>
+          )}
+        </div>
+      );
+    }
   };
 
   if (!isOpen) return null;
@@ -280,7 +656,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                       >
                         <option value="quiz">Quiz</option>
                         <option value="exam">Exam</option>
-                        <option value="programming">Programming</option>
                       </select>
                     </div>
 
@@ -330,34 +705,46 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
 
                 {assignmentData.questions.length > 0 ? (
                   <div className="space-y-4 mb-6">
-                    {assignmentData.questions.map((question, qIndex) => (
+                    {assignmentData.questions.map((question) => (
                       <div
                         key={question.id}
                         className="border border-gray-200 rounded-lg p-4"
                       >
                         {editingQuestionId === question.id ? (
                           <div className="space-y-4">
-                            <textarea
-                              value={newQuestion.text}
-                              onChange={handleQuestionChange}
-                              name="text"
-                              rows="3"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                              placeholder="Question text"
-                            />
-                            <textarea
-                              value={newQuestion.expectedOutput}
-                              onChange={handleQuestionChange}
-                              name="expectedOutput"
-                              rows="2"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                              placeholder="Sample expected output"
-                            />
+                            <div className="flex justify-between items-center">
+                              <label className="block text-sm font-medium text-gray-700">
+                                Question Type
+                              </label>
+                              <select
+                                value={newQuestion.type}
+                                onChange={(e) =>
+                                  setNewQuestion((prev) => ({
+                                    ...prev,
+                                    type: e.target.value,
+                                  }))
+                                }
+                                className="px-3 py-1 border border-gray-300 rounded-lg"
+                              >
+                                <option value="multiple_choice">
+                                  Multiple Choice
+                                </option>
+                                <option value="programming">Programming</option>
+                              </select>
+                            </div>
+
+                            {renderQuestionForm()}
+
                             <div className="flex justify-between">
                               <input
                                 type="number"
                                 value={newQuestion.points}
-                                onChange={handleQuestionChange}
+                                onChange={(e) =>
+                                  setNewQuestion((prev) => ({
+                                    ...prev,
+                                    points: e.target.value,
+                                  }))
+                                }
                                 name="points"
                                 min="1"
                                 className="w-20 px-4 py-2 border border-gray-300 rounded-lg"
@@ -372,11 +759,24 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                                           ? {
                                               ...q,
                                               text: newQuestion.text,
-                                              expectedOutput:
-                                                newQuestion.expectedOutput,
                                               points: parseInt(
                                                 newQuestion.points
                                               ),
+                                              type: newQuestion.type,
+                                              ...(newQuestion.type ===
+                                              "programming"
+                                                ? {
+                                                    expectedOutput:
+                                                      newQuestion.expectedOutput,
+                                                    options: [],
+                                                    answer: "",
+                                                  }
+                                                : {
+                                                    options:
+                                                      newQuestion.options,
+                                                    answer: newQuestion.answer,
+                                                    expectedOutput: "",
+                                                  }),
                                             }
                                           : q
                                       );
@@ -405,54 +805,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex justify-between items-start">
-                            <div className="w-full">
-                              <div className="flex justify-between items-start w-full">
-                                <h4 className="font-medium">
-                                  Question {qIndex + 1} ({question.points} point
-                                  {question.points !== 1 ? "s" : ""})
-                                </h4>
-                                <div className="flex space-x-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setNewQuestion({
-                                        text: question.text,
-                                        points: question.points,
-                                        expectedOutput: question.expectedOutput,
-                                      });
-                                      setEditingQuestionId(question.id);
-                                    }}
-                                    className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
-                                    title="Edit question"
-                                  >
-                                    <FiEdit2 size={16} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeQuestion(question.id)}
-                                    className="cursor-pointer text-red-600 hover:text-red-800 p-1"
-                                    title="Delete question"
-                                  >
-                                    <FiTrash2 size={16} />
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-gray-700 mt-1">
-                                {question.text}
-                              </p>
-                              {question.expectedOutput && (
-                                <>
-                                  <h5 className="font-medium mt-2 text-sm">
-                                    Sample Expected Output:
-                                  </h5>
-                                  <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
-                                    {question.expectedOutput}
-                                  </pre>
-                                </>
-                              )}
-                            </div>
-                          </div>
+                          renderQuestionPreview(question)
                         )}
                       </div>
                     ))}
@@ -466,71 +819,67 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-medium mb-3">Add New Question</h4>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Question Text *
-                      </label>
-                      <textarea
-                        name="text"
-                        value={newQuestion.text}
-                        onChange={handleQuestionChange}
-                        rows="3"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Example: Given an array of integers nums, find the smallest index i such that nums[i] == i. If no such index exists, return -1"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Sample Expected Output (Optional)
-                      </label>
-                      <textarea
-                        name="expectedOutput"
-                        value={newQuestion.expectedOutput}
-                        onChange={handleQuestionChange}
-                        rows="2"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Example: Input: [0,2,3,4,5] → Output: 0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Points *
-                      </label>
-                      <input
-                        type="number"
-                        name="points"
-                        value={newQuestion.points}
-                        onChange={handleQuestionChange}
-                        min="1"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      />
-                    </div>
-
-                    {error && (
-                      <div className="text-red-600 text-sm">{error}</div>
-                    )}
-
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowAIPromptModal(true)}
-                        className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm"
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Question Type
+                    </label>
+                    <select
+                      value={newQuestion.type}
+                      onChange={(e) =>
+                        setNewQuestion((prev) => ({
+                          ...prev,
+                          type: e.target.value,
+                        }))
+                      }
+                      className="px-3 py-1 border border-gray-300 rounded-lg"
+                      disabled={assignmentData.type === "programming"}
+                    >
+                      <option value="multiple_choice">Multiple Choice</option>
+                      <option
+                        value="programming"
+                        disabled={assignmentData.type === "quiz"}
                       >
-                        <FiMessageSquare className="mr-2" /> Generate Questions
-                      </button>
-                      <button
-                        type="button"
-                        onClick={addQuestion}
-                        className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
-                      >
-                        <FiPlus className="mr-2" /> Add Question
-                      </button>
-                    </div>
+                        Programming
+                      </option>
+                    </select>
+                  </div>
+
+                  {renderQuestionForm()}
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Points *
+                    </label>
+                    <input
+                      type="number"
+                      name="points"
+                      value={newQuestion.points}
+                      onChange={handleQuestionChange}
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="text-red-600 text-sm mt-2">{error}</div>
+                  )}
+
+                  <div className="flex justify-end space-x-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowAIPromptModal(true)}
+                      className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm"
+                    >
+                      <FiMessageSquare className="mr-2" /> Generate Questions
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addQuestion}
+                      className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                    >
+                      <FiPlus className="mr-2" /> Add Question
+                    </button>
                   </div>
                 </div>
               </div>
@@ -580,29 +929,9 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                       Questions ({assignmentData.questions.length})
                     </h4>
                     <div className="space-y-4">
-                      {assignmentData.questions.map((question, index) => (
-                        <div
-                          key={question.id}
-                          className="border border-gray-200 rounded-lg p-4"
-                        >
-                          <div className="flex justify-between">
-                            <h5 className="font-medium">
-                              Question {index + 1} ({question.points} points)
-                            </h5>
-                          </div>
-                          <p className="text-gray-700 mt-1">{question.text}</p>
-                          {question.expectedOutput && (
-                            <>
-                              <h6 className="font-medium mt-2 text-sm">
-                                Sample Expected Output:
-                              </h6>
-                              <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
-                                {question.expectedOutput}
-                              </pre>
-                            </>
-                          )}
-                        </div>
-                      ))}
+                      {assignmentData.questions.map((question, index) =>
+                        renderReviewQuestion(question, index)
+                      )}
                     </div>
                   </div>
                 </div>
@@ -630,15 +959,17 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
               <div className="flex space-x-3">
                 {currentStep < steps.length ? (
                   <button
-                    type="button"
+                    type="button" // Important: type="button" not "submit"
                     onClick={nextStep}
                     className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                   >
                     Next <FiChevronRight className="ml-2" />
                   </button>
-                ) : (
+                ) : null}
+
+                {currentStep == 3 ? (
                   <button
-                    type="submit"
+                    type="submit" // Only the final button should be type="submit"
                     className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                     disabled={isSubmitting}
                   >
@@ -670,22 +1001,20 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                       "Create Activity"
                     )}
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           </form>
         </div>
+
         {showAIPromptModal && (
           <AIPromptModal
             isOpen={showAIPromptModal}
             onClose={() => setShowAIPromptModal(false)}
-            onSelectQuestion={(question) => {
-              setNewQuestion({
-                text: question.text,
-                points: newQuestion.points,
-                expectedOutput: question.expectedOutput,
-              });
-            }}
+            onSelectQuestion={handleQuestionSelect}
+            activityType={assignmentData.type}
+            progLanguage={progLanguage}
+            questionType={newQuestion.type} // Add this line
           />
         )}
       </div>
