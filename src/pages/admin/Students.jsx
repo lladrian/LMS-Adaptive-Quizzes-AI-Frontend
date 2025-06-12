@@ -8,12 +8,14 @@ import {
   FiPlus,
   FiEdit,
   FiTrash2,
+  FiArrowUp,
 } from "react-icons/fi";
 import {
   getAllStudents,
   registerStudent,
   updateStudent,
   deleteStudent,
+  promoteUser,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
@@ -22,6 +24,7 @@ const Students = () => {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [deleteModalStudent, setDeleteModalStudent] = useState(null);
+  const [promoteModalStudent, setPromoteModalStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [newStudent, setNewStudent] = useState({
@@ -115,12 +118,12 @@ const Students = () => {
   const handleUpdateStudent = async (e) => {
     e.preventDefault();
     try {
-      const response = await updateStudent(editStudentData.id, {
-        fullname: editStudentData.fullname,
-        email: editStudentData.email,
-        student_id_number: editStudentData.student_id_number,
-        role: editStudentData.role,
-      });
+      const response = await updateStudent(
+        editStudentData.id,
+        editStudentData.email,
+        editStudentData.fullname,
+        editStudentData.student_id_number
+      );
 
       if (response.success) {
         toast.success(
@@ -154,6 +157,27 @@ const Students = () => {
         error.response?.data?.message ||
           "Failed to delete student. Please try again."
       );
+    }
+  };
+
+  const handlePromoteStudent = async (studentId) => {
+    try {
+      const response = await promoteUser(studentId, "instructor");
+
+      if (response.success) {
+        toast.success("Student promoted to instructor successfully!");
+        await fetchStudents();
+      } else {
+        toast.error(response.error || "Failed to promote student");
+      }
+    } catch (error) {
+      console.error("Error promoting student:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to promote student. Please try again."
+      );
+    } finally {
+      setPromoteModalStudent(null);
     }
   };
 
@@ -231,7 +255,7 @@ const Students = () => {
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student.id}>
+                    <tr key={student._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-3">
@@ -255,7 +279,11 @@ const Students = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800`}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            student.role === "Instructor"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-indigo-100 text-indigo-800"
+                          }`}
                         >
                           {student.role}
                         </span>
@@ -267,20 +295,31 @@ const Students = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEditStudent(student)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 cursor-pointer"
-                          title="Edit"
-                        >
-                          <FiEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteModalStudent(student)}
-                          className="text-red-600 hover:text-red-900 cursor-pointer"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditStudent(student)}
+                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                            title="Edit"
+                          >
+                            <FiEdit size={18} />
+                          </button>
+                          {student.role === "student" && (
+                            <button
+                              onClick={() => setPromoteModalStudent(student)}
+                              className="text-green-600 hover:text-green-900 cursor-pointer"
+                              title="Promote to Instructor"
+                            >
+                              <FiArrowUp size={18} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDeleteModalStudent(student)}
+                            className="text-red-600 hover:text-red-900 cursor-pointer"
+                            title="Delete"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -511,6 +550,52 @@ const Students = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote Confirmation Modal */}
+      {promoteModalStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex flex-col items-center">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                  <FiArrowUp className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2 text-center">
+                  Promote Student to Instructor
+                </h3>
+                <div className="mt-2 text-sm text-gray-500 text-center">
+                  <p>
+                    Are you sure you want to promote{" "}
+                    <span className="font-semibold">
+                      {promoteModalStudent.fullname}
+                    </span>{" "}
+                    to Instructor?
+                  </p>
+                  <p className="mt-1">
+                    This will give them instructor-level access.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setPromoteModalStudent(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePromoteStudent(promoteModalStudent._id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                >
+                  Promote
                 </button>
               </div>
             </div>

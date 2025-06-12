@@ -67,6 +67,37 @@ export const getAllStudents = async () => {
     };
   }
 };
+export const updateStudent = async (id, email, fullname, student_id_number) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/students/update_student/${id}`,
+      { email, fullname, student_id_number }
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to update specific student.",
+    };
+  }
+};
+export const deleteStudent = async (id) => {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/students/delete_student/${id}`
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to delete specific student.",
+    };
+  }
+};
 
 export const addStudentsToClassroom = async (
   classroom_id,
@@ -1173,6 +1204,28 @@ export const askPrompt = async (prompt) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to ask assistant",
+    };
+  }
+};
+
+/* PROMOTE ROLE */
+export const promoteUser = async (id, role_name) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/promotes/promote_user/${id}`,
+      {
+        role_name,
+      }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: error.response?.data?.message || "Failed to promote specific user",
     };
   }
 };
