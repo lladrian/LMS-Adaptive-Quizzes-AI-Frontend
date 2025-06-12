@@ -386,114 +386,119 @@ const AssignmentAnswerPage = () => {
     <div className="p-6 space-y-4">
       {currentQuestion && (
         <div className="space-y-4">
-          {!started ? (
-              <div className="text-center">
-                <h2 className="text-xl font-bold mb-4">
-                  Ready to Start the {type === "quiz" ? "Quiz" : "Exam"}?
-                </h2>
-                <button
-                  onClick={startAssignment}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
-                >
-                  Start {type === "quiz" ? "Quiz" : "Exam"}
-                </button>
-              </div>
-            ) : 
-              <div className="p-4 border rounded bg-white shadow">
-                  <h2 className="text-lg font-semibold mb-2">
-                    Question {currentIndex + 1} of {questions.length}
-                  </h2>
-                  <p className="mb-2">{currentQuestion.text}</p>
-                  <p className="text-sm text-gray-600">
-                    Points: {points[currentIndex]} / {currentQuestion.points}
-                  </p>
-                   <p className="text-sm">
-                    Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
-                  </p>
-                  <div>
-                    <p>Time Left: {formatTime(timeLeft)}</p>
-                  </div>
-              </div>
-            }
-
-          <CodeEditor
-            value={code}
-            onChange={handleCodeChange}
-            language={compiler.language}
-            height="400px"
-          />
-
-          <select
-            onChange={handleCompilerChange}
-            className="border border-gray-300 rounded px-2 py-3 w-full"
-            value={JSON.stringify(compiler)}
-          >
-            {languages.map((lang, index) => (
-              <option
-                key={index}
-                value={JSON.stringify({
-                  name: lang.name,
-                  language: lang.language,
-                  version: lang.version,
-                  starting_code: lang.starting_code,
-                })}
-              >
-                {`${lang.name} - ${lang.version}`.toUpperCase()}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={runCode}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
-          >
-            Run Code
-          </button>
-
-          <button
-            onClick={startingCode}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
-          >
-            Starting Code
-          </button>
-
-          
-            {!started ? (
-              null
-            ) : 
-              <div className="flex justify-between gap-4">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentIndex === 0}
-                  className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-                    currentIndex === 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gray-600 hover:bg-gray-700"
-                  }`}
-                >
-                  Previous
-                </button>
-
-                {currentIndex < questions.length - 1 ? (
-                  <button
-                    onClick={handleNext}
-                    className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-3 rounded"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmitAll}
-                    className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
-                  >
-                    Submit All Answers
-                  </button>
-                )}
-              </div>
-            }
-
-          <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
+                <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
             {output}
+          </div>
+          
+          <div className="flex gap-4">
+            {/* Left Column - Controls */}
+            <div className="w-full md:w-1/2 space-y-4">
+              {!started ? (
+                <div className="text-center">
+                  <h2 className="text-xl font-bold mb-4">
+                    Ready to Start the {type === "quiz" ? "Quiz" : "Exam"}?
+                  </h2>
+                  <button
+                    onClick={startAssignment}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
+                  >
+                    Start {type === "quiz" ? "Quiz" : "Exam"}
+                  </button>
+                </div>
+              ) : 
+                <div className="p-4 border rounded bg-white shadow">
+                    <h2 className="text-lg font-semibold mb-2">
+                      Question {currentIndex + 1} of {questions.length}
+                    </h2>
+                    <p className="mb-2">{currentQuestion.text}</p>
+                    <p className="text-sm text-gray-600">
+                      Points: {points[currentIndex]} / {currentQuestion.points}
+                    </p>
+                    <p className="text-sm">
+                      Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
+                    </p>
+                    <div>
+                      <p>Time Left: {formatTime(timeLeft)}</p>
+                    </div>
+                </div>
+              }
+
+              <select
+                onChange={handleCompilerChange}
+                className="border border-gray-300 rounded px-2 py-3 w-full"
+                value={JSON.stringify(compiler)}
+              >
+                {languages.map((lang, index) => (
+                  <option
+                    key={index}
+                    value={JSON.stringify({
+                      name: lang.name,
+                      language: lang.language,
+                      version: lang.version,
+                      starting_code: lang.starting_code,
+                    })}
+                  >
+                    {`${lang.name} - ${lang.version}`.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={runCode}
+                className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
+              >
+                Run Code
+              </button>
+
+              <button
+                onClick={startingCode}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
+              >
+                Starting Code
+              </button>
+
+              {started && (
+                <div className="flex justify-between gap-4">
+                  <button
+                    onClick={handlePrevious}
+                    disabled={currentIndex === 0}
+                    className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
+                      currentIndex === 0
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  {currentIndex < questions.length - 1 ? (
+                    <button
+                      onClick={handleNext}
+                      className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-3 rounded"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmitAll}
+                      className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
+                    >
+                      Submit All Answers
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right Column - Code Editor */}
+            <div className="w-full md:w-1/2">
+              <CodeEditor
+                value={code}
+                onChange={handleCodeChange}
+                language={compiler.language}
+                height="400px"
+              />
+            </div>
           </div>
 
         </div>
