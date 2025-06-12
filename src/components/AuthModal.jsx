@@ -227,6 +227,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     localStorage.setItem("userId", userData._id);
     localStorage.setItem("role", userData.role);
     localStorage.setItem("fullname", userData.fullname);
+    localStorage.setItem("email", userData.email);
     localStorage.setItem("status", userData.status);
 
     if (userData.role === "student") {

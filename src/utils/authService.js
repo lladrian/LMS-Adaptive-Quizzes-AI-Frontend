@@ -83,6 +83,23 @@ export const updateStudent = async (id, email, fullname, student_id_number) => {
     };
   }
 };
+export const updateStudentPassword = async (id, password) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/students/update_student_password/${id}`,
+      { password }
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to update student password.",
+    };
+  }
+};
+
 export const deleteStudent = async (id) => {
   try {
     const response = await axios.delete(
@@ -305,7 +322,9 @@ export const updateAdminPassword = async (id, password) => {
   try {
     const response = await axios.put(
       `${BASE_URL}/admins/update_admin_password/${id}`,
-      password
+      {
+        password,
+      }
     );
 
     return { success: true, data: response.data };
@@ -1229,3 +1248,5 @@ export const promoteUser = async (id, role_name) => {
     };
   }
 };
+
+/* UPDATE PROFILE */

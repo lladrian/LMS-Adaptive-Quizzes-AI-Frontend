@@ -12,14 +12,13 @@ import AdminLayout from "./pages/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
 import Classrooms from "./pages/admin/Classrooms";
-import AdminSettings from "./pages/admin/Settings";
+import AccountSettings from "./components/Settings";
 import AdminsManagement from "./pages/admin/AdminsManagement";
 
 import InstructorLayout from "./pages/layouts/InstructorLayout";
 import InstructorDashboard from "./components/InstructorDashboard";
 
 import AddStudentPage from "./pages/instructor/AddStudentPage";
-import EditStudentPage from "./pages/instructor/EditStudentPage";
 import ClassesPage from "./pages/instructor/ClassesPage";
 import CreateClassPage from "./pages/instructor/CreateClassPage";
 import ClassViewPage from "./pages/instructor/ClassViewPage";
@@ -111,7 +110,7 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="instructors" element={<Instructors />} />
             <Route path="students" element={<Students />} />
-            <Route path="settings" element={<AdminSettings />} />
+            <Route path="settings" element={<AccountSettings />} />
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
 
@@ -129,7 +128,6 @@ function App() {
               path="class/:classId/students/add"
               element={<AddStudentPage />}
             />
-            <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="archive" element={<ArchivePage />} />
             <Route path="class/:classId" element={<ClassViewPage />} />
@@ -137,6 +135,7 @@ function App() {
               path="class/:classId/activity/:assignmentId"
               element={<AssignmentDetailPage />}
             />
+            <Route path="settings" element={<AccountSettings />} />
           </Route>
 
           <Route
@@ -165,6 +164,8 @@ function App() {
               element={<LessonPracticePage />}
             />
             <Route path="grades" element={<GradesPage />} />
+            <Route path="settings" element={<AccountSettings />} />
+
             <Route path="*" element={<NotFound />} />
           </Route>
 

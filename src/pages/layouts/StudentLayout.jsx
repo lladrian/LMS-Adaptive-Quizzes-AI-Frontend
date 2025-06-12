@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { FiHome, FiBook, FiCode, FiAward, FiLogOut, FiBell  } from "react-icons/fi";
+import {
+  FiHome,
+  FiBook,
+  FiCode,
+  FiAward,
+  FiLogOut,
+  FiBell,
+  FiSettings,
+} from "react-icons/fi";
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 const StudentLayout = () => {
@@ -11,6 +19,7 @@ const StudentLayout = () => {
   const navItems = [
     { path: "/student/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/student/classes", icon: FiBook, label: "My Classes" },
+    { path: "/student/settings", icon: FiSettings, label: "Settings" },
     // { path: "/student/grades", icon: FiAward, label: "Grades" },
   ];
 
@@ -19,13 +28,16 @@ const StudentLayout = () => {
     localStorage.removeItem("role");
     localStorage.removeItem("fullname");
     localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    localStorage.removeItem("status");
   };
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div
-        className={`relative bg-white shadow-md transition-all duration-300 flex flex-col justify-between ${sidebarOpen ? "w-64" : "w-20"
-          }`}
+        className={`relative bg-white shadow-md transition-all duration-300 flex flex-col justify-between ${
+          sidebarOpen ? "w-64" : "w-20"
+        }`}
       >
         {/* Header and Navigation */}
         <div>
@@ -52,10 +64,11 @@ const StudentLayout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center p-3 rounded-lg mb-1 transition-colors ${location.pathname.startsWith(item.path)
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`flex items-center p-3 rounded-lg mb-1 transition-colors ${
+                  location.pathname.startsWith(item.path)
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
               >
                 <item.icon className="text-lg" />
                 {sidebarOpen && <span className="ml-3">{item.label}</span>}
@@ -97,28 +110,26 @@ const StudentLayout = () => {
             </h2>
 
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button className="p-1 rounded-full hover:bg-gray-100">
-                  <FiBell className="text-gray-600" />
-                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-                </button>
-              </div>
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                  G
-                </div>
-                {sidebarOpen && (
-                  <span className="ml-2 text-sm font-medium text-gray-700">
-                    {studentFullname}
-                  </span>
-                )}
+                <Link
+                  to="settings"
+                  className="flex items-center hover:bg-gray-100 p-1 rounded transition"
+                >
+                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
+                    {studentFullname?.charAt(0).toUpperCase()}
+                  </div>
+                  {sidebarOpen && (
+                    <span className="ml-2 text-sm font-medium text-gray-700">
+                      {studentFullname}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>
         </header>
 
         <main className="p-6">
-
           <Outlet />
         </main>
       </div>

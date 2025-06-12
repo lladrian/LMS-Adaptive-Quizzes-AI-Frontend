@@ -22,9 +22,7 @@ const InstructorLayout = () => {
     { path: "/instructor/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/instructor/classes", icon: FiBook, label: "Classes" },
     { path: "/instructor/archive", icon: FiBook, label: "Archive" },
-    /* { path: "/instructor/materials", icon: FiFileText, label: "Materials" },
-    { path: "/instructor/grades", icon: FiBarChart2, label: "Grades" },
-    { path: "/instructor/settings", icon: FiSettings, label: "Settings" }, */
+    { path: "/instructor/settings", icon: FiSettings, label: "Settings" },
   ];
 
   const instructorName = localStorage.getItem("fullname");
@@ -33,6 +31,8 @@ const InstructorLayout = () => {
     localStorage.removeItem("role");
     localStorage.removeItem("fullname");
     localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    localStorage.removeItem("status");
   };
 
   return (
@@ -115,21 +115,20 @@ const InstructorLayout = () => {
             </h2>
 
             <div className="flex items-center space-x-4">
-              {/*     <div className="relative">
-                <button className="p-1 rounded-full hover:bg-gray-100">
-                  <FiBell className="text-gray-600" />
-                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-                </button>
-              </div> */}
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                  {instructorName?.charAt(0).toUpperCase()}
-                </div>
-                {sidebarOpen && (
-                  <span className="ml-2 text-sm font-medium text-gray-700">
-                    {instructorName}
-                  </span>
-                )}
+                <Link
+                  to="settings"
+                  className="flex items-center hover:bg-gray-100 p-1 rounded transition"
+                >
+                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
+                    {instructorName?.charAt(0).toUpperCase()}
+                  </div>
+                  {sidebarOpen && (
+                    <span className="ml-2 text-sm font-medium text-gray-700">
+                      {instructorName}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>
