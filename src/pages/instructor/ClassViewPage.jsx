@@ -9,15 +9,13 @@ import {
   FiDownload,
   FiEdit2,
   FiEdit3,
-  FiClipboard
+  FiClipboard,
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
 import { BASE_URL } from "../../utils/config";
 import {
-  updateClassroom,
   specificClassroom,
-  addMaterial,
   specificMaterial,
   deleteActivity,
   removeStudentClassroom,
@@ -43,8 +41,8 @@ const ClassDetailPage = () => {
   const [activityToDelete, setActivityToDelete] = useState(null);
 
   const [ClassroomData, setClassroomData] = useState([]);
-    const [copied, setCopied] = useState(false);
-  
+  const [copied, setCopied] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
 
   /* const activities = ClassroomData.exams; */
@@ -234,15 +232,14 @@ const ClassDetailPage = () => {
             {ClassroomData.classroom?.subject_code})
           </h1>
           <p className="mt-1">
-            Classroom Code:   <button
-                      onClick={handleCopy}
-                      className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
-                    >
-                      {copied ? `Copied` : `${ClassroomData.classroom?.classroom_code}`}
-                    </button>
+            Classroom Code:{" "}
+            <button
+              onClick={handleCopy}
+              className="text-sm hover:bg-gray-400 hover:text-white px-2 py-1 rounded"
+            >
+              {copied ? `Copied` : `${ClassroomData.classroom?.classroom_code}`}
+            </button>
           </p>
-
-         
         </div>
 
         <button
@@ -347,32 +344,24 @@ const ClassDetailPage = () => {
                     </span>
                   </div>
                 </div>
-                 <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiEdit3 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
                       {(() => {
-                        const total =
-                          (ClassroomData.quizzes?.length || 0) +
-                          (0);
-                        return `${total} ${
-                          total <= 1 ? "Quiz" : "Quizzes"
-                        }`;
+                        const total = (ClassroomData.quizzes?.length || 0) + 0;
+                        return `${total} ${total <= 1 ? "Quiz" : "Quizzes"}`;
                       })()}
                     </span>
                   </div>
                 </div>
-                 <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiClipboard className="text-indigo-600 mr-2" />
                     <span className="font-medium">
                       {(() => {
-                        const total =
-                          (0) +
-                          (ClassroomData.exams?.length || 0);
-                        return `${total} ${
-                          total <= 1 ? "Exam" : "Exams"
-                        }`;
+                        const total = 0 + (ClassroomData.exams?.length || 0);
+                        return `${total} ${total <= 1 ? "Exam" : "Exams"}`;
                       })()}
                     </span>
                   </div>
@@ -644,10 +633,11 @@ const ClassDetailPage = () => {
                           <span className="ml-2 text-gray-700">
                             <strong className="font-medium">Points:</strong>{" "}
                             <span>
-                              {activity.question?.reduce(
-                                (total, q) => total + (q.points || 0),
-                                0
-                              )}
+                              {activity.points ||
+                                activity.question?.reduce(
+                                  (total, q) => total + (q.points || 0),
+                                  0
+                                )}
                             </span>
                           </span>
                         </div>

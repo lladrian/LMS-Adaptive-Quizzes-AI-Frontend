@@ -944,26 +944,24 @@ export const addActivity = async (
         classroom_id: classId,
         question: questions.map((q) => ({
           text: q.text,
+          expected_output: q.expectedOutput,
           points: Number(q.points),
         })),
         time_limit: Number(timeLimit),
         title,
         description,
-        type,
-        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
       });
     } else {
       response = await axios.post(`${BASE_URL}/exams/add_exam`, {
         classroom_id: classId,
         question: questions.map((q) => ({
           text: q.text,
+          expected_output: q.expectedOutput,
           points: Number(q.points),
         })),
         time_limit: Number(timeLimit),
         title,
         description,
-        type,
-        points: questions.reduce((sum, q) => sum + q.points, 0), // Calculate total points
       });
     }
 
@@ -1122,6 +1120,26 @@ export const recoveryOTP = async (otp_code, email, password) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to join classroom",
+    };
+  }
+};
+
+/* AI PROMPT */
+
+export const askPrompt = async (prompt) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/ai/ask`, {
+      ask: prompt,
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to ask assistant",
     };
   }
 };
