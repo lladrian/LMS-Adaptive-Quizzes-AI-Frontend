@@ -1228,6 +1228,21 @@ export const askPrompt = async (prompt) => {
 };
 
 /* PROMOTE ROLE */
+export const checkPromotedUser = async (id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/promotes/check_user/${id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: error.response?.data?.message || "Failed to check promoted user",
+    };
+  }
+};
 export const promoteUser = async (id, role_name) => {
   try {
     const response = await axios.post(

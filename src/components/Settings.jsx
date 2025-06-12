@@ -7,8 +7,11 @@ import {
   updateInstructorPassword,
   updateAdmin,
   updateAdminPassword,
+  checkPromotedUser,
+  promoteUser,
 } from "../utils/authService";
 import { toast } from "react-toastify";
+import { FiArrowDown } from "react-icons/fi";
 
 export default function AccountSettings() {
   const [account, setAccount] = useState({
@@ -19,10 +22,13 @@ export default function AccountSettings() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isPromotedUser, setIsPromotedUser] = useState(false);
+  const [originalRole, setOriginalRole] = useState(null);
   const userId = localStorage.getItem("userId");
   const role = localStorage.getItem("role");
   const isStudent = role === "student";
   const isAdmin = role === "admin";
+  const [showDemoteModal, setShowDemoteModal] = useState(false);
 
   useEffect(() => {
     // Initialize email from localStorage if available
@@ -30,7 +36,44 @@ export default function AccountSettings() {
     if (storedEmail) {
       setAccount((prev) => ({ ...prev, email: storedEmail }));
     }
+
+    // Check if current admin was promoted from instructor
+    if (isAdmin) {
+      checkIfPromotedUser();
+    }
   }, []);
+
+  const checkIfPromotedUser = async () => {
+    try {
+      const response = await checkPromotedUser(userId);
+      if (response.success && response.data) {
+        setIsPromotedUser(true);
+        setOriginalRole(response.data.data); // This will be "instructor"
+      }
+    } catch (error) {
+      console.error("Error checking promoted user:", error);
+    }
+  };
+
+  const handleDemote = async () => {
+    setIsLoading(true);
+    try {
+      const response = await promoteUser(userId, originalRole);
+      if (response.success) {
+        toast.success("You have been demoted back to instructor");
+        // Update local storage and reload
+        localStorage.setItem("role", originalRole);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.error(response.data || "Failed to demote user");
+      }
+    } catch (error) {
+      console.error("Demote error:", error);
+      toast.error("Failed to demote. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAccountChange = (e) => {
     const { name, value } = e.target;
@@ -128,6 +171,77 @@ export default function AccountSettings() {
           </p>
         </div>
 
+        {/* Demote Section for Promoted Admins */}
+        {isAdmin && isPromotedUser && originalRole === "instructor" && (
+          <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Demote Account
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                You can demote yourself back to{" "}
+                <span className="font-medium">{originalRole}</span>.
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowDemoteModal(true)}
+                  className="cursor-pointer px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : `Demote to ${originalRole}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Demote Confirmation Modal */}
+        {showDemoteModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="p-6">
+                <div className="flex flex-col items-center">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                    <FiArrowDown className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2 text-center">
+                    Confirm Demotion
+                  </h3>
+                  <div className="mt-2 text-sm text-gray-500 text-center">
+                    <p>
+                      Are you sure you want to demote yourself back to{" "}
+                      <span className="font-semibold">{originalRole}</span>?
+                    </p>
+                    <p className="mt-1">
+                      This will remove your administrator privileges.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoteModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDemoteModal(false);
+                      handleDemote();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                  >
+                    Confirm Demote
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Profile Section */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
           <div className="px-6 py-5 border-b border-gray-200">

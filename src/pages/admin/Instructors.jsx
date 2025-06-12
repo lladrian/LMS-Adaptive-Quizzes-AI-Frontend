@@ -9,6 +9,7 @@ import {
   FiEdit,
   FiTrash2,
   FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import {
   getAllInstructors,
@@ -16,6 +17,7 @@ import {
   updateInstructor,
   deleteInstructor,
   promoteUser,
+  checkPromotedUser,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 const Instructors = () => {
@@ -27,6 +29,9 @@ const Instructors = () => {
   const [promoteModalAdmin, setPromoteModalAdmin] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const [demoteModalInstructor, setDemoteModalInstructor] = useState(null);
+  const [originalRoles, setOriginalRoles] = useState({});
 
   const [newInstructor, setNewInstructor] = useState({
     fullname: "",
@@ -42,29 +47,43 @@ const Instructors = () => {
     role: "Instructor",
   });
 
-  const [Instructor, setInstructor] = useState([]);
+  const [instructors, setInstructors] = useState([]);
 
   useEffect(() => {
-    fetchInstructor();
-  }, [setEditInstructorData]);
+    fetchInstructors();
+  }, []);
 
-  const fetchInstructor = async () => {
+  const fetchInstructors = async () => {
     setIsLoading(true);
     try {
       const result = await getAllInstructors();
       if (result.success) {
-        setInstructor(result.data.data);
-        console.log(Instructor);
+        setInstructors(result.data.data);
+        // Check original roles for each instructor
+        checkOriginalRoles(result.data.data);
       }
     } catch (error) {
-      console.error("Error fetching Instructor:", error);
-      toast.error("Failed to fetch Instructor");
+      console.error("Error fetching instructors:", error);
+      toast.error("Failed to fetch instructors");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredInstructors = Instructor.filter(
+  const checkOriginalRoles = async (instructorsList) => {
+    const roles = {};
+    for (const instructor of instructorsList) {
+      if (instructor.role === "instructor") {
+        const response = await checkPromotedUser(instructor._id);
+        if (response.success && response.data) {
+          roles[instructor._id] = response.data.data; // "student" or "instructor"
+        }
+      }
+    }
+    setOriginalRoles(roles);
+  };
+
+  const filteredInstructors = instructors.filter(
     (instructor) =>
       instructor.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -90,32 +109,30 @@ const Instructors = () => {
           password: "",
           role: "Instructor",
         });
-        await fetchInstructor();
+        await fetchInstructors();
       } else {
         toast.error(response.error);
       }
     } catch (error) {
-      console.error("Error adding Instructor:", error);
+      console.error("Error adding instructor:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to add Instructor. Please try again."
+          "Failed to add instructor. Please try again."
       );
     }
   };
 
-  const handleEditInstructor = (Instructor) => {
+  const handleEditInstructor = (instructor) => {
     setEditInstructorData({
-      id: Instructor._id,
-      fullname: Instructor.fullname,
-      email: Instructor.email,
-      role: Instructor.role,
+      id: instructor._id,
+      fullname: instructor.fullname,
+      email: instructor.email,
+      role: instructor.role,
     });
-    console.log(editInstructorData.id);
     setShowEditInstructorModal(true);
   };
 
   const handleUpdateInstructor = async (e) => {
-    console.log(editInstructorData.id);
     e.preventDefault();
     try {
       const response = await updateInstructor(editInstructorData.id, {
@@ -129,32 +146,32 @@ const Instructors = () => {
           `Instructor ${editInstructorData.fullname} updated successfully!`
         );
         setShowEditInstructorModal(false);
-        await fetchInstructor();
+        await fetchInstructors();
       } else {
         toast.error(response.error);
       }
     } catch (error) {
-      console.error("Error updating Instructor:", error);
+      console.error("Error updating instructor:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to update Instructor. Please try again."
+          "Failed to update instructor. Please try again."
       );
     }
   };
 
-  const handleDeleteInstructor = async (InstructorId) => {
+  const handleDeleteInstructor = async (instructorId) => {
     try {
-      const response = await deleteInstructor(InstructorId);
+      const response = await deleteInstructor(instructorId);
 
       if (response.success) {
         toast.success("Instructor deleted successfully!");
-        await fetchInstructor();
+        await fetchInstructors();
       }
     } catch (error) {
-      console.error("Error deleting Instructor:", error);
+      console.error("Error deleting instructor:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to delete Instructor. Please try again."
+          "Failed to delete instructor. Please try again."
       );
     }
   };
@@ -165,7 +182,7 @@ const Instructors = () => {
 
       if (response.success) {
         toast.success("Instructor promoted to admin successfully!");
-        await fetchInstructor();
+        await fetchInstructors();
       } else {
         toast.error(response.data || "Failed to promote admin");
       }
@@ -177,6 +194,33 @@ const Instructors = () => {
       );
     } finally {
       setPromoteModalAdmin(null);
+    }
+  };
+
+  const handleDemoteInstructor = async (instructorId) => {
+    try {
+      const originalRole = originalRoles[instructorId];
+      if (!originalRole) {
+        toast.error("Cannot determine original role for this user");
+        return;
+      }
+
+      const response = await promoteUser(instructorId, originalRole);
+
+      if (response.success) {
+        toast.success(`Instructor demoted to ${originalRole} successfully!`);
+        await fetchInstructors();
+      } else {
+        toast.error(response.data || "Failed to demote instructor");
+      }
+    } catch (error) {
+      console.error("Error demoting instructor:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to demote instructor. Please try again."
+      );
+    } finally {
+      setDemoteModalInstructor(null);
     }
   };
 
@@ -287,19 +331,36 @@ const Instructors = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleEditInstructor(instructor)}
-                            className="text-indigo-600 hover:text-indigo-900  cursor-pointer"
+                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
                             title="Edit"
                           >
                             <FiEdit size={18} />
                           </button>
+
                           {instructor.role === "instructor" && (
-                            <button
-                              onClick={() => setPromoteModalAdmin(instructor)}
-                              className="text-green-600 hover:text-green-900 cursor-pointer"
-                              title="Promote to Admin"
-                            >
-                              <FiArrowUp size={18} />
-                            </button>
+                            <>
+                              {originalRoles[instructor._id] === "student" ? (
+                                <button
+                                  onClick={() =>
+                                    setDemoteModalInstructor(instructor)
+                                  }
+                                  className="text-yellow-600 hover:text-yellow-900 cursor-pointer"
+                                  title="Demote to Student"
+                                >
+                                  <FiArrowDown size={18} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    setPromoteModalAdmin(instructor)
+                                  }
+                                  className="text-green-600 hover:text-green-900 cursor-pointer"
+                                  title="Promote to Admin"
+                                >
+                                  <FiArrowUp size={18} />
+                                </button>
+                              )}
+                            </>
                           )}
                           <button
                             onClick={() => setDeleteModalInstructor(instructor)}
@@ -585,6 +646,52 @@ const Instructors = () => {
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
                 >
                   Promote
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {demoteModalInstructor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex flex-col items-center">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                  <FiArrowDown className="h-6 w-6 text-yellow-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2 text-center">
+                  Demote Instructor to Student
+                </h3>
+                <div className="mt-2 text-sm text-gray-500 text-center">
+                  <p>
+                    Are you sure you want to demote{" "}
+                    <span className="font-semibold">
+                      {demoteModalInstructor.fullname}
+                    </span>{" "}
+                    back to Student?
+                  </p>
+                  <p className="mt-1">
+                    This will remove their instructor privileges.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setDemoteModalInstructor(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDemoteInstructor(demoteModalInstructor._id)
+                  }
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer"
+                >
+                  Demote
                 </button>
               </div>
             </div>
