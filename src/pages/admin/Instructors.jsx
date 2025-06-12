@@ -8,12 +8,14 @@ import {
   FiPlus,
   FiEdit,
   FiTrash2,
+  FiArrowUp,
 } from "react-icons/fi";
 import {
   getAllInstructors,
   registerInstructor,
   updateInstructor,
   deleteInstructor,
+  promoteUser,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 const Instructors = () => {
@@ -22,6 +24,7 @@ const Instructors = () => {
   const [showAddInstructorModal, setShowAddInstructorModal] = useState(false);
   const [showEditInstructorModal, setShowEditInstructorModal] = useState(false);
   const [deleteModalInstructor, setDeleteModalInstructor] = useState(null);
+  const [promoteModalAdmin, setPromoteModalAdmin] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -156,6 +159,27 @@ const Instructors = () => {
     }
   };
 
+  const handlePromoteAdmin = async (instructorId) => {
+    try {
+      const response = await promoteUser(instructorId, "admin");
+
+      if (response.success) {
+        toast.success("Instructor promoted to admin successfully!");
+        await fetchInstructor();
+      } else {
+        toast.error(response.data || "Failed to promote admin");
+      }
+    } catch (error) {
+      console.error("Error promoting admin:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to promote admin. Please try again."
+      );
+    } finally {
+      setPromoteModalAdmin(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -260,20 +284,31 @@ const Instructors = () => {
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEditInstructor(instructor)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 cursor-pointer"
-                          title="Edit"
-                        >
-                          <FiEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteModalInstructor(instructor)}
-                          className="text-red-600 hover:text-red-900 cursor-pointer"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditInstructor(instructor)}
+                            className="text-indigo-600 hover:text-indigo-900  cursor-pointer"
+                            title="Edit"
+                          >
+                            <FiEdit size={18} />
+                          </button>
+                          {instructor.role === "instructor" && (
+                            <button
+                              onClick={() => setPromoteModalAdmin(instructor)}
+                              className="text-green-600 hover:text-green-900 cursor-pointer"
+                              title="Promote to Admin"
+                            >
+                              <FiArrowUp size={18} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setDeleteModalInstructor(instructor)}
+                            className="text-red-600 hover:text-red-900 cursor-pointer"
+                            title="Delete"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -504,6 +539,52 @@ const Instructors = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote Confirmation Modal */}
+      {promoteModalAdmin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex flex-col items-center">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                  <FiArrowUp className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2 text-center">
+                  Promote User to Admin
+                </h3>
+                <div className="mt-2 text-sm text-gray-500 text-center">
+                  <p>
+                    Are you sure you want to promote{" "}
+                    <span className="font-semibold">
+                      {promoteModalAdmin.fullname}
+                    </span>{" "}
+                    to Admin?
+                  </p>
+                  <p className="mt-1">
+                    This will give them administrator-level access.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setPromoteModalAdmin(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePromoteAdmin(promoteModalAdmin._id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                >
+                  Promote
                 </button>
               </div>
             </div>
