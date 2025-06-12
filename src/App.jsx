@@ -9,7 +9,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import AdminLayout from "./pages/layouts/AdminLayout";
-import AdminDashboard from "./components/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import Instructors from "./pages/admin/Instructors";
 import Classrooms from "./pages/admin/Classrooms";
 import AdminSettings from "./pages/admin/Settings";
@@ -46,6 +46,7 @@ import GradesPage from "./pages/student/GradesPage";
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import ArchivePage from "./pages/instructor/ArchivePage";
+import Students from "./pages/admin/Students";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -109,7 +110,7 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="instructors" element={<Instructors />} />
-            <Route path="classrooms" element={<Classrooms />} />
+            <Route path="students" element={<Students />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
@@ -124,7 +125,10 @@ function App() {
           >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<InstructorDashboard />} />
-            <Route path="students/add" element={<AddStudentPage />} />
+            <Route
+              path="class/:classId/students/add"
+              element={<AddStudentPage />}
+            />
             <Route path="students/edit/:id" element={<EditStudentPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="archive" element={<ArchivePage />} />
@@ -147,10 +151,19 @@ function App() {
             <Route path="dashboard" element={<DashboardHome />} />
             <Route path="classes" element={<ClassesPageStudent />} />
             <Route path="class/:classId" element={<ClassDetailPageStudent />} />
-            <Route path="class/:classId/:assignmentId/:type/answer" element={<AssignmentAnswerPage />} />
-            <Route path="class/:classId/:assignmentId/:type/view_answer" element={<ViewAssignmentAnswerPage />} />
+            <Route
+              path="class/:classId/:assignmentId/:type/answer"
+              element={<AssignmentAnswerPage />}
+            />
+            <Route
+              path="class/:classId/:assignmentId/:type/view_answer"
+              element={<ViewAssignmentAnswerPage />}
+            />
             <Route path="class/practice_with_ai" element={<PracticePage />} />
-            <Route path="class/:lessonId/practice_with_lesson" element={<LessonPracticePage />} />
+            <Route
+              path="class/:lessonId/practice_with_lesson"
+              element={<LessonPracticePage />}
+            />
             <Route path="grades" element={<GradesPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>

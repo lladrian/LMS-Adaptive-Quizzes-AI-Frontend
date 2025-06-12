@@ -55,6 +55,37 @@ export const registerStudent = async (
     };
   }
 };
+export const getAllStudents = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/students/get_all_student`);
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed fetch all students .",
+    };
+  }
+};
+
+export const addStudentsToClassroom = async (
+  classroom_id,
+  student_id_number
+) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/classrooms/add_student_classroom/${classroom_id}/${student_id_number}`
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed add student in classroom.",
+    };
+  }
+};
 
 /* INSTRUCTOR */
 
@@ -934,7 +965,8 @@ export const addActivity = async (
   timeLimit,
   title,
   description,
-  type = "quiz"
+  type = "quiz",
+  grading_breakdown
 ) => {
   try {
     let response;
@@ -962,6 +994,7 @@ export const addActivity = async (
         time_limit: Number(timeLimit),
         title,
         description,
+        grading_breakdown,
       });
     }
 

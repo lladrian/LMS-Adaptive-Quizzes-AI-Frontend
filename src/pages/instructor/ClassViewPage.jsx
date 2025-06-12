@@ -25,12 +25,14 @@ import CreateAssignmentModal from "../../components/CreateAssignmentModal";
 import EditMaterialModal from "../../components/EditMaterialModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import ActivityDeletionModal from "../../components/ActivityDeletionModal";
+import AddStudentsModal from "../../components/AddStudentsModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [classData, setClassData] = useState(null);
 
+  const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
@@ -375,12 +377,12 @@ const ClassDetailPage = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Students</h3>
-              {/*      <Link
-                to={`/instructor/class/${classId}/students/add`}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
+              <button
+                onClick={() => setShowAddStudentsModal(true)}
+                className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
               >
                 <FiPlus className="mr-2" /> Add Students
-              </Link> */}
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -467,6 +469,15 @@ const ClassDetailPage = () => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {showAddStudentsModal && (
+              <AddStudentsModal
+                isOpen={showAddStudentsModal}
+                onClose={() => setShowAddStudentsModal(false)}
+                classId={classId}
+                onSuccess={fetchClasses} // This will refresh the student list after adding
+              />
             )}
           </div>
         )}

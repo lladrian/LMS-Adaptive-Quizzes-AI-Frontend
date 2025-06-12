@@ -21,6 +21,7 @@ const AdminLayout = () => {
   const navItems = [
     { path: "/admin/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/admin/instructors", icon: FiUsers, label: "Instructors" },
+    { path: "/admin/students", icon: FiLock, label: "Students" },
     { path: "/admin/admins", icon: FiLock, label: "Admins" },
     /*     { path: "/admin/classrooms", icon: FiBook, label: "Classrooms" },
     { path: "/admin/settings", icon: FiSettings, label: "Settings" }, */

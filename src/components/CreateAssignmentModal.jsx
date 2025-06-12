@@ -26,6 +26,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
     timeLimit: 60,
     totalPoints: 0,
     questions: [],
+    grading_breakdown: "midterm",
   });
 
   const [newQuestion, setNewQuestion] = useState({
@@ -76,39 +77,10 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
       points: 1,
       expectedOutput: "",
     });
-    setShowAIPromptModal(false);
-  };
-
-  /* const addQuestion = () => {
-    if (!newQuestion.text) {
-      setError("Question text is required");
-      return;
-    }
-
-    setError(null);
-
-    const questionToAdd = {
-      id: Date.now(),
-      text: newQuestion.text,
-      points: parseInt(newQuestion.points),
-      expectedOutput: newQuestion.expectedOutput,
-    };
-
-    setAssignmentData((prev) => ({
-      ...prev,
-      questions: [...prev.questions, questionToAdd],
-      totalPoints: prev.totalPoints + parseInt(newQuestion.points),
-    }));
-
-    setNewQuestion({
-      text: "",
-      points: 1,
-      expectedOutput: "",
-    });
     setEditingQuestionId(null);
     setShowAIPromptModal(false);
   };
- */
+
   const removeQuestion = (questionId) => {
     const question = assignmentData.questions.find((q) => q.id === questionId);
     setAssignmentData((prev) => ({
@@ -142,7 +114,10 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
         assignmentData.timeLimit,
         assignmentData.title,
         assignmentData.description,
-        assignmentData.type
+        assignmentData.type,
+        assignmentData.type === "exam"
+          ? assignmentData.grading_breakdown
+          : undefined
       );
 
       if (!result.success) {
@@ -156,6 +131,7 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
         timeLimit: 60,
         totalPoints: 0,
         questions: [],
+        grading_breakdown: "midterm",
       });
 
       onClose();
@@ -184,6 +160,10 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
     if (currentStep === 1) {
       if (!assignmentData.title || !assignmentData.timeLimit) {
         setError("Please fill all required fields");
+        return;
+      }
+      if (assignmentData.type === "exam" && !assignmentData.grading_breakdown) {
+        setError("Please select grading breakdown for exams");
         return;
       }
     } else if (currentStep === 2 && assignmentData.questions.length === 0) {
@@ -303,6 +283,24 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                         <option value="programming">Programming</option>
                       </select>
                     </div>
+
+                    {assignmentData.type === "exam" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Grading Breakdown *
+                        </label>
+                        <select
+                          name="grading_breakdown"
+                          value={assignmentData.grading_breakdown}
+                          onChange={handleAssignmentChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
+                        >
+                          <option value="midterm">Midterm</option>
+                          <option value="final">Final</option>
+                        </select>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -558,6 +556,8 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
                         <p className="text-sm text-gray-500">Type</p>
                         <p className="font-medium capitalize">
                           {assignmentData.type}
+                          {assignmentData.type === "exam" &&
+                            ` (${assignmentData.grading_breakdown})`}
                         </p>
                       </div>
                       <div>
@@ -676,12 +676,6 @@ const CreateAssignmentModal = ({ isOpen, onClose, classId, onSuccess }) => {
           </form>
         </div>
         {showAIPromptModal && (
-          /*       <AIPromptModal
-            isOpen={showAIPromptModal}
-            onClose={() => setShowAIPromptModal(false)}
-            question={newQuestion.text}
-            onSelectOutput={handleOutputSelect}
-          /> */
           <AIPromptModal
             isOpen={showAIPromptModal}
             onClose={() => setShowAIPromptModal(false)}

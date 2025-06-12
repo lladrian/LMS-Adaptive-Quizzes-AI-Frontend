@@ -1,7 +1,7 @@
 // pages/admin/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { FiUsers, FiBook, FiUserPlus, FiTrendingUp, FiXCircle, FiCheckCircle, FiBookOpen, FiShield} from "react-icons/fi";
-import { getAllInstructors, getAllAdmins, allClassrooms  } from "../utils/authService";
+import { getAllInstructors, getAllAdmins, allClassrooms  } from "../../utils/authService";
 import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
