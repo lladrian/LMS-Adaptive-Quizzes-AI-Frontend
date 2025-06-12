@@ -24,8 +24,13 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loadingForgotPassword, setLoadingForgotPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    message: "",
+  });
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const navigate = useNavigate();
 
   // Reset form when tab changes
@@ -41,6 +46,27 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
 
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [loadingLogin, setLoadingLogin] = useState(false);
+
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    let message = "";
+
+    // Check length
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+
+    // Check complexity
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    // Determine message
+    if (score >= 5) message = "Strong password";
+    else if (score >= 3) message = "Medium password";
+    else if (password.length > 0) message = "Weak password";
+
+    return { score, message };
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -175,6 +201,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
         verificationData.email,
         newPassword
       );
+      console.log(result);
 
       if (result.success) {
         toast.success("Password reset successfully!");
@@ -213,8 +240,23 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.password) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !confirmPassword
+    ) {
       toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (passwordStrength.score < 3) {
+      toast.error("Please use a stronger password");
       return;
     }
 
@@ -224,7 +266,6 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     }
 
     setLoadingRegister(true);
-
     try {
       if (formData.role === "student") {
         const result = await registerStudent(
@@ -256,6 +297,8 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
       toast.error("An error occurred during registration");
     } finally {
       setLoadingRegister(false);
+      setNewPassword("");
+      setConfirmPassword("");
     }
   };
 
@@ -501,12 +544,76 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                     id="register-password"
                     name="password"
                     value={formData.password}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setPasswordStrength(
+                        checkPasswordStrength(e.target.value)
+                      );
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="••••••••"
                     required
                     minLength={8}
                   />
+                  {formData.password && (
+                    <div className="mt-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${
+                              passwordStrength.score >= 5
+                                ? "bg-green-500"
+                                : passwordStrength.score >= 3
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                            }`}
+                            style={{
+                              width: `${(passwordStrength.score / 5) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span
+                          className={`text-xs ${
+                            passwordStrength.score >= 5
+                              ? "text-green-600"
+                              : passwordStrength.score >= 3
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {passwordStrength.message}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Use at least 8 characters with uppercase, numbers, and
+                        symbols
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="confirm-password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirm-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="••••••••"
+                    required
+                    minLength={8}
+                  />
+                  {confirmPassword && formData.password !== confirmPassword && (
+                    <p className="mt-1 text-xs text-red-600">
+                      Passwords do not match
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -578,7 +685,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                           ></path>
                         </svg>
-                        <span>Creating account...</span>
+                        <span>Registering account...</span>
                       </div>
                     ) : (
                       "Create account"
@@ -778,6 +885,12 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                           required
                           minLength={8}
                         />
+                        {confirmPassword &&
+                          formData.password !== confirmPassword && (
+                            <p className="mt-1 text-xs text-red-600">
+                              Passwords do not match
+                            </p>
+                          )}
                       </div>
                     </>
                   )}

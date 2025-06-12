@@ -1119,7 +1119,7 @@ export const recoveryOTP = async (otp_code, email, password) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to join classroom",
+      error: error.response?.data?.message || "Failed to recover password",
     };
   }
 };
