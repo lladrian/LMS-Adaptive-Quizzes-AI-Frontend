@@ -520,6 +520,26 @@ export const specificQuiz = async (quiz_id) => {
   }
 };
 
+
+
+
+export const specificActivitySpecificAnswer = async (material_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/materials/get_specific_material_specific_answer/${material_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get specific activity",
+    };
+  }
+};
+
 export const specificExamSpecificAnswer = async (exam_id, student_id) => {
   try {
     const response = await axios.get(`
@@ -906,8 +926,6 @@ export const addMaterial = async (file, classroom_id, description, title) => {
       }
     );
 
-    console.log("Material added:", response.data);
-
     return {
       success: true,
       data: response.data,
@@ -1252,6 +1270,7 @@ export const sendOTP = async (email) => {
     };
   }
 };
+
 export const verifyEmailOTP = async (otp_code, email) => {
   try {
     const response = await axios.post(
@@ -1292,6 +1311,43 @@ export const recoveryOTP = async (otp_code, email, password) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to recover password",
+    };
+  }
+};
+
+
+export const specificActivityAnswer = async (answer_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_activities/get_specific_answer/${answer_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the exam answers",
+    };
+  }
+};
+
+export const activityAnswer = async (material_id, student_id, array_answers) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/answer_activities/add_answer/${material_id}/${student_id}`, {
+      array_answers,
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to join classroom",
     };
   }
 };

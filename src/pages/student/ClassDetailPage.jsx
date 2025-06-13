@@ -543,21 +543,31 @@ const ClassDetailPage = () => {
                                 {(answer.quiz?.question || answer.exam?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {answer.exam?.type === 'exam' ? (
-                                  <Link
-                                    to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                                  >
-                                    VIEW
-                                  </Link>
-                                ) : (
-                                  <Link
-                                    to={`/student/class/${classId}/${answer.quiz._id}/quiz/view_answer`}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                                  >
-                                    VIEW
-                                  </Link>
-                                )}
+                              {answer.exam?.type === 'exam' ? (
+                                <Link
+                                  to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                >
+                                  VIEW
+                                </Link>
+                              ) : answer.quiz?.type === 'quiz' ? (
+                                <Link
+                                  to={`/student/class/${classId}/${answer.quiz._id}/quiz/view_answer`}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                >
+                                  VIEW
+                                </Link>
+                              ) : answer.quiz?.type === 'activity' ? (
+                                <Link
+                                  to={`/student/class/${classId}/${answer.material._id}/activity/view_answer`}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                >
+                                  VIEW
+                                </Link>
+                              ) : null}
+
+
+                               
                               </td>
                             </tr>
                           )

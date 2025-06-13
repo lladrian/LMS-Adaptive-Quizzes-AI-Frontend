@@ -163,6 +163,12 @@ function App() {
               path="class/:classId/:lessonId/practice_with_lesson"
               element={<LessonPracticePage />}
             />
+            <Route
+              path="class/:classId/:lessonId/activity/view_answer"
+              element={<LessonPracticePage />}
+            />
+
+
             <Route path="grades" element={<GradesPage />} />
             <Route path="settings" element={<AccountSettings />} />
 
