@@ -40,6 +40,8 @@ const AssignmentAnswerPage = () => {
   const [correct, setCorrect] = useState([]);
   const [points, setPoints] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [selectedAnswer, setSelectedAnswer] = useState([]);
+
 
 
   const studentId = localStorage.getItem("userId");
@@ -131,7 +133,12 @@ const AssignmentAnswerPage = () => {
         return matched ? matched.line_of_code : "";
       });
 
-      
+      const initialSelectedAnswers = combinedQuestions.map((question) => {
+        const matched = answers.find((ans) => ans.questionId == question._id);
+        return matched ? matched.selected_option : "";
+      });
+
+       
       const initialAnswersPoints = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
         return matched ? matched.points : 0;
@@ -144,6 +151,7 @@ const AssignmentAnswerPage = () => {
 
       setCode(initialAnswers[currentIndex] || ""); // initial code display
       setAnswers(initialAnswers);
+      setSelectedAnswer(initialSelectedAnswers);
       setPoints(initialAnswersPoints)
       setCorrect(initialAnswersCorrect)
   };
@@ -187,6 +195,7 @@ const AssignmentAnswerPage = () => {
             if(result2.success){
               toast.success(result2?.data?.message);
               setAnswers(questions.map(() => "")); 
+              setSelectedAnswer(questions.map(() => "")); 
             }
             toast.error(result2.error);
         } else {
@@ -194,6 +203,7 @@ const AssignmentAnswerPage = () => {
           if(result1.success){
               toast.success(result1?.data?.message);
               setAnswers(questions.map(() => "")); 
+              setSelectedAnswer(questions.map(() => "")); 
           }
           toast.error(result1.error);
         }
@@ -209,8 +219,24 @@ const AssignmentAnswerPage = () => {
         compiler.version,
         code
       );
+
+      const updatedPoints = [...points];    
+      const updatedCorrect = [...correct];
+
+      if(questions[currentIndex].expected_output == result.data.data.run.output) {
+        updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
+        updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
+      } else {
+        updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
+        updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
+      }
+
+      // Update state with the new arrays
+      setPoints(updatedPoints);
+      setCorrect(updatedCorrect);
+
       setOutput(result.data.data.run.output);
-      askAIFunction(result.data.data.run.output, questions[currentIndex].points);
+      //askAIFunction(result.data.data.run.output, questions[currentIndex].points);
     } catch (error) {
       console.error(error);
       setOutput("Error running code.");
@@ -273,12 +299,13 @@ const AssignmentAnswerPage = () => {
     const submitted = questions.map((q, i) => ({
       questionId: q._id,
       line_of_code: answers[i] || "",
+      selected_option: selectedAnswer[i] || "",
       points: points[i] || 0,
       is_correct: correct[i] || 0,
     }));
 
     submitAnswers(submitted); 
-    console.log("Submitting Answers:", submitted);
+    //console.log("Submitting Answers:", submitted);
 
      // Reset answers
    // setAnswers(questions.map(() => "")); 
@@ -294,39 +321,6 @@ const AssignmentAnswerPage = () => {
 
   const askAIFunction = async (output_result, question_points) => {
         try {
-          // let askForCorrection = `in this code ->${code}<- using ${compiler.name} programming language with this output ->${output}<- .
-          // . please do correction with this question ->${questions[currentIndex].text}<-. 
-          // strictly just answer 1 or 0. remove the newline. please take note and have consideration that the compiler API used
-          // doesnt accept any input data like to pause and wait for input. no more any other to say just 0 or 1 only. 
-          // note that it is okay to give 1 if its partially correct. please do consider if code is beginner.
-          // strictly give answer and stick to the output from the given code. do stricly give 0 if out of nowhere code and results`;
-
-          // let askForPoints = `From this total points ->${questions[currentIndex].points} <- as maximum. 
-          // what can you give points from this code ->${code}<- using ${compiler.name} programming language with this question
-          // ->${questions[currentIndex].text}<- with this output ->${output}<- from the given code give result 
-          // just number only remove the newline. by giving points please stick to the output from the given code
-          // please take note and have consideration that the compiler API used
-          // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
-          // please do consider to give more points especially if code is beginner`;
-
-    
-
-          // let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
-          // how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
-          // ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
-          // Please respond with just a number, without any newlines. Stick to the output from the given code. 
-          // Note that the compiler API does not accept input data or pause for input. 
-          // Strictly respond with points only, and consider giving more points, especially for beginner code.`;
-
-        //   let askForPoints = `From a total of ->${question_points}<- points maximum, 
-        //   how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
-        //   ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
-        //   Please respond with just a number, without any newlines. Stick to the output from the given code. 
-        //   Note that the compiler API does not accept input data or pause for input. 
-        //   Strictly look for the valid question to give points and the given code and output of the code.
-        //   Strictly respond with points only, and consider giving more points, especially for beginner code.
-        //  `;
-
           let askForCorrection = `You are evaluating a beginner's code submission.
           The code is: ->${code}<-
           The output is: ->${output_result}<-
@@ -362,13 +356,6 @@ const AssignmentAnswerPage = () => {
           const updatedPoints = [...points];    
           const updatedCorrect = [...correct];
 
-          //console.log(askForCorrection)
-          //console.log(askForPoints)
-          // console.log(result)
-          // console.log(result.data.data)
-          // console.log(result2)
-          // console.log(result2.data.data)
-
           updatedCorrect[currentIndex] = result.data.data; // Assign the value if it's not text
           updatedPoints[currentIndex] = result2.data.data; // Assign the value if it's not text
         
@@ -380,21 +367,43 @@ const AssignmentAnswerPage = () => {
         }
       };
 
+    const handleOptionSelect = (option) => {
+      const updatedAnswers = [...selectedAnswer];
+      const updatedCorrect = [...correct];
+      const updatedPoints = [...points];
+
+
+      if (option === questions[currentIndex].correct_option) {
+        updatedCorrect[currentIndex] = 1;
+        updatedPoints[currentIndex] = questions[currentIndex].points;
+        updatedAnswers[currentIndex] = option;
+      } else {
+        updatedCorrect[currentIndex] = 0;
+        updatedPoints[currentIndex] = 0;
+        updatedAnswers[currentIndex] = option;
+      }
+
+      setSelectedAnswer(updatedAnswers);
+      setCorrect(updatedCorrect);
+      setPoints(updatedPoints);
+    };
+
+
   const currentQuestion = questions[currentIndex];
 
   return (
     <div className="p-6 space-y-4">
       {currentQuestion && (
         <div className="space-y-4">
-                <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
-            {output}
-          </div>
-          
-          <div className="flex gap-4">
-            {/* Left Column - Controls */}
-            <div className="w-full md:w-1/2 space-y-4">
-              {!started ? (
-                <div className="text-center">
+
+          {started && currentQuestion.answer_type === 'programming' && (
+           <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
+              {output}
+            </div>
+          )}
+
+          {!started  && (
+                <div className="text-center w-full">
                   <h2 className="text-xl font-bold mb-4">
                     Ready to Start the {type === "quiz" ? "Quiz" : "Exam"}?
                   </h2>
@@ -405,58 +414,82 @@ const AssignmentAnswerPage = () => {
                     Start {type === "quiz" ? "Quiz" : "Exam"}
                   </button>
                 </div>
-              ) : 
+          )}
+
+          <div className="flex gap-4">
+            {/* Left Column - Controls */}
+            <div className="w-full md:w-1/2 space-y-4">
+            
+
+              {started && (
+              <>
                 <div className="p-4 border rounded bg-white shadow">
-                    <h2 className="text-lg font-semibold mb-2">
-                      Question {currentIndex + 1} of {questions.length}
-                    </h2>
-                    <p className="mb-2">{currentQuestion.text}</p>
-                    <p className="text-sm text-gray-600">
-                      Points: {points[currentIndex]} / {currentQuestion.points}
-                    </p>
-                    <p className="text-sm">
-                      Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
-                    </p>
-                    <div>
-                      <p>Time Left: {formatTime(timeLeft)}</p>
-                    </div>
-                </div>
-              }
+                      <h2 className="text-lg font-semibold mb-2">
+                        Question {currentIndex + 1} of {questions.length}
+                      </h2>
+                      <p className="mb-2">{currentQuestion.text}</p>
 
-              <select
-                onChange={handleCompilerChange}
-                className="border border-gray-300 rounded px-2 py-3 w-full"
-                value={JSON.stringify(compiler)}
-              >
-                {languages.map((lang, index) => (
-                  <option
-                    key={index}
-                    value={JSON.stringify({
-                      name: lang.name,
-                      language: lang.language,
-                      version: lang.version,
-                      starting_code: lang.starting_code,
-                    })}
-                  >
-                    {`${lang.name} - ${lang.version}`.toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                      {(currentQuestion.answer_type === 'programming' || answersData.submitted_at) && ( 
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Expected Output: {currentQuestion.expected_output}
+                          </p>
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Points: {points[currentIndex]} / {currentQuestion.points}
+                          </p>
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Correct: {correct[currentIndex] === 1 ? 'true' : 'false'}
+                          </p>
+                        </div>
+                      )}
 
-              <button
-                onClick={runCode}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
-              >
-                Run Code
-              </button>
+                      {(!answersData.submitted_at) && ( 
+                        <div>
+                          <p>Time Left: {formatTime(timeLeft)}</p>
+                        </div>
+                      )}
+                  </div>
+              </>
+              )}
 
-              <button
-                onClick={startingCode}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
-              >
-                Starting Code
-              </button>
+              {started && currentQuestion.answer_type === 'programming' && (
+              <>
+                <select
+                  onChange={handleCompilerChange}
+                  className="border border-gray-300 rounded px-2 py-3 w-full"
+                  value={JSON.stringify(compiler)}
+                >
+                  {languages.map((lang, index) => (
+                    <option
+                      key={index}
+                      value={JSON.stringify({
+                        name: lang.name,
+                        language: lang.language,
+                        version: lang.version,
+                        starting_code: lang.starting_code,
+                      })}
+                    >
+                      {`${lang.name} - ${lang.version}`.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
 
+                <button
+                  onClick={runCode}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
+                >
+                  Run Code
+                </button>
+
+                <button
+                  onClick={startingCode}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
+                >
+                  Starting Code
+                </button>
+              </>
+              )}
+         
               {started && (
                 <div className="flex justify-between gap-4">
                   <button
@@ -490,17 +523,67 @@ const AssignmentAnswerPage = () => {
               )}
             </div>
 
-            {/* Right Column - Code Editor */}
-            <div className="w-full md:w-1/2">
+           <div className="w-full md:w-1/2">
+            {/* Only show if answer_type is 'options' */}
+            {started && currentQuestion.answer_type === 'options' && (
+              <div className="mb-8 p-6 bg-white rounded-xl shadow-md border border-gray-200">
+              <h3 className="font-bold text-xl text-gray-800 mb-4 text-center">
+                Choose Your Answer
+              </h3>
+              <ul className="space-y-4">
+                {Object.values(currentQuestion.options).map((value, index) => (
+                    <li key={index}>
+                      <label className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer hover:bg-blue-50 transition">
+                        <input
+                          type="radio"
+                          name={`mcq-${currentIndex}`}
+                          value={value}
+                          checked={selectedAnswer[currentIndex] === value}
+                          onChange={() => handleOptionSelect(value)}
+                          className="accent-blue-600 w-5 h-5 mr-4"
+                        />
+                        <span className="text-lg font-medium text-gray-700">{value}</span>
+                      </label>
+                    </li>
+                  ))}
+          
+
+                {/* {["option_1", "option_2", "option_3", "option_4"].map((opt, index) => (
+                  <li key={index}>
+                    <label className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer hover:bg-blue-50 transition">
+                      <input
+                        type="radio"
+                        name="mcq"
+                        value={opt}
+                        className="accent-blue-600 w-5 h-5 mr-4"
+                        // checked={selectedAnswer === opt}
+                        // onChange={() => setSelectedAnswer(opt)}
+                      />
+                      <span className="text-lg font-medium text-gray-700">
+                        {currentQuestion.options[opt]}
+                      </span>
+                    </label>
+                  </li>
+                ))} */}
+              </ul>
+            </div>
+            )}
+
+           
+
+            {/* Only show CodeEditor if answer_type is 'programming' */}
+            {started && currentQuestion.answer_type === 'programming' && (
               <CodeEditor
                 value={code}
                 onChange={handleCodeChange}
                 language={compiler.language}
                 height="400px"
               />
-            </div>
+            )}
           </div>
 
+
+          </div>
         </div>
       )}
     </div>
