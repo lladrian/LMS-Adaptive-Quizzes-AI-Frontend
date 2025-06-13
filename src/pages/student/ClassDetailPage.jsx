@@ -434,18 +434,55 @@ const ClassDetailPage = () => {
                     <div>📝 Midterm:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
                     <div>📚 Final:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
                     <div>🎯 Activity:  {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div> */}
-                    <div>📘 Quiz: {grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz}/{classroom.classroom.grading_system.quiz}</div>
-                    <div>📝 Midterm:  {grades.midterm.earnedPoints / grades.midterm.totalPoints  * classroom.classroom.grading_system.midterm}/{classroom.classroom.grading_system.midterm}</div>
-                    <div>📚 Final:  {grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final}/{classroom.classroom.grading_system.final}</div>
-                    <div>🎯 Activity:  {120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div>
-                    <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                      🔢 Total: {grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz +
-                                      grades.midterm.earnedPoints / grades.midterm.totalPoints  * classroom.classroom.grading_system.midterm +
-                                      grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final + 
-
-                                      120 / 120 * classroom.classroom.grading_system.activity
-                             } / 100%
+                    <div>
+                      📘 Quiz: {
+                        grades.quiz.totalPoints > 0
+                          ? (grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz).toFixed(1)
+                          : 0
+                      } / {classroom.classroom.grading_system.quiz}
                     </div>
+                   <div>
+                      📝 Midterm: {
+                        grades.midterm.totalPoints > 0
+                          ? (grades.midterm.earnedPoints / grades.midterm.totalPoints * classroom.classroom.grading_system.midterm).toFixed(1)
+                          : 0
+                      } / {classroom.classroom.grading_system.midterm}
+                    </div>
+
+                    <div>
+                      📚 Final: {
+                        grades.final.totalPoints > 0
+                          ? (grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final).toFixed(1)
+                          : 0
+                      } / {classroom.classroom.grading_system.final}
+                    </div>
+
+                    <div>
+                      🎯 Activity: {
+                        120 > 0
+                          ? (120 / 120 * classroom.classroom.grading_system.activity).toFixed(1)
+                          : 0
+                      } / {classroom.classroom.grading_system.activity}
+                    </div>
+
+                    <div  div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
+                        🔢 Total: {
+                          (
+                            (grades.quiz.totalPoints > 0
+                              ? (grades.quiz.earnedPoints / grades.quiz.totalPoints) * classroom.classroom.grading_system.quiz
+                              : 0) +
+                            (grades.midterm.totalPoints > 0
+                              ? (grades.midterm.earnedPoints / grades.midterm.totalPoints) * classroom.classroom.grading_system.midterm
+                              : 0) +
+                            (grades.final.totalPoints > 0
+                              ? (grades.final.earnedPoints / grades.final.totalPoints) * classroom.classroom.grading_system.final
+                              : 0) +
+                            (120 > 0
+                              ? (120 / 120) * classroom.classroom.grading_system.activity
+                              : 0)
+                          ).toFixed(0)
+                        } / 100%
+                      </div>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
