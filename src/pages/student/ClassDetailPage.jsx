@@ -306,7 +306,7 @@ const ClassDetailPage = () => {
                             </Link>
                           </div>
 
-                          {material && (
+                          {/* {material && (
                             <div className="mt-4 border-t pt-4">
                               <Link
                                 to={`/student/class/${classId}/${material._id}/practice_with_lesson`}
@@ -316,7 +316,7 @@ const ClassDetailPage = () => {
                                 Start Practice Exercises
                               </Link>
                             </div>
-                          )}
+                          )} */}
 
                         </div>
                       )}  
