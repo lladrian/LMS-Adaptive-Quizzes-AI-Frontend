@@ -16,23 +16,28 @@ const CreateClassModal = ({ onClose, onClassCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // List of popular programming languages
+  // const programmingLanguages = [
+  //   { value: "python", label: "Python" },
+  //   { value: "javascript", label: "JavaScript" },
+  //   { value: "java", label: "Java" },
+  //   { value: "c", label: "C" },
+  //   { value: "cpp", label: "C++" },
+  //   { value: "csharp", label: "C#" },
+  //   { value: "php", label: "PHP" },
+  //   { value: "ruby", label: "Ruby" },
+  //   { value: "swift", label: "Swift" },
+  //   { value: "kotlin", label: "Kotlin" },
+  //   { value: "go", label: "Go" },
+  //   { value: "rust", label: "Rust" },
+  //   { value: "typescript", label: "TypeScript" },
+  //   { value: "r", label: "R" },
+  //   { value: "scala", label: "Scala" },
+  //   { value: "other", label: "Other" },
+  // ];
+
   const programmingLanguages = [
     { value: "python", label: "Python" },
-    { value: "javascript", label: "JavaScript" },
-    { value: "java", label: "Java" },
-    { value: "c", label: "C" },
-    { value: "cpp", label: "C++" },
-    { value: "csharp", label: "C#" },
-    { value: "php", label: "PHP" },
-    { value: "ruby", label: "Ruby" },
-    { value: "swift", label: "Swift" },
-    { value: "kotlin", label: "Kotlin" },
-    { value: "go", label: "Go" },
-    { value: "rust", label: "Rust" },
-    { value: "typescript", label: "TypeScript" },
-    { value: "r", label: "R" },
-    { value: "scala", label: "Scala" },
-    { value: "other", label: "Other" },
+    { value: "java", label: "Java" }
   ];
 
   const generateClassCode = () => {

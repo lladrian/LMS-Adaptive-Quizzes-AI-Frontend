@@ -15,6 +15,7 @@ import {
   specificExamSpecificAnswer,
   specificQuizSpecificAnswer,
   askAI,
+  specificClassroom
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
@@ -22,9 +23,9 @@ import { toast } from "react-toastify";
 
 
 const AssignmentAnswerPage = () => {
-  const {assignmentId, type} = useParams();
+  const {assignmentId, type, classId} = useParams();
   const [started, setStarted] = useState(false);
-  const [code, setCode] = useState("print('Hello, World!')");
+  const [code, setCode] = useState("");
   const [compiler, setCompiler] = useState({
     name: "Python",
     language: "python",
@@ -41,6 +42,7 @@ const AssignmentAnswerPage = () => {
   const [points, setPoints] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0); // in seconds
   const [selectedAnswer, setSelectedAnswer] = useState([]);
+  const [classroom, setClassroom] = useState(null);
 
 
 
@@ -48,9 +50,23 @@ const AssignmentAnswerPage = () => {
 
 
   useEffect(() => {
-    fetchLanguages();
+    fetchSpecificClassroom();
     fetchAssignment();
   }, []);
+
+  const fetchSpecificClassroom = async () => {
+      try {
+        const result = await specificClassroom(classId);
+
+        if (result.success) {
+          setClassroom(result.data.data);
+          fetchLanguages(result.data.data.classroom.programming_language);
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } 
+  };
 
 
   useEffect(() => {
@@ -84,14 +100,23 @@ const AssignmentAnswerPage = () => {
     };
 
 
-  const fetchLanguages = async () => {
-    try {
-      const result = await allLanguage();
-      setLanguages(result.data.data || []);
-    } catch (error) {
-      console.error("Failed to fetch languages:", error);
-    }
-  };
+ const fetchLanguages = async (language) => {
+  try {
+    const result = await allLanguage(language);
+
+    const allLanguages = result.data.data || [];
+
+    // Filter to get only the language that matches the `language` argument
+    const matched = allLanguages.find((lang) => lang.language === language);
+
+    // Set only the matched language (as an array if needed)
+    setLanguages(matched ? [matched] : []);
+  } catch (error) {
+    console.error("Failed to fetch languages:", error);
+  }
+};
+
+
   const takeAssignment = async () => {
     try {
       if(type == 'quiz') {
@@ -246,10 +271,11 @@ const AssignmentAnswerPage = () => {
 
   const startingCode = async () => {
     const updatedAnswers = [...answers];
-    updatedAnswers[currentIndex] = compiler.starting_code || "";
+    //updatedAnswers[currentIndex] = compiler.starting_code || "";
+    updatedAnswers[currentIndex] = languages[0].starting_code || "";
 
     setAnswers(updatedAnswers); // ✅ You need to set the answers array
-    setCode(compiler.starting_code || ""); // ✅ Also update the code shown to the user
+    setCode(languages[0].starting_code || ""); // ✅ Also update the code shown to the user
   };
 
   const handleCompilerChange = (e) => {
@@ -454,7 +480,7 @@ const AssignmentAnswerPage = () => {
 
               {started && currentQuestion.answer_type === 'programming' && (
               <>
-                <select
+                {/* <select
                   onChange={handleCompilerChange}
                   className="border border-gray-300 rounded px-2 py-3 w-full"
                   value={JSON.stringify(compiler)}
@@ -472,7 +498,7 @@ const AssignmentAnswerPage = () => {
                       {`${lang.name} - ${lang.version}`.toUpperCase()}
                     </option>
                   ))}
-                </select>
+                </select> */}
 
                 <button
                   onClick={runCode}
