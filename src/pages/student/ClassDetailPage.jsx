@@ -150,7 +150,7 @@ const ClassDetailPage = () => {
                 {classroom?.classroom.classroom_name}
               </h1>
               <p className="text-gray-600">
-                {classroom?.classroom.subject_code} • {classroom?.classroom.instructor.fullname}
+                {classroom?.classroom?.subject_code} • {classroom?.classroom?.instructor?.fullname}
               </p>
               <p className="mt-2 text-gray-700">{classroom?.classroom.description}</p>
               <div className="flex items-center gap-2 mt-2">
@@ -400,7 +400,26 @@ const ClassDetailPage = () => {
 
             {activeTab === "grades" && (
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Grades</h2>
+                {/* <h2 className="text-xl font-semibold">Grades</h2> */}
+                <div className="bg-white p-6 rounded shadow-md">
+                  <h2 className="text-xl font-bold mb-4 text-gray-800">Your Grades</h2>
+                  <div className="space-y-2 text-lg font-semibold text-gray-700">
+                    {/* <div>📘 Quiz: {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.quiz}</div>
+                    <div>📝 Midterm:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
+                    <div>📚 Final:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
+                    <div>🎯 Activity:  {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div> */}
+                    <div>📘 Quiz: {2 / 2 * 20}/{classroom.classroom.grading_system.quiz}</div>
+                    <div>📝 Midterm:  {120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
+                    <div>📚 Final:  {120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
+                    <div>🎯 Activity:  {120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div>
+                    <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
+                      🔢 Total: 100/{classroom.classroom.grading_system.quiz +
+                                classroom.classroom.grading_system.midterm +
+                                classroom.classroom.grading_system.final +
+                                classroom.classroom.grading_system.activity}
+                    </div>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -530,6 +549,23 @@ const ClassDetailPage = () => {
                   <p className="text-2xl font-bold">{classroom.exams.length}</p>
                 </div> 
               </div>
+
+             <div className="bg-white p-6 rounded shadow-md">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Grading System</h2>
+                <div className="space-y-2 text-lg font-semibold text-gray-700">
+                  <div>📘 Quiz: {classroom.classroom.grading_system.quiz}%</div>
+                  <div>📝 Midterm: {classroom.classroom.grading_system.midterm}%</div>
+                  <div>📚 Final: {classroom.classroom.grading_system.final}%</div>
+                  <div>🎯 Activity: {classroom.classroom.grading_system.activity}%</div>
+                  <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
+                    🔢 Total: {classroom.classroom.grading_system.quiz +
+                              classroom.classroom.grading_system.midterm +
+                              classroom.classroom.grading_system.final +
+                              classroom.classroom.grading_system.activity}%
+                  </div>
+                </div>
+              </div>
+
 
               {/* <div>
                 <h3 className="text-lg font-semibold mb-2">Students</h3>
