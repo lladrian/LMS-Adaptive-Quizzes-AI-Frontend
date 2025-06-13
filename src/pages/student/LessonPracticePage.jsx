@@ -180,7 +180,7 @@ const LessonPracticePage = () => {
       const updatedPoints = [...points];    
       const updatedCorrect = [...correct];
 
-      if (questions[currentIndex].expected_output.toString().trim() === result.data.data.run.output.toString().trim()) {
+      if (questions[currentIndex]?.expected_output?.toString().trim() === result?.data?.data?.run?.output?.toString().trim()) {
         updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
         updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
       } else {
@@ -270,9 +270,9 @@ const LessonPracticePage = () => {
                   ) : (
                     <button
                      onClick={handleSubmitAll}
-                      disabled={answersData.submitted_at}
+                      disabled={answersData?.submitted_at}
                       className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-                        answersData.submitted_at
+                        answersData?.submitted_at
                           ? "bg-blue-400 cursor-not-allowed"
                           : "bg-blue-600 hover:bg-blue-700"
                       }`}
