@@ -249,7 +249,7 @@ const AssignmentAnswerPage = () => {
       const updatedPoints = [...points];    
       const updatedCorrect = [...correct];
 
-      if(questions[currentIndex].expected_output == result.data.data.run.output) {
+      if (questions[currentIndex].expected_output.toString().trim() === result.data.data.run.output.toString().trim()) {
         updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
         updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
       } else {
