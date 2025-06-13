@@ -616,7 +616,7 @@ const ClassDetailPage = () => {
 
                   <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
                   <h3 className="text-sm font-medium">Total Materials</h3>
-                  <p className="text-2xl font-bold">{classroom.exams.length}</p>
+                  <p className="text-2xl font-bold">{classroom.materials.length}</p>
                 </div> 
               </div>
 
