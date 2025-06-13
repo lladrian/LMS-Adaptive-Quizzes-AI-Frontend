@@ -480,7 +480,7 @@ const ClassDetailPage = () => {
                             (120 > 0
                               ? (120 / 120) * classroom.classroom.grading_system.activity
                               : 0)
-                          ).toFixed(0)
+                          ).toFixed(1)
                         } / 100%
                       </div>
                   </div>
