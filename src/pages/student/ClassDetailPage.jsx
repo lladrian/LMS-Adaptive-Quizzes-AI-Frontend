@@ -475,7 +475,7 @@ const ClassDetailPage = () => {
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {answer.exam?.type === 'exam' ? (
                                   <Link
-                                    to={`/student/class/${classId}/${classId}/${answer.exam._id}/exam/view_answer`}
+                                    to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
                                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                                   >
                                     VIEW
@@ -504,7 +504,7 @@ const ClassDetailPage = () => {
                 {/* <h2 className="text-2xl font-semibold">Practice With AI</h2> */}
                 <div className="w-full">
                   <Link
-                      to={`/student/class/practice_with_ai`}
+                      to={`/student/class/${classId}/practice_with_ai`}
                   >
                       <button
                         className="bg-blue-600 hover:bg-blue-700  text-white font-medium w-full py-2 px-4 rounded"

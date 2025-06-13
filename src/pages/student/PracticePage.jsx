@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import CodeEditor from "../../components/CodeEditor";
 import {
   compilerRunCode,
   allLanguage,
-  askAI
+  askAI,
+  specificClassroom
 } from "../../utils/authService";
 import renderFormattedTextGemini from "../../components/GeminiTextFormatter";
 
 
 const PracticePage = () => {
+  const { classId } = useParams();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [practiceData, setPracticeData] = useState([]);
   const [code, setCode] = useState("print('Hello, World!')");
@@ -22,15 +24,18 @@ const PracticePage = () => {
       starting_code: "print('Hello, World!')",
   });
   const [languages, setLanguages] = useState([]);
+  const [classroom, setClassroom] = useState(null);
   
 
   useEffect(() => {
-    fetchQuiz();
+    fetchSpecificClassroom();
+
   }, []);
 
-     const fetchQuiz = async () => {
+
+     const fetchQuiz = async (language) => {
       try {
-        let ask = `Give me one simple programming quiz using ${compiler.name} programming. 
+        let ask = `Give me one simple programming quiz using ${language} programming. 
         Do not give any solutions and instructions, just problems only. 
         make it unique quiz to practice. Put also sample result for easy to 
         understand especially for beginner. strictly no more to say.. no more input related quiz`;
@@ -67,8 +72,8 @@ const PracticePage = () => {
       const runCode = async () => {
         try {
           const result = await compilerRunCode(
-            compiler.language,
-            compiler.version,
+            languages[0].language,
+            languages[0].version,
             code
           );
           setOutput(result.data.data.run.output);
@@ -95,19 +100,36 @@ const PracticePage = () => {
   };
 
 
-   useEffect(() => {
-      fetchLanguages();
-    }, []);
-  
-    const fetchLanguages = async () => {
+      const fetchSpecificClassroom = async () => {
       try {
-        const result = await allLanguage();
-        setLanguages(result.data.data || []);
-      } catch (error) {
-        console.error("Failed to fetch languages:", error);
-      }
-    };
+        const result = await specificClassroom(classId);
 
+        if (result.success) {
+          setClassroom(result.data.data);
+          fetchLanguages(result.data.data.classroom.programming_language);
+          fetchQuiz(result.data.data.classroom.programming_language);
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } 
+  };
+
+   const fetchLanguages = async (language) => {
+  try {
+    const result = await allLanguage(language);
+
+    const allLanguages = result.data.data || [];
+
+    // Filter to get only the language that matches the `language` argument
+    const matched = allLanguages.find((lang) => lang.language === language);
+
+    // Set only the matched language (as an array if needed)
+    setLanguages(matched ? [matched] : []);
+  } catch (error) {
+    console.error("Failed to fetch languages:", error);
+  }
+};
     
 
   const handleCompilerChange = (e) => {
@@ -136,7 +158,7 @@ const PracticePage = () => {
           <CodeEditor
             value={code}
             onChange={handleCodeChange}
-            language="python"
+            language={classroom.classroom.programming_language}
             height="400px"
           />
 
