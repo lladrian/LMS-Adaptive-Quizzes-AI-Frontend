@@ -252,8 +252,8 @@ const AssignmentAnswerPage = () => {
         updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
         updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
       } else {
-        updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
-        updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
+        updatedCorrect[currentIndex] = 0; // Assign the value if it's not text
+        updatedPoints[currentIndex] = 0; // Assign the value if it's not text
       }
 
       // Update state with the new arrays
