@@ -240,8 +240,8 @@ const AssignmentAnswerPage = () => {
   const runCode = async () => {
     try {
       const result = await compilerRunCode(
-        compiler.language,
-        compiler.version,
+        languages[0].language,
+        languages[0].version,
         code
       );
 
@@ -602,7 +602,7 @@ const AssignmentAnswerPage = () => {
               <CodeEditor
                 value={code}
                 onChange={handleCodeChange}
-                language={compiler.language}
+                language={classroom.classroom.programming_language}
                 height="400px"
               />
             )}

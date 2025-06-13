@@ -283,7 +283,7 @@ const ClassDetailPage = () => {
                           {material && (
                             <div className="mt-4 border-t pt-4">
                               <Link
-                                to={`/student/class/${material._id}/practice_with_lesson`}
+                                to={`/student/class/${classId}/${material._id}/practice_with_lesson`}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                               >
                                 <FiCode className="mr-2" /> 
@@ -475,7 +475,7 @@ const ClassDetailPage = () => {
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {answer.exam?.type === 'exam' ? (
                                   <Link
-                                    to={`/student/class/${classId}/${answer.exam._id}/exam/view_answer`}
+                                    to={`/student/class/${classId}/${classId}/${answer.exam._id}/exam/view_answer`}
                                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                                   >
                                     VIEW

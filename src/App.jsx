@@ -155,12 +155,12 @@ function App() {
               element={<AssignmentAnswerPage />}
             />
             <Route
-              path="class/:classId/:assignmentId/:type/view_answer"
+              path="class/:classId/:classId/:assignmentId/:type/view_answer"
               element={<ViewAssignmentAnswerPage />}
             />
             <Route path="class/practice_with_ai" element={<PracticePage />} />
             <Route
-              path="class/:lessonId/practice_with_lesson"
+              path="class/:classId/:lessonId/practice_with_lesson"
               element={<LessonPracticePage />}
             />
             <Route path="grades" element={<GradesPage />} />

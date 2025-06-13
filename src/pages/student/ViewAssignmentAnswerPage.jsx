@@ -10,18 +10,22 @@ import {
   quizAnswer,
   specificExamAnswer,
   specificQuizAnswer,
+  takeExam,
+  takeQuiz,
   specificExamSpecificAnswer,
   specificQuizSpecificAnswer,
   askAI,
+  specificClassroom
 } from "../../utils/authService";
+import { toast } from "react-toastify";
+
 
 
 
 const AssignmentAnswerPage = () => {
-  const { assignmentId, type } = useParams();
-
-  const [code, setCode] = useState("print('Hello, World!')");
-  const [points, setPoints] = useState(0);
+  const {assignmentId, type, classId} = useParams();
+  const [started, setStarted] = useState(false);
+  const [code, setCode] = useState("");
   const [compiler, setCompiler] = useState({
     name: "Python",
     language: "python",
@@ -33,121 +37,98 @@ const AssignmentAnswerPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [answers, setAnswers] = useState([]);
+  const [answersData, setAnswersData] = useState([]);
   const [correct, setCorrect] = useState([]);
-  //const [points, setPoints] = useState([]);
-  //const [answers2, setAnswers2] = useState([]);
+  const [points, setPoints] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [selectedAnswer, setSelectedAnswer] = useState([]);
+  const [classroom, setClassroom] = useState(null);
+
+
 
   const studentId = localStorage.getItem("userId");
 
 
   useEffect(() => {
-    fetchLanguages();
+    fetchSpecificClassroom();
     fetchAssignment();
   }, []);
 
-  const fetchLanguages = async () => {
-    try {
-      const result = await allLanguage();
-      setLanguages(result.data.data || []);
-    } catch (error) {
-      console.error("Failed to fetch languages:", error);
-    }
+  const fetchSpecificClassroom = async () => {
+      try {
+        const result = await specificClassroom(classId);
+
+        if (result.success) {
+          setClassroom(result.data.data);
+          fetchLanguages(result.data.data.classroom.programming_language);
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } 
   };
 
-  
-    const askAIFunction = async (output_result, question_points) => {
-          try {
-            // let askForCorrection = `in this code ->${code}<- using ${compiler.name} programming language with this output ->${output}<- .
-            // . please do correction with this question ->${questions[currentIndex].text}<-. 
-            // strictly just answer 1 or 0. remove the newline. please take note and have consideration that the compiler API used
-            // doesnt accept any input data like to pause and wait for input. no more any other to say just 0 or 1 only. 
-            // note that it is okay to give 1 if its partially correct. please do consider if code is beginner.
-            // strictly give answer and stick to the output from the given code. do stricly give 0 if out of nowhere code and results`;
-  
-            // let askForPoints = `From this total points ->${questions[currentIndex].points} <- as maximum. 
-            // what can you give points from this code ->${code}<- using ${compiler.name} programming language with this question
-            // ->${questions[currentIndex].text}<- with this output ->${output}<- from the given code give result 
-            // just number only remove the newline. by giving points please stick to the output from the given code
-            // please take note and have consideration that the compiler API used
-            // doesnt accept any input data like to pause and wait for input. stricly no more any other to say just points only.
-            // please do consider to give more points especially if code is beginner`;
-  
-            // let askForCorrection = `In this code ->${code}<- using the ${compiler.name} programming language,
-            //  the output is ->${output_result}<-.
-            // Please provide a correction for the question ->${questions[currentIndex].text}<-.
-            // Strictly respond with either 1 or 0, without any newlines. Note that the compiler API does 
-            // not accept input data or pause for input. 
-            // Only respond with 0 or 1. It is acceptable to give 1 if the code is partially correct. 
-            // Please consider that the code is for beginners. 
-            // Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.`;
-  
-            // let askForPoints = `From a total of ->${questions[currentIndex].points}<- points maximum, 
-            // how many points would you assign to this code ->${code}<- using the ${compiler.name} programming language for the question 
-            // ->${questions[currentIndex].text}<- with the output ->${output_result}<-? 
-            // Please respond with just a number, without any newlines. Stick to the output from the given code. 
-            // Note that the compiler API does not accept input data or pause for input. 
-            // Strictly respond with points only, and consider giving more points, especially for beginner code.`;
 
+  useEffect(() => {
+ // const countdownFrom = 120; // 2 minutes in seconds.
+  //const openedAt = new Date(); // Initialize openedAt when useEffect runs
+ // const openedAt = answersData.opened_at; // 2025-06-03 12:00:34
+    const countdownFrom = (answersData?.quiz?.submission_time || answersData?.exam?.submission_time) * 60;
+    const openedAt = new Date(answersData?.opened_at?.replace(' ', 'T')); // e.g. "2025-06-03T12:00:34"
 
-          let askForCorrection = `You are evaluating a beginner's code submission.
-          The code is: ->${code}<-
-          The output is: ->${output_result}<-
-          The question is: ->${questions[currentIndex].text}<-
-          The programming language is: ->${compiler.name}<-
-          Determine if the code correctly answers the question based on its output.
-          Respond with:
-            - 1 if the code is fully or partially correct and relate to the question.
-            - 0 if the code and output do not relate to the question.
-          Only respond with a single number (0 or 1). No newlines, explanations, or symbols.
-          Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.
-          Note: The compiler does not support input(), so do not penalize for input handling.
-          `;
-          
-          
-          let askForPoints = `You are grading a beginner's code submission.
-          The code is: ->${code}<-
-          The output is: ->${output_result}<-
-          The question is: ->${questions[currentIndex].text}<-
-          The programming language is: ->${compiler.name}<-
-          Maximum possible points: ->${question_points}<-
-          Evaluate how well the code matches the question and produces the expected output.
-          Stricly if the code does not answer the question or the output is unrelated, respond with 0.
-          If the code is partially correct or attempts to solve the question reasonably, assign partial points.
-          Only respond with a number (0 to ${question_points}), with no newlines, explanations, or symbols.
-          Note: Input is not supported by the compiler. Do not penalize for that.
-          `;
+    const updateCountdown = () => {
+    const now = new Date();
+    const elapsed = Math.floor((now - openedAt) / 1000);
+    const remaining = countdownFrom - elapsed;
+
+    setTimeLeft(remaining > 0 ? remaining : 0);
+  };
+
+  updateCountdown(); // initial call
+
+  const timer = setInterval(updateCountdown, 1000);
+  return () => clearInterval(timer);
+}, [answersData]);
 
   
-    
-            const result = await askAI(askForCorrection);
-            const result2 = await askAI(askForPoints);
-  
-            const updatedPoints = [...points];    
-            const updatedCorrect = [...correct];
-  
-            // console.log(askForCorrection)
-            //console.log(askForPoints)
-            // console.log(result)
-            // console.log(result.data.data)
-            // console.log(result2)
-            // console.log(result2.data.data)
-  
-            // if (typeof result.data.data === 'string' || typeof result2.data.data === 'string') {
-            //     updatedCorrect[currentIndex] = 0; // Return 0 if the data is text
-            //     updatedPoints[currentIndex] = 0;   // Return 0 if the data is text
-            // } 
-  
-            updatedCorrect[currentIndex] = result.data.data; // Assign the value if it's not text
-            updatedPoints[currentIndex] = result2.data.data; // Assign the value if it's not text
-          
-            // Update state with the new arrays
-            setPoints(updatedPoints);
-            setCorrect(updatedCorrect);
-          } catch (error) {
-            console.error("Error fetching question:", error);
-          }
-        };
 
+
+    const formatTime = (seconds) => {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+
+ const fetchLanguages = async (language) => {
+  try {
+    const result = await allLanguage(language);
+
+    const allLanguages = result.data.data || [];
+
+    // Filter to get only the language that matches the `language` argument
+    const matched = allLanguages.find((lang) => lang.language === language);
+
+    setCode(matched.starting_code)
+    // Set only the matched language (as an array if needed)
+    setLanguages(matched ? [matched] : []);
+  } catch (error) {
+    console.error("Failed to fetch languages:", error);
+  }
+};
+
+
+  const takeAssignment = async () => {
+    try {
+      if(type == 'quiz') {
+        const result2 = await takeQuiz(assignmentId, studentId);
+      } else {
+        const result1 = await takeExam(assignmentId, studentId);
+      }
+    } catch (error) {
+      console.error("Failed to fetch assignments:", error);
+    }
+  };
 
   const getAnswers = async (combinedQuestions, answer_id) => {
     try {
@@ -156,29 +137,37 @@ const AssignmentAnswerPage = () => {
             const answers = [
               ...(result2.data?.data?.answers || []),
             ];
-            functionGetAnswers(answers, combinedQuestions)
+     
+            functionGetAnswers(answers, combinedQuestions);
+            setStarted(result2.success);
        } else {
-            const result1 = await specificExamAnswer(answer_id);
-            const answers = [
-                ...(result1.data?.data?.answers || []),
-            ];
-            functionGetAnswers(answers, combinedQuestions)
+          const result1 = await specificExamAnswer(answer_id);
+          const answers = [
+              ...(result1.data?.data?.answers || []),
+          ];
+          functionGetAnswers(answers, combinedQuestions)
+          setStarted(result1.success);
        }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
     }
   };
 
-   const functionGetAnswers = async (answers, combinedQuestions) => {
+  const functionGetAnswers = async (answers, combinedQuestions) => {
       const initialAnswers = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
         return matched ? matched.line_of_code : "";
       });
 
-      
+      const initialSelectedAnswers = combinedQuestions.map((question) => {
+        const matched = answers.find((ans) => ans.questionId == question._id);
+        return matched ? matched.selected_option : "";
+      });
+
+       
       const initialAnswersPoints = combinedQuestions.map((question) => {
         const matched = answers.find((ans) => ans.questionId == question._id);
-        return matched ? matched.points : "";
+        return matched ? matched.points : 0;
       });
 
       const initialAnswersCorrect = combinedQuestions.map((question) => {
@@ -188,6 +177,7 @@ const AssignmentAnswerPage = () => {
 
       setCode(initialAnswers[currentIndex] || ""); // initial code display
       setAnswers(initialAnswers);
+      setSelectedAnswer(initialSelectedAnswers);
       setPoints(initialAnswersPoints)
       setCorrect(initialAnswersCorrect)
   };
@@ -195,36 +185,30 @@ const AssignmentAnswerPage = () => {
 
   const fetchAssignment = async () => {
     try {
-      
-
       if(type == 'quiz') { 
         const result2 = await specificQuiz(assignmentId);
+        //const result4 = await specificQuizAnswer(answer_id)
         const result4 = await specificQuizSpecificAnswer(assignmentId, studentId);
+
 
         const combinedQuestions = [
           ...(result2.data?.data?.question || []),
         ];
-
+        setAnswersData(result4.data.data)
         setQuestions(combinedQuestions);
         getAnswers(combinedQuestions, result4.data?.data?._id);
       } else {
         const result1 = await specificExam(assignmentId);
+        //const result3 = await specificExamAnswer(answer_id);
         const result3 = await specificExamSpecificAnswer(assignmentId, studentId);
 
         const combinedQuestions = [
           ...(result1.data?.data?.question || []),
         ];
-
+        setAnswersData(result3.data.data)
         setQuestions(combinedQuestions);
         getAnswers(combinedQuestions, result3.data?.data?._id);
       }
-
-     
-
- 
-      // console.log(combinedQuestions)
-      // console.log(123)
-      //setAnswers(combinedQuestions.map(() => "")); // initialize blank answers
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
     }
@@ -234,10 +218,20 @@ const AssignmentAnswerPage = () => {
     try {
         if(type == 'quiz') { 
             const result2 = await quizAnswer(assignmentId, studentId, answers);
-            console.log(result2);
+            if(result2.success){
+              toast.success(result2?.data?.message);
+              setAnswers(questions.map(() => "")); 
+              setSelectedAnswer(questions.map(() => "")); 
+            }
+            toast.error(result2.error);
         } else {
           const result1 = await examAnswer(assignmentId, studentId, answers);
-          console.log(result1);
+          if(result1.success){
+              toast.success(result1?.data?.message);
+              setAnswers(questions.map(() => "")); 
+              setSelectedAnswer(questions.map(() => "")); 
+          }
+          toast.error(result1.error);
         }
     } catch (error) {
       console.error("Failed to fetch assignments:", error);
@@ -247,40 +241,68 @@ const AssignmentAnswerPage = () => {
   const runCode = async () => {
     try {
       const result = await compilerRunCode(
-        compiler.language,
-        compiler.version,
+        languages[0].language,
+        languages[0].version,
         code
       );
+
+      const updatedPoints = [...points];    
+      const updatedCorrect = [...correct];
+
+      if(questions[currentIndex].expected_output == result.data.data.run.output) {
+        updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
+        updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
+      } else {
+        updatedCorrect[currentIndex] = 1; // Assign the value if it's not text
+        updatedPoints[currentIndex] = questions[currentIndex].points; // Assign the value if it's not text
+      }
+
+      // Update state with the new arrays
+      setPoints(updatedPoints);
+      setCorrect(updatedCorrect);
+
       setOutput(result.data.data.run.output);
-      askAIFunction(result.data.data.run.output, questions[currentIndex].points);
+      //askAIFunction(result.data.data.run.output, questions[currentIndex].points);
     } catch (error) {
       console.error(error);
       setOutput("Error running code.");
     }
   };
 
-  
+
+  const startingCode = async () => {
+    const updatedAnswers = [...answers];
+    //updatedAnswers[currentIndex] = compiler.starting_code || "";
+    updatedAnswers[currentIndex] = languages[0].starting_code || "";
+
+    setAnswers(updatedAnswers); // ✅ You need to set the answers array
+    setCode(languages[0].starting_code || ""); // ✅ Also update the code shown to the user
+  };
+
   const handleCompilerChange = (e) => {
     const selected = JSON.parse(e.target.value);
-    const updatedAnswers = [...answers];
-    //const updatedPoints = [...points];    
-    //const updatedCorrect = [...correct];
+    //const updatedAnswers = [...answers];
+   // const updatedPoints = [...points];    
+   // const updatedCorrect = [...correct];
 
-    updatedAnswers[currentIndex] = selected.starting_code || "";
-    //updatedPoints[currentIndex]  = 0;
-    //updatedCorrect[currentIndex] = 0;
+    //updatedAnswers[currentIndex] = selected.starting_code || "";
+   // updatedPoints[currentIndex]  = 0;
+   // updatedCorrect[currentIndex] = 0;
 
     setCompiler(selected);
    // setCode(selected.starting_code || "");
-    setAnswers(updatedAnswers);
+   // setAnswers(updatedAnswers);
    // setPoints(updatedPoints);
-   // setCorrect(updatedCorrect);
+    //setCorrect(updatedCorrect);
+  
   };
 
   const handleCodeChange = (newCode) => {
-    setCode(newCode);
-    const updatedAnswers = [...answers];
+    const updatedAnswers = [...answers];   
+
     updatedAnswers[currentIndex] = newCode;
+
+    setCode(newCode);
     setAnswers(updatedAnswers);
   };
 
@@ -304,17 +326,95 @@ const AssignmentAnswerPage = () => {
     const submitted = questions.map((q, i) => ({
       questionId: q._id,
       line_of_code: answers[i] || "",
+      selected_option: selectedAnswer[i] || "",
+      points: points[i] || 0,
+      is_correct: correct[i] || 0,
     }));
 
     submitAnswers(submitted); 
-    console.log("Submitting Answers:", submitted);
+    //console.log("Submitting Answers:", submitted);
 
      // Reset answers
-    setAnswers(questions.map(() => "")); 
+   // setAnswers(questions.map(() => "")); 
     setCurrentIndex(0); // optional: go back to first question
-    alert("All answers submitted!");
     fetchAssignment();
   };
+
+  const startAssignment = async () => {
+    await takeAssignment();
+    await fetchAssignment();
+    setStarted(true);
+  };
+
+  const askAIFunction = async (output_result, question_points) => {
+        try {
+          let askForCorrection = `You are evaluating a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Determine if the code correctly answers the question based on its output.
+          Respond with:
+            - 1 if the code is fully or partially correct.
+            - 0 if the code and output do not relate to the question.
+          Only respond with a single number (0 or 1). No newlines, explanations, or symbols.
+          Strictly adhere to the output from the given code, and respond with 0 if the code and results are unrelated.
+          Note: The compiler does not support input(), so do not penalize for input handling.
+          `;
+          
+          
+          let askForPoints = `You are grading a beginner's code submission.
+          The code is: ->${code}<-
+          The output is: ->${output_result}<-
+          The question is: ->${questions[currentIndex].text}<-
+          The programming language is: ->${compiler.name}<-
+          Maximum possible points: ->${question_points}<-
+          Evaluate how well the code matches the question and produces the expected output.
+          Stricly if the code does not answer the question or the output is unrelated, respond with 0.
+          If the code is partially correct or attempts to solve the question reasonably, assign partial points.
+          Only respond with a number (0 to ${question_points}), with no newlines, explanations, or symbols.
+          Note: Input is not supported by the compiler. Do not penalize for that.
+          `;
+
+  
+          const result = await askAI(askForCorrection);
+          const result2 = await askAI(askForPoints);
+
+          const updatedPoints = [...points];    
+          const updatedCorrect = [...correct];
+
+          updatedCorrect[currentIndex] = result.data.data; // Assign the value if it's not text
+          updatedPoints[currentIndex] = result2.data.data; // Assign the value if it's not text
+        
+          // Update state with the new arrays
+          setPoints(updatedPoints);
+          setCorrect(updatedCorrect);
+        } catch (error) {
+          console.error("Error fetching question:", error);
+        }
+      };
+
+    const handleOptionSelect = (option) => {
+      const updatedAnswers = [...selectedAnswer];
+      const updatedCorrect = [...correct];
+      const updatedPoints = [...points];
+
+
+      if (option === questions[currentIndex].correct_option) {
+        updatedCorrect[currentIndex] = 1;
+        updatedPoints[currentIndex] = questions[currentIndex].points;
+        updatedAnswers[currentIndex] = option;
+      } else {
+        updatedCorrect[currentIndex] = 0;
+        updatedPoints[currentIndex] = 0;
+        updatedAnswers[currentIndex] = option;
+      }
+
+      setSelectedAnswer(updatedAnswers);
+      setCorrect(updatedCorrect);
+      setPoints(updatedPoints);
+    };
+
 
   const currentQuestion = questions[currentIndex];
 
@@ -322,87 +422,196 @@ const AssignmentAnswerPage = () => {
     <div className="p-6 space-y-4">
       {currentQuestion && (
         <div className="space-y-4">
-          <div className="p-4 border rounded bg-white shadow">
-            <h2 className="text-lg font-semibold mb-2">
-              Question {currentIndex + 1} of {questions.length}
-            </h2>
-            <p className="mb-2">{currentQuestion.text}</p>
-            <p className="text-sm text-gray-600">
-              Points: {points[currentIndex]} / {currentQuestion.points}
-            </p>
-            <p className="text-sm">
-              Correct: {correct[currentIndex] == 1 ? 'true' : 'false'}
-            </p>
-          </div>
 
-          <CodeEditor
-            value={code}
-            onChange={handleCodeChange}
-            language={compiler.language}
-            height="400px"
-          />
+          {started && currentQuestion.answer_type === 'programming' && (
+           <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
+              {output}
+            </div>
+          )}
 
-          <select
-            onChange={handleCompilerChange}
-            className="border border-gray-300 rounded px-2 py-3 w-full"
-            value={JSON.stringify(compiler)}
-          >
-            {languages.map((lang, index) => (
-              <option
-                key={index}
-                value={JSON.stringify({
-                  name: lang.name,
-                  language: lang.language,
-                  version: lang.version,
-                  starting_code: lang.starting_code,
-                })}
-              >
-                {`${lang.name} - ${lang.version}`.toUpperCase()}
-              </option>
-            ))}
-          </select>
+          {!started  && (
+                <div className="text-center w-full">
+                  <h2 className="text-xl font-bold mb-4">
+                    Ready to Start the {type === "quiz" ? "Quiz" : "Exam"}?
+                  </h2>
+                  <button
+                    onClick={startAssignment}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
+                  >
+                    Start {type === "quiz" ? "Quiz" : "Exam"}
+                  </button>
+                </div>
+          )}
 
-          <button
-            onClick={runCode}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
-          >
-            Run Code
-          </button>
+          <div className="flex gap-4">
+            {/* Left Column - Controls */}
+            <div className="w-full md:w-1/2 space-y-4">
+            
 
+              {started && (
+              <>
+                <div className="p-4 border rounded bg-white shadow">
+                      <h2 className="text-lg font-semibold mb-2">
+                        Question {currentIndex + 1} of {questions.length}
+                      </h2>
+                      <p className="mb-2">{currentQuestion.text}</p>
+
+                      {(currentQuestion.answer_type === 'programming' || answersData.submitted_at) && ( 
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Expected Output: {currentQuestion.expected_output}
+                          </p>
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Points: {points[currentIndex]} / {currentQuestion.points}
+                          </p>
+                          <p className="text-sm text-gray-600 font-semibold">
+                            Correct: {correct[currentIndex] === 1 ? 'true' : 'false'}
+                          </p>
+                        </div>
+                      )}
+
+                      {(!answersData.submitted_at) && ( 
+                        <div>
+                          <p>Time Left: {formatTime(timeLeft)}</p>
+                        </div>
+                      )}
+                  </div>
+              </>
+              )}
+
+              {started && currentQuestion.answer_type === 'programming' && (
+              <>
+                <select
+                  onChange={handleCompilerChange}
+                  className="border border-gray-300 rounded px-2 py-3 w-full"
+                  value={JSON.stringify(compiler)}
+                >
+                  {languages.map((lang, index) => (
+                    <option
+                      key={index}
+                      value={JSON.stringify({
+                        name: lang.name,
+                        language: lang.language,
+                        version: lang.version,
+                        starting_code: lang.starting_code,
+                      })}
+                    >
+                      {`${lang.name} - ${lang.version}`.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={runCode}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
+                >
+                  Run Code
+                </button>
+
+                <button
+                  onClick={startingCode}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
+                >
+                  Starting Code
+                </button>
+              </>
+              )}
+         
+              {started && (
+                <div className="flex justify-between gap-4">
+                  <button
+                    onClick={handlePrevious}
+                    disabled={currentIndex === 0}
+                    className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
+                      currentIndex === 0
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  {currentIndex < questions.length - 1 ? (
+                    <button
+                      onClick={handleNext}
+                      className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-3 rounded"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      onClick={handleSubmitAll}
+                      className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
+                    >
+                      Submit All Answers
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+           <div className="w-full md:w-1/2">
+            {/* Only show if answer_type is 'options' */}
+            {started && currentQuestion.answer_type === 'options' && (
+              <div className="mb-8 p-6 bg-white rounded-xl shadow-md border border-gray-200">
+              <h3 className="font-bold text-xl text-gray-800 mb-4 text-center">
+                Choose Your Answer
+              </h3>
+              <ul className="space-y-4">
+                {Object.values(currentQuestion.options).map((value, index) => (
+                    <li key={index}>
+                      <label className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer hover:bg-blue-50 transition">
+                        <input
+                          type="radio"
+                          name={`mcq-${currentIndex}`}
+                          value={value}
+                          checked={selectedAnswer[currentIndex] === value}
+                          onChange={() => handleOptionSelect(value)}
+                          className="accent-blue-600 w-5 h-5 mr-4"
+                        />
+                        <span className="text-lg font-medium text-gray-700">{value}</span>
+                      </label>
+                    </li>
+                  ))}
           
-        <div className="flex justify-between gap-4">
-          {/* Previous Button */}
-          <button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-              currentIndex === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gray-600 hover:bg-gray-700"
-            }`}
-          >
-            Previous
-          </button>
 
-          {/* Next Button - Disabled if at last question */}
-          <button
-            onClick={handleNext}
-            disabled={currentIndex >= questions.length - 1}
-            className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-              currentIndex >= questions.length - 1
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
-          >
-            Next
-          </button>
-        </div>
+                {/* {["option_1", "option_2", "option_3", "option_4"].map((opt, index) => (
+                  <li key={index}>
+                    <label className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer hover:bg-blue-50 transition">
+                      <input
+                        type="radio"
+                        name="mcq"
+                        value={opt}
+                        className="accent-blue-600 w-5 h-5 mr-4"
+                        // checked={selectedAnswer === opt}
+                        // onChange={() => setSelectedAnswer(opt)}
+                      />
+                      <span className="text-lg font-medium text-gray-700">
+                        {currentQuestion.options[opt]}
+                      </span>
+                    </label>
+                  </li>
+                ))} */}
+              </ul>
+            </div>
+            )}
 
+           
 
-          <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
-            {output}
+            {/* Only show CodeEditor if answer_type is 'programming' */}
+            {started && currentQuestion.answer_type === 'programming' && (
+              <CodeEditor
+                value={code}
+                onChange={handleCodeChange}
+                language={classroom.classroom.programming_language}
+                height="400px"
+              />
+            )}
           </div>
 
+
+          </div>
         </div>
       )}
     </div>

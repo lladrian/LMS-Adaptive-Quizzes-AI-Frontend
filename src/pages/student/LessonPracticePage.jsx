@@ -5,7 +5,8 @@ import {
   compilerRunCode,
   allLanguage,
   askAI,
-  extractMaterialData
+  extractMaterialData,
+  specificClassroom
 } from "../../utils/authService";
 import renderFormattedTextGemini from "../../components/GeminiTextFormatter";
 
@@ -14,7 +15,7 @@ const LessonPracticePage = () => {
   const { classId, lessonId } = useParams();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [practiceData, setPracticeData] = useState([]);
-  const [code, setCode] = useState("print('Hello, World!')");
+  const [code, setCode] = useState("code here");
   const [output, setOutput] = useState("");
   const [solution, setSolution] = useState("");
   const [material, setMaterial] = useState("");
@@ -25,6 +26,7 @@ const LessonPracticePage = () => {
       starting_code: "print('Hello, World!')",
   });
   const [languages, setLanguages] = useState([]);
+  const [classroom, setClassroom] = useState(null);
   
 
   useEffect(() => {
@@ -86,8 +88,8 @@ const LessonPracticePage = () => {
       const runCode = async () => {
         try {
           const result = await compilerRunCode(
-            compiler.language,
-            compiler.version,
+            languages[0].language,
+            languages[0].version,
             code
           );
           setOutput(result.data.data.run.output);
@@ -115,17 +117,41 @@ const LessonPracticePage = () => {
 
 
    useEffect(() => {
-      fetchLanguages();
+      fetchSpecificClassroom();
     }, []);
-  
-    const fetchLanguages = async () => {
+
+      const fetchSpecificClassroom = async () => {
       try {
-        const result = await allLanguage();
-        setLanguages(result.data.data || []);
+        const result = await specificClassroom(classId);
+
+        if (result.success) {
+          setClassroom(result.data.data);
+          fetchLanguages(result.data.data.classroom.programming_language);
+        }
       } catch (error) {
-        console.error("Failed to fetch languages:", error);
-      }
-    };
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } 
+  };
+
+  
+  const fetchLanguages = async (language) => {
+    try {
+      const result = await allLanguage(language);
+      console.log(language)
+
+      const allLanguages = result.data.data || [];
+
+      // Filter to get only the language that matches the `language` argument
+      const matched = allLanguages.find((lang) => lang.language === language);
+
+      // Set only the matched language (as an array if needed)
+      setCode(matched.starting_code)
+      setLanguages(matched ? [matched] : []);
+    } catch (error) {
+      console.error("Failed to fetch languages:", error);
+    }
+  };
 
     
 
@@ -155,7 +181,7 @@ const LessonPracticePage = () => {
           <CodeEditor
             value={code}
             onChange={handleCodeChange}
-            language="python"
+            language={classroom.classroom.programming_language}
             height="400px"
           />
 
