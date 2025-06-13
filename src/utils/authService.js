@@ -828,6 +828,27 @@ export const updateClassroom = async (
     };
   }
 };
+
+export const compute_grade = async (classroom_id, student_id) => {
+  try {
+    const response = await axios.get(
+      `
+      ${BASE_URL}/grades/compute_grade/${classroom_id}/${student_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to archive classroom",
+    };
+  }
+};
+
+
 export const hideClassroom = async (roomId) => {
   try {
     const response = await axios.get(
@@ -846,6 +867,7 @@ export const hideClassroom = async (roomId) => {
     };
   }
 };
+
 export const unHideClassroom = async (roomId) => {
   try {
     const response = await axios.get(

@@ -458,9 +458,12 @@ const AssignmentAnswerPage = () => {
 
                       {(currentQuestion.answer_type === 'programming' || answersData.submitted_at) && ( 
                         <div className="mt-2">
-                          <p className="text-sm text-gray-600 font-semibold">
-                            Expected Output: {currentQuestion.expected_output}
-                          </p>
+                          {(currentQuestion.answer_type === 'programming') && ( 
+                            <p className="text-sm text-gray-600 font-semibold">
+                              Expected Output: {currentQuestion.expected_output}
+                            </p>
+                          )}
+
                           <p className="text-sm text-gray-600 font-semibold">
                             Points: {points[currentIndex]} / {currentQuestion.points}
                           </p>
@@ -539,13 +542,26 @@ const AssignmentAnswerPage = () => {
                       Next
                     </button>
                   ) : (
+
                     <button
-                      disabled
                       onClick={handleSubmitAll}
-                      className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
+                      disabled={currentIndex === questions.length - 1}
+                      className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
+                        currentIndex === questions.length - 1
+                          ? "bg-blue-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700"
+                      }`}
                     >
                       Submit All Answers
                     </button>
+                    
+                    // <button
+                    //   disabled
+                    //   onClick={handleSubmitAll}
+                    //   className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-3 rounded"
+                    // >
+                    //   Submit All Answers
+                    // </button>
                   )}
                 </div>
               )}

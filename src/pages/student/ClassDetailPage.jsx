@@ -16,7 +16,8 @@ import CodeEditor from "../../components/CodeEditor";
 import {specificClassroom, 
 allAnswerExamSpecificStudentSpecificClassroom,
 allAnswerQuizSpecificStudentSpecificClassroom,
-leaveClassroom
+leaveClassroom,
+compute_grade
 } from "../../utils/authService";
 import { BASE_URL } from "../../utils/config";
 import Modal from '../../components/Modal'; // Adjust the path as necessary
@@ -31,13 +32,14 @@ const ClassDetailPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [classroom, setClassroom] = useState(null);
   const [materials, setMaterial] = useState([]);
+  const [grades, setGrade] = useState([]);
   const [assignments, setAssignment] = useState([]);
   const [answers, setAnswer] = useState([]);
   const [students, setStudent] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-    const studentId = localStorage.getItem("userId");
+  const studentId = localStorage.getItem("userId");
 
 
 //   not yet  // student hasn't opened the exam
@@ -58,11 +60,15 @@ const ClassDetailPage = () => {
         const result = await specificClassroom(classId);
         const result2 = await allAnswerExamSpecificStudentSpecificClassroom(classId, studentId);
         const result3 = await allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId);
+        const result4 = await compute_grade(classId, studentId);
 
-        if (result.success && result2.success && result3.success) {
+      
+
+        if (result.success && result2.success && result3.success && result4.success) {
           setClassroom(result.data.data);
           setMaterial(result.data.data.materials);
           setStudent(result.data.data.students);
+          setGrade(result4.data.data)
           setAssignment(
             [
               ...(result.data.data.exams || []),
@@ -86,8 +92,28 @@ const ClassDetailPage = () => {
       }
     };
 
+    const filterAnswer = () => {
+    return assignments.filter((assignment) => {
+      const isAnswered = answers.some(
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.submitted_at
+      );
+
+      const isOngoing= answers.some(
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.opened_at
+      );
+
+      if (selectedStatus === 'all') return true;
+      if (selectedStatus === 'not yet') return !isAnswered && !isOngoing;
+      if (selectedStatus === 'ongoing') return isOngoing && !isAnswered;
+      if (selectedStatus === 'completed') return isAnswered;
+
+      return true;
+    });
+  };
+
   const filterAssignments = () => {
     return assignments.filter((assignment) => {
+
       const isAnswered = answers.some(
         (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.submitted_at
       );
@@ -408,15 +434,17 @@ const ClassDetailPage = () => {
                     <div>📝 Midterm:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
                     <div>📚 Final:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
                     <div>🎯 Activity:  {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div> */}
-                    <div>📘 Quiz: {2 / 2 * 20}/{classroom.classroom.grading_system.quiz}</div>
-                    <div>📝 Midterm:  {120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
-                    <div>📚 Final:  {120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
+                    <div>📘 Quiz: {grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz}/{classroom.classroom.grading_system.quiz}</div>
+                    <div>📝 Midterm:  {grades.midterm.earnedPoints / grades.midterm.totalPoints  * classroom.classroom.grading_system.midterm}/{classroom.classroom.grading_system.midterm}</div>
+                    <div>📚 Final:  {grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final}/{classroom.classroom.grading_system.final}</div>
                     <div>🎯 Activity:  {120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div>
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                      🔢 Total: 100/{classroom.classroom.grading_system.quiz +
-                                classroom.classroom.grading_system.midterm +
-                                classroom.classroom.grading_system.final +
-                                classroom.classroom.grading_system.activity}
+                      🔢 Total: {grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz +
+                                      grades.midterm.earnedPoints / grades.midterm.totalPoints  * classroom.classroom.grading_system.midterm +
+                                      grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final + 
+
+                                      120 / 120 * classroom.classroom.grading_system.activity
+                             } / 100%
                     </div>
                   </div>
                 </div>
@@ -426,6 +454,9 @@ const ClassDetailPage = () => {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Assignment Type
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Grading Breakdown
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Assignment Title
@@ -445,7 +476,6 @@ const ClassDetailPage = () => {
                         {answers.map((answer) =>
                           answer.submitted_at && (
                             <tr key={answer._id}>
-                              {console.log(answer)}
                               <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                 {(() => {
                                   const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
@@ -461,6 +491,9 @@ const ClassDetailPage = () => {
                                     </span>
                                   );
                                 })()}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                {(answer.quiz?.grading_breakdown || answer.exam?.grading_breakdown)?.toUpperCase()}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {answer.quiz?.title || answer.exam?.title}
