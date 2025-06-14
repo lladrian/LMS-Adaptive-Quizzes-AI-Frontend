@@ -430,23 +430,23 @@ const ClassDetailPage = () => {
                   <h2 className="text-xl font-bold mb-4 text-gray-800">Your Grades</h2>
                   <div className="space-y-2 text-lg font-semibold text-gray-700">
                     <div>
-                      📘 Quiz: {grades.quiz.earnedPoints} / {grades.quiz.totalPoints} = {grades.quiz.quiz} / {classroom.classroom.grading_system.quiz}
+                      📘 Quiz: {grades.quiz.earnedPoints}/{grades.quiz.totalPoints} = {grades.quiz.quiz}/{classroom.classroom.grading_system.quiz}
                     </div>
                     
                     <div>
-                      🎯 Activity: {grades.activity.earnedPoints} / {grades.activity.totalPoints} = {grades.activity.activity} / {classroom.classroom.grading_system.activity}
+                      🎯 Activity: {grades.activity.earnedPoints}/{grades.activity.totalPoints} = {grades.activity.activity}/{classroom.classroom.grading_system.activity}
                     </div>
                     
                     <div>
-                      📝 Midterm: {grades.midterm.earnedPoints} / {grades.midterm.totalPoints} = {grades.midterm.midterm} / {classroom.classroom.grading_system.midterm}
+                      📝 Midterm: {grades.midterm.earnedPoints}/{grades.midterm.totalPoints} = {grades.midterm.midterm}/{classroom.classroom.grading_system.midterm}
                     </div>
 
                     <div>
-                      📚 Final: {grades.final.earnedPoints} / {grades.final.totalPoints} = {grades.final.final} / {classroom.classroom.grading_system.final}
+                      📚 Final: {grades.final.earnedPoints}/{grades.final.totalPoints} = {grades.final.final}/{classroom.classroom.grading_system.final}
                     </div>
 
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                      🔢 Total: {grades.student_grade.grade} / 100
+                      🔢 Total: {grades.student_grade.grade}/100
                       </div>
                   </div>
                 </div>

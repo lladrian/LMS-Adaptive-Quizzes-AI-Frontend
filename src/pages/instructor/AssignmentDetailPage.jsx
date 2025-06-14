@@ -314,6 +314,7 @@ const AssignmentDetailPage = () => {
         time_limit: activityToEdit.submission_time,
         title: activityToEdit.title,
         description: activityToEdit.description,
+        grading_breakdown: activityToEdit.grading_breakdown,
       };
 
       const result = await updateActivity(
@@ -321,6 +322,10 @@ const AssignmentDetailPage = () => {
         activityToEdit.type,
         payload
       );
+
+    
+
+
 
       if (result.success) {
         toast.success("Activity updated successfully");
@@ -733,7 +738,7 @@ const AssignmentDetailPage = () => {
                   </label>
                   <input
                     type="number"
-                    defaultValue={activityToEdit.submission_time}
+                    defaultValue={activityToEdit.submission_time || 0}
                     onChange={(e) =>
                       setActivityToEdit((prev) => ({
                         ...prev,
@@ -743,62 +748,57 @@ const AssignmentDetailPage = () => {
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />
                 </div>
-                {activityToEdit.type === "quiz" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Questions
-                    </label>
-                    {activityToEdit.question?.map((q, index) => (
-                      <div
-                        key={index}
-                        className="mb-4 p-4 border border-gray-200 rounded-lg"
-                      >
-                        <div className="flex justify-between mb-2">
-                          <span className="font-medium">
-                            Question {index + 1}
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          defaultValue={q.text}
-                          onChange={(e) => {
-                            const updatedQuestions = [
-                              ...activityToEdit.question,
-                            ];
-                            updatedQuestions[index].text = e.target.value;
-                            setActivityToEdit((prev) => ({
-                              ...prev,
-                              question: updatedQuestions,
-                            }));
-                          }}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
-                        />
-                        <div className="flex items-center">
-                          <span className="text-sm text-gray-600 mr-2">
-                            Points:
-                          </span>
-                          <input
-                            type="number"
-                            defaultValue={q.points}
-                            onChange={(e) => {
-                              const updatedQuestions = [
-                                ...activityToEdit.question,
-                              ];
-                              updatedQuestions[index].points = parseInt(
-                                e.target.value
-                              );
-                              setActivityToEdit((prev) => ({
-                                ...prev,
-                                question: updatedQuestions,
-                              }));
-                            }}
-                            className="w-20 border border-gray-300 rounded-md px-3 py-1"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {activityToEdit.type && (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Questions
+    </label>
+    {activityToEdit.question?.map((q, index) => (
+      <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg">
+        <div className="flex justify-between mb-2">
+          <span className="font-medium">Question {index + 1}</span>
+        </div>
+        <textarea
+          defaultValue={q.text}
+          onChange={(e) => {
+            const updatedQuestions = [...activityToEdit.question];
+            updatedQuestions[index].text = e.target.value;
+            setActivityToEdit((prev) => ({
+              ...prev,
+              question: updatedQuestions,
+            }));
+
+            // Auto-resize functionality
+            e.target.style.height = 'auto'; // Reset height
+            e.target.style.height = `${e.target.scrollHeight}px`; // Set new height
+          }}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2 resize-none overflow-hidden"
+          rows={6}
+          // Add a style to make it more user-friendly
+          style={{ minHeight: '40px' }} 
+        />
+
+        <div className="flex items-center">
+          <span className="text-sm text-gray-600 mr-2">Points:</span>
+          <input
+            type="number"
+            defaultValue={q.points}
+            onChange={(e) => {
+              const updatedQuestions = [...activityToEdit.question];
+              updatedQuestions[index].points = parseInt(e.target.value);
+              setActivityToEdit((prev) => ({
+                ...prev,
+                question: updatedQuestions,
+              }));
+            }}
+            className="w-20 border border-gray-300 rounded-md px-3 py-1"
+          />
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
               </div>
               <div className="mt-6 flex justify-end space-x-3">
                 <button
@@ -818,6 +818,8 @@ const AssignmentDetailPage = () => {
           </div>
         </div>
       )}
+
+
     </div>
   );
 };

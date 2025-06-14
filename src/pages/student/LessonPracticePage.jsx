@@ -5,7 +5,8 @@ import {
   compilerRunCode,
   allLanguage,
   askAI,
-  extractMaterialData
+  extractMaterialData,
+  specificClassroom
 } from "../../utils/authService";
 import renderFormattedTextGemini from "../../components/GeminiTextFormatter";
 
@@ -25,13 +26,28 @@ const LessonPracticePage = () => {
       starting_code: "print('Hello, World!')",
   });
   const [languages, setLanguages] = useState([]);
+  const [classroom, setClassroom] = useState(null);
   
+    useEffect(() => {
+      fetchSpecificClassroom();
+      fetchMaterialData();
+    }, []);
 
-  useEffect(() => {
-    fetchMaterialData();
-  }, []);
+    const fetchSpecificClassroom = async () => {
+      try {
+        const result = await specificClassroom(classId);
 
-  // extractMaterialData materialId
+        if (result.success) {
+          setClassroom(result.data.data);
+          fetchLanguages(result.data.data.classroom.programming_language);
+        }
+      } catch (error) {
+        console.error("Error fetching admins:", error);
+        toast.error("Failed to fetch admins");
+      } 
+  };
+
+ 
 
     const fetchMaterialData = async () => {
       try {
@@ -54,7 +70,6 @@ const LessonPracticePage = () => {
         strictly one problem or question only`;
 
         const result = await askAI(ask);
-        console.log(ask)
 
         setPracticeData([
           {
@@ -86,8 +101,8 @@ const LessonPracticePage = () => {
       const runCode = async () => {
         try {
           const result = await compilerRunCode(
-            compiler.language,
-            compiler.version,
+            languages[0].language,
+            languages[0].version,
             code
           );
           setOutput(result.data.data.run.output);
@@ -103,7 +118,7 @@ const LessonPracticePage = () => {
   };
 
   const handleNext = () => {
-    fetchQuiz();
+    fetchQuiz(material);
     setOutput("");
     setSolution("");
     setCode("");
@@ -113,26 +128,27 @@ const LessonPracticePage = () => {
     getQuizSolution(practiceData[currentQuestionIndex].text);
   };
 
+ 
 
-   useEffect(() => {
-      fetchLanguages();
-    }, []);
   
-    const fetchLanguages = async () => {
-      try {
-        const result = await allLanguage();
-        setLanguages(result.data.data || []);
-      } catch (error) {
-        console.error("Failed to fetch languages:", error);
-      }
-    };
+  const fetchLanguages = async (language) => {
+    try {
+      const result = await allLanguage(language);
 
-    
+      const allLanguages = result.data.data || [];
 
-  const handleCompilerChange = (e) => {
-    const selected = JSON.parse(e.target.value);
-    setCompiler(selected);
-    setCode(selected.starting_code || "");
+      // Filter to get only the language that matches the `language` argument
+      const matched = allLanguages.find((lang) => lang.language === language);
+
+      // Set only the matched language (as an array if needed)
+      setLanguages(matched ? [matched] : []);
+    } catch (error) {
+      console.error("Failed to fetch languages:", error);
+    }
+  };
+
+  const startingCode = async () => {
+    setCode(languages[0].starting_code || ""); // ✅ Also update the code shown to the user
   };
 
   const currentQuestion = practiceData[currentQuestionIndex];
@@ -141,69 +157,62 @@ const LessonPracticePage = () => {
     <div className="p-6 space-y-4">
       {currentQuestion && (
         <div className="space-y-4">
-          <div className="p-4 border rounded bg-white shadow">
-                {renderFormattedTextGemini(currentQuestion.text)}
-          </div>
-
-          {solution && (
-              <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
-                <h1 className="text-xl">Solution:</h1>
-                   {renderFormattedTextGemini(solution)}
-              </div>
-          )}
-
-          <CodeEditor
-            value={code}
-            onChange={handleCodeChange}
-            language="python"
-            height="400px"
-          />
-
-            <select
-            onChange={handleCompilerChange}
-            className="border border-gray-300 rounded px-2 py-3 w-full"
-            value={JSON.stringify(compiler)}
-          >
-            {languages.map((lang, index) => (
-              <option
-                key={index}
-                value={JSON.stringify({
-                  name: lang.name,
-                  language: lang.language,
-                  version: lang.version,
-                  starting_code: lang.starting_code,
-                })}
-              >
-                {`${lang.name} - ${lang.version}`.toUpperCase()}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={runCode}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
-          >
-            Run Code
-          </button>
-
-          <div className="flex justify-between gap-1">
-              <button
-                onClick={handleSolution}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
-              >
-                Show Solution
-              </button>
-
-              <button
-                onClick={handleNext}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium w-full px-4 py-3 rounded"
-              >
-                Next
-              </button>
-          </div>
-
           <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">
             {output}
+          </div>
+          {solution && (
+            <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap mb-5">
+                <h1 className="text-xl">Solution:</h1>
+                {renderFormattedTextGemini(solution)}
+            </div>
+          )}
+          <div className="flex gap-4">
+             <div className="w-full md:w-1/2 space-y-4">
+                  <div className="p-4 border rounded bg-white shadow">
+                    <div className="p-4 border rounded bg-white shadow">
+                        {renderFormattedTextGemini(currentQuestion.text)}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={runCode}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium w-full px-4 py-3 rounded"
+                  >
+                    Run Code
+                  </button>
+
+                  <button
+                    onClick={startingCode}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-medium w-full px-4 py-3 rounded"
+                  >
+                  Starting Code
+                  </button>
+
+                  <div className="flex justify-between gap-4">
+                      <button
+                        onClick={handleSolution}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-medium w-full px-4 py-3 rounded"
+                      >
+                        Show Solution
+                      </button>
+                      
+                      <button
+                      onClick={handleNext}
+                      className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-3 rounded"
+                      >
+                        Next
+                      </button>
+                  </div>
+              </div>
+
+              <div className="w-full md:w-1/2">
+                <CodeEditor
+                  value={code}
+                  onChange={handleCodeChange}
+                  language={classroom?.classroom?.programming_language}
+                  height="500px"
+                />
+              </div>
           </div>
         </div>
       )}

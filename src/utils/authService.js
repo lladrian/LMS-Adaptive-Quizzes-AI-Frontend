@@ -1212,21 +1212,22 @@ export const updateActivity = async (activityId, activityType, data) => {
         data
       );
     }
-    if (activityType === "acitivty") {
-      response = await axios.put(
-        `${BASE_URL}/activities/update_activity/${activityId}`,
-        data
-      );
-    }
     
-    else {
+    if (activityType === "exam") {
       response = await axios.put(
         `${BASE_URL}/exams/update_exam/${activityId}`,
         data
       );
     }
 
-    return { success: true, data: response.data };
+    if (activityType === "activity") {
+      response = await axios.put(
+        `${BASE_URL}/activities/update_activity/${activityId}`,
+        data
+      );
+    }
+
+    return { success: true, data: response?.data };
   } catch (error) {
     return {
       success: false,

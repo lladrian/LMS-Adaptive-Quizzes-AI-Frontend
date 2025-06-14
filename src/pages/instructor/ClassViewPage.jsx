@@ -515,25 +515,25 @@ const calculateActivityPoints = (activity) => {
                           <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
                             <p className="font-semibold capitalize">Quiz:</p>
                             <p>
-                              { selectedStudent.grades.quiz.earnedPoints } / { selectedStudent.grades.quiz.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.quiz.quiz }</span> / { selectedStudent.classroom.grading_system.quiz }
+                              { selectedStudent.grades.quiz.earnedPoints }/{ selectedStudent.grades.quiz.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.quiz.quiz }</span>/{ selectedStudent.classroom.grading_system.quiz }
                             </p>
                           </div>
                           <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
                             <p className="font-semibold capitalize">Activity:</p>
                             <p>
-                              { selectedStudent.grades.activity.earnedPoints } / { selectedStudent.grades.activity.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.activity.activity }</span> / { selectedStudent.classroom.grading_system.activity }
+                              { selectedStudent.grades.activity.earnedPoints }/{ selectedStudent.grades.activity.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.activity.activity }</span>/{ selectedStudent.classroom.grading_system.activity }
                             </p>
                           </div>
                           <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
                             <p className="font-semibold capitalize">Midterm:</p>
                             <p>
-                              { selectedStudent.grades.midterm.earnedPoints } / { selectedStudent.grades.midterm.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.midterm.midterm }</span> / { selectedStudent.classroom.grading_system.midterm }
+                              { selectedStudent.grades.midterm.earnedPoints }/{ selectedStudent.grades.midterm.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.midterm.midterm }</span>/{ selectedStudent.classroom.grading_system.midterm }
                             </p>
                           </div>
                            <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
                             <p className="font-semibold capitalize">Final:</p>
                             <p>
-                              { selectedStudent.grades.final.earnedPoints } / { selectedStudent.grades.final.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.final.final }</span> / { selectedStudent.classroom.grading_system.final }
+                              { selectedStudent.grades.final.earnedPoints }/{ selectedStudent.grades.final.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.final.final }</span>/ { selectedStudent.classroom.grading_system.final }
                             </p>
                           </div>
                     </div>
@@ -542,7 +542,7 @@ const calculateActivityPoints = (activity) => {
                       <p className="text-lg font-semibold">
                         Student Grade:
                         <span className="text-indigo-700 ml-2">
-                          { selectedStudent.grades.student_grade.grade } / 100
+                          { selectedStudent.grades.student_grade.grade }/100
                         </span>
                       </p>
                     </div>
