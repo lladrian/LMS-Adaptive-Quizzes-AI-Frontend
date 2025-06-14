@@ -44,17 +44,38 @@ const ClassDetailPage = () => {
 
   const [ClassroomData, setClassroomData] = useState([]);
   const [copied, setCopied] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
 
-  /* const activities = ClassroomData.exams; */
-  // Combine and sort
+  // Helper function to calculate activity points
+ // Updated calculateActivityPoints function
+// Updated calculateActivityPoints function
+const calculateActivityPoints = (activity) => {
+  console.log(activity)
+  // First check if activity has direct points property
+  if (activity.points !== undefined && activity.points !== null) {
+    return activity.points;
+  }
+  
+  // Check if it has questions array with points
+  if (Array.isArray(activity.question)) {  // Note: your data uses 'question' not 'questions'
+    return activity.question.reduce((total, q) => {
+      return total + (Number(q.points) || 0);  // Ensure points is treated as number
+    }, 0);
+  }
+  
+  // Default to 0 if no points can be calculated
+  return 0;
+};
+  // Combine and sort all activities (quizzes, exams, and activities)
   const quizzes = Array.isArray(ClassroomData.quizzes)
     ? ClassroomData.quizzes
     : [];
   const exams = Array.isArray(ClassroomData.exams) ? ClassroomData.exams : [];
+  const activities = Array.isArray(ClassroomData.activities)
+    ? ClassroomData.activities
+    : [];
 
-  const activities = [...quizzes, ...exams].sort((a, b) => {
+  const allActivities = [...quizzes, ...exams, ...activities].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
@@ -64,12 +85,10 @@ const ClassDetailPage = () => {
       const result = await specificClassroom(classId);
       if (result.success) {
         setClassroomData(result.data.data);
-        /* console.log(result.data.data) */
       }
-      /*  console.log(ClassroomData); */
     } catch (error) {
-      console.error("Error fetching Instructor:", error);
-      toast.error("Failed to fetch Instructor");
+      console.error("Error fetching classroom:", error);
+      toast.error("Failed to fetch classroom data");
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +105,6 @@ const ClassDetailPage = () => {
 
   const handleRemoveClick = (student) => {
     setStudentToRemove(student);
-    console.log(student);
     setShowRemoveStudentModal(true);
   };
 
@@ -121,21 +139,27 @@ const ClassDetailPage = () => {
 
   const handleDeleteActivity = async (activityId, activityType) => {
     try {
-      // You'll need to implement this function in your authService
       const result = await deleteActivity(activityId, activityType);
 
       if (result.success) {
         toast.success("Activity deleted successfully");
+
         // Update the state to remove the deleted activity
         if (activityType === "quiz") {
           setClassroomData((prev) => ({
             ...prev,
             quizzes: prev.quizzes?.filter((q) => q._id !== activityId) || [],
           }));
-        } else {
+        } else if (activityType === "exam") {
           setClassroomData((prev) => ({
             ...prev,
             exams: prev.exams?.filter((e) => e._id !== activityId) || [],
+          }));
+        } else if (activityType === "activity") {
+          setClassroomData((prev) => ({
+            ...prev,
+            activities:
+              prev.activities?.filter((a) => a._id !== activityId) || [],
           }));
         }
       } else {
@@ -155,14 +179,14 @@ const ClassDetailPage = () => {
 
     // Create a complete activity object with all required fields
     const completeActivity = {
-      _id: newActivity._id, // temporary ID if not provided
+      _id: newActivity._id,
       title: newActivity.title || "Untitled Activity",
       description: newActivity.description || "",
       submission_time: newActivity.submission_time || 60,
-      points: newActivity.points || 0,
+      points: newActivity.points || calculateActivityPoints(newActivity),
       created_at: newActivity.created_at || new Date().toISOString(),
       type: newActivity.type || "quiz",
-      ...newActivity, // spread any additional properties
+      ...newActivity,
     };
 
     // Update the appropriate array based on activity type
@@ -171,10 +195,15 @@ const ClassDetailPage = () => {
         ...prev,
         quizzes: [...(prev.quizzes || []), completeActivity],
       }));
-    } else {
+    } else if (completeActivity.type === "exam") {
       setClassroomData((prev) => ({
         ...prev,
         exams: [...(prev.exams || []), completeActivity],
+      }));
+    } else if (completeActivity.type === "activity") {
+      setClassroomData((prev) => ({
+        ...prev,
+        activities: [...(prev.activities || []), completeActivity],
       }));
     }
 
@@ -182,7 +211,7 @@ const ClassDetailPage = () => {
   };
 
   const handleUploadSuccess = () => {
-    fetchClasses(); // This will refetch the classroom data including materials
+    fetchClasses();
   };
 
   const handleClassUpdate = useCallback((updatedClass) => {
@@ -200,14 +229,8 @@ const ClassDetailPage = () => {
       const result = await specificMaterial(materialId);
 
       if (result.success) {
-        // Get file path from result (e.g., 'materials/filename.docx')
         const filePath = result.data.data?.material;
-        console.log(filePath);
-
-        // Construct the full URL
         const fileUrl = `${BASE_URL}/uploads/${filePath}`;
-
-        // Open in new tab instead of downloading directly
         window.open(fileUrl, "_blank");
       } else {
         toast.error(result.error || "Failed to download file");
@@ -221,7 +244,7 @@ const ClassDetailPage = () => {
   const handleCopy = () => {
     navigator.clipboard.writeText(ClassroomData?.classroom.classroom_code);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -244,7 +267,6 @@ const ClassDetailPage = () => {
         </div>
 
         <button
-          /*         onClick={() => setShowEditClassModal(true)} */
           onClick={() => {
             setShowEditClassModal(true);
             setClassData(ClassroomData.classroom);
@@ -337,7 +359,8 @@ const ClassDetailPage = () => {
                       {(() => {
                         const total =
                           (ClassroomData.quizzes?.length || 0) +
-                          (ClassroomData.exams?.length || 0);
+                          (ClassroomData.exams?.length || 0) +
+                          (ClassroomData.activities?.length || 0);
                         return `${total} ${
                           total <= 1 ? "Activity" : "Activities"
                         }`;
@@ -349,10 +372,8 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiEdit3 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {(() => {
-                        const total = (ClassroomData.quizzes?.length || 0) + 0;
-                        return `${total} ${total <= 1 ? "Quiz" : "Quizzes"}`;
-                      })()}
+                      {ClassroomData.quizzes?.length || 0} Quiz
+                      {(ClassroomData.quizzes?.length || 0) !== 1 ? "zes" : ""}
                     </span>
                   </div>
                 </div>
@@ -360,10 +381,19 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiClipboard className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {(() => {
-                        const total = 0 + (ClassroomData.exams?.length || 0);
-                        return `${total} ${total <= 1 ? "Exam" : "Exams"}`;
-                      })()}
+                      {ClassroomData.exams?.length || 0} Exam
+                      {(ClassroomData.exams?.length || 0) !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiBook className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {ClassroomData.activities?.length || 0} Activity
+                      {(ClassroomData.activities?.length || 0) !== 1
+                        ? "ies"
+                        : "y"}
                     </span>
                   </div>
                 </div>
@@ -475,7 +505,7 @@ const ClassDetailPage = () => {
                 isOpen={showAddStudentsModal}
                 onClose={() => setShowAddStudentsModal(false)}
                 classId={classId}
-                onSuccess={fetchClasses} // This will refresh the student list after adding
+                onSuccess={fetchClasses}
               />
             )}
           </div>
@@ -573,7 +603,7 @@ const ClassDetailPage = () => {
                 onClose={() => setShowEditMaterialModal(false)}
                 material={selectedMaterial}
                 classId={classId}
-                onUpdateSuccess={handleUploadSuccess} // Reuse the same success handler
+                onUpdateSuccess={handleUploadSuccess}
               />
             )}
 
@@ -582,7 +612,7 @@ const ClassDetailPage = () => {
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 material={materialToDelete}
-                onDeleteSuccess={handleUploadSuccess} // Reuse the same success handler
+                onDeleteSuccess={handleUploadSuccess}
               />
             )}
           </div>
@@ -597,17 +627,17 @@ const ClassDetailPage = () => {
                   onClick={() => setIsAssignmentModalOpen(true)}
                   className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
                 >
-                  <FiPlus className="mr-2" /> New Acitivity
+                  <FiPlus className="mr-2" /> New Activity
                 </button>
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {activities.length === 0 ? (
+              {allActivities.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   There are no activities
                 </div>
               ) : (
-                activities.map((activity) => (
+                allActivities.map((activity) => (
                   <div
                     key={activity._id}
                     className="p-4 hover:bg-gray-50 transition-colors"
@@ -624,31 +654,37 @@ const ClassDetailPage = () => {
                           {activity.description}
                         </span>
                         <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs mr-2 capitalize ${
+                              activity.type === "quiz"
+                                ? "bg-blue-100 text-blue-800"
+                                : activity.type === "exam"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
                             {activity.type}
                           </span>
 
-                          <span className="text-gray-700 flex items-center">
-                            <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
-                            <strong className="font-medium mr-2">
-                              Duration:
-                            </strong>
-                            {activity.submission_time >= 60
-                              ? `${Math.floor(
-                                  activity.submission_time / 60
-                                )}h ${activity.submission_time % 60}m`
-                              : `${activity.submission_time}m`}
-                          </span>
+                          {activity.type !== "activity" && (
+                            <>
+                              <span className="text-gray-700 flex items-center">
+                                <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
+                                <strong className="font-medium mr-2">
+                                  Duration:
+                                </strong>
+                                {activity.submission_time >= 60
+                                  ? `${Math.floor(
+                                      activity.submission_time / 60
+                                    )}h ${activity.submission_time % 60}m`
+                                  : `${activity.submission_time}m`}
+                              </span>
+                            </>
+                          )}
 
                           <span className="ml-2 text-gray-700">
                             <strong className="font-medium">Points:</strong>{" "}
-                            <span>
-                              {activity.points ||
-                                activity.question?.reduce(
-                                  (total, q) => total + (q.points || 0),
-                                  0
-                                )}
-                            </span>
+                            <span>{calculateActivityPoints(activity)}</span>
                           </span>
                         </div>
                       </div>
@@ -672,7 +708,7 @@ const ClassDetailPage = () => {
                     </div>
                   </div>
                 ))
-              )}{" "}
+              )}
             </div>
           </div>
         )}
@@ -695,7 +731,13 @@ const ClassDetailPage = () => {
             handleDeleteActivity(activityToDelete._id, activityToDelete.type);
             setShowActivityDeletionModal(false);
           }}
-          title={`Delete ${activityToDelete.type === "quiz" ? "Quiz" : "Exam"}`}
+          title={`Delete ${
+            activityToDelete.type === "quiz"
+              ? "Quiz"
+              : activityToDelete.type === "exam"
+              ? "Exam"
+              : "Activity"
+          }`}
           message={`Are you sure you want to delete "${activityToDelete.title}"? All associated data will be permanently removed.`}
         />
       )}
@@ -705,7 +747,7 @@ const ClassDetailPage = () => {
           isOpen={isAssignmentModalOpen}
           onClose={() => setIsAssignmentModalOpen(false)}
           classId={classId}
-          onSuccess={handleUploadSuccess} // Add this prop
+          onSuccess={handleActivityCreated}
           progLanguage={ClassroomData?.classroom.programming_language}
         />
       )}

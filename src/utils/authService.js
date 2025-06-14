@@ -520,10 +520,10 @@ export const specificQuiz = async (quiz_id) => {
   }
 };
 
-
-
-
-export const specificActivitySpecificAnswer = async (activity_id, student_id) => {
+export const specificActivitySpecificAnswer = async (
+  activity_id,
+  student_id
+) => {
   try {
     const response = await axios.get(`
       ${BASE_URL}/activities/get_specific_activity_specific_answer/${activity_id}/${student_id}`);
@@ -631,7 +631,6 @@ export const allAnswerActivitySpecificStudentSpecificClassroom = async (
     };
   }
 };
-
 
 export const allAnswerExamSpecificStudentSpecificClassroom = async (
   classroom_id,
@@ -890,7 +889,6 @@ export const compute_grade = async (classroom_id, student_id) => {
   }
 };
 
-
 export const hideClassroom = async (roomId) => {
   try {
     const response = await axios.get(
@@ -961,7 +959,6 @@ export const addMaterial = async (file, classroom_id, description, title) => {
   }
 };
 
-
 export const specificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
@@ -979,7 +976,6 @@ export const specificActivity = async (activity_id) => {
     };
   }
 };
-
 
 export const specificMaterial = async (materialId) => {
   try {
@@ -1128,6 +1124,22 @@ export const addActivity = async (
         title,
         description,
       });
+    } else if (type === "activity") {
+      response = await axios.post(`${BASE_URL}/activities/add_activity`, {
+        classroom_id: classId,
+  
+        question: questions.map((q) => ({
+          text: q.text,
+          expected_output: q.expectedOutput,
+      
+          points: Number(q.points),
+          answer_type: q.type === "multiple_choice" ? "options" : "programming",
+        })),
+
+
+        title,
+        description,
+      });
     } else {
       response = await axios.post(`${BASE_URL}/exams/add_exam`, {
         classroom_id: classId,
@@ -1178,7 +1190,15 @@ export const updateActivity = async (activityId, activityType, data) => {
         `${BASE_URL}/quizzes/update_quiz/${activityId}`,
         data
       );
-    } else {
+    }
+    if (activityType === "acitivty") {
+      response = await axios.put(
+        `${BASE_URL}/activities/update_activity/${activityId}`,
+        data
+      );
+    }
+    
+    else {
       response = await axios.put(
         `${BASE_URL}/exams/update_exam/${activityId}`,
         data
@@ -1200,6 +1220,10 @@ export const deleteActivity = async (activityId, activityType) => {
     if (activityType === "quiz") {
       response = await axios.delete(
         `${BASE_URL}/quizzes/delete_quiz/${activityId}`
+      );
+    }if (activityType === "activity") {
+      response = await axios.delete(
+        `${BASE_URL}/activities/delete_activity/${activityId}`
       );
     } else {
       response = await axios.delete(
@@ -1357,7 +1381,6 @@ export const recoveryOTP = async (otp_code, email, password) => {
   }
 };
 
-
 export const specificActivityAnswer = async (answer_id) => {
   try {
     const response = await axios.get(
@@ -1376,11 +1399,18 @@ export const specificActivityAnswer = async (answer_id) => {
   }
 };
 
-export const activityAnswer = async (activity_id, student_id, array_answers) => {
+export const activityAnswer = async (
+  activity_id,
+  student_id,
+  array_answers
+) => {
   try {
-    const response = await axios.post(`${BASE_URL}/answer_activities/add_answer/${activity_id}/${student_id}`, {
-      array_answers,
-    });
+    const response = await axios.post(
+      `${BASE_URL}/answer_activities/add_answer/${activity_id}/${student_id}`,
+      {
+        array_answers,
+      }
+    );
 
     return {
       success: true,

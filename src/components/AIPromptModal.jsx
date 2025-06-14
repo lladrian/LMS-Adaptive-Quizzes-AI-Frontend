@@ -9,7 +9,7 @@ const AIPromptModal = ({
   onSelectQuestion,
   activityType,
   progLanguage,
-  questionType, // Add this prop to know which type is currently selected
+  questionType,
 }) => {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ const AIPromptModal = ({
     if (isOpen) {
       generateQuestions();
     }
-  }, [isOpen, activityType, questionType]); // Add questionType to dependencies
+  }, [isOpen, activityType, questionType]);
 
   const generateQuestions = async () => {
     setIsLoading(true);
@@ -26,7 +26,7 @@ const AIPromptModal = ({
 
     try {
       let prompt = "";
-      const topic = progLanguage || "programming"; // fallback if not defined
+      const topic = progLanguage || "programming";
 
       if (activityType === "quiz") {
         prompt = `Generate 3 multiple choice quiz questions about ${topic} with these requirements:
@@ -53,84 +53,39 @@ const AIPromptModal = ({
         C) [option 3]
         D) [option 4]
         Answer: [correct letter]`;
-      } else if (activityType === "programming") {
-        prompt = `Generate 3 concise programming questions with these requirements:
-        - Each question should be one clear sentence
-        - Include one sample input in parentheses
-        - Only provide the output value in the output field
+      } else if (activityType === "activity") {
+        prompt = `Generate 3 practical programming activities with these requirements:
+        - Each activity should be a clear, practical coding task
+        - Include one sample input/output pair
+        - Focus on real-world application
         - Format exactly like this:
         
-        1. Problem: [description] (Input: [example])
+        1. Activity: [description] (Input: [example])
         Output: [value]
         
-        2. Problem: [description] (Input: [example])
+        2. Activity: [description] (Input: [example])
         Output: [value]
         
-        3. Problem: [description] (Input: [example])
+        3. Activity: [description] (Input: [example])
         Output: [value]`;
       } else if (activityType === "exam") {
-        // Focus on the selected question type when in exam mode
         if (questionType === "multiple_choice") {
           prompt = `Generate 3 multiple choice exam questions about ${topic} with these requirements:
           - Each question should have 1 correct answer and 3 incorrect answers
           - Questions should be exam-level difficulty
-          - Format exactly like this:
-
-          1. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-
-          2. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-
-          3. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]`;
+          - Format exactly like the quiz format above`;
         } else if (questionType === "programming") {
           prompt = `Generate 3 programming exam questions with these requirements:
           - Each question should be one clear sentence
           - Include one sample input in parentheses
           - Only provide the output value in the output field
           - Questions should be exam-level difficulty
-          - Format exactly like this:
-          
-          1. Problem: [description] (Input: [example])
-          Output: [value]
-          
-          2. Problem: [description] (Input: [example])
-          Output: [value]
-          
-          3. Problem: [description] (Input: [example])
-          Output: [value]`;
+          - Format exactly like the activity format above`;
         } else {
-          // Default to mixed types if no specific type is selected
           prompt = `Generate 3 questions with mixed types (programming and multiple choice) for an exam:
           - For programming questions: include sample input in parentheses and just the output value
           - For multiple choice: make sure the question is related to the topic: "${topic}"
-          - Format exactly like this:
-          
-          1. [PROGRAMMING] Problem: [description] (Input: [example])
-          Output: [value]
-          
-          2. [MULTIPLE CHOICE] Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-          
-          3. [PROGRAMMING] Problem: [description] (Input: [example])
-          Output: [value]`;
+          - Format exactly like the mixed format above`;
         }
       }
 
@@ -139,7 +94,7 @@ const AIPromptModal = ({
         const generatedQuestions = parseQuestions(
           result.data.data,
           activityType,
-          questionType // Pass questionType to parser
+          questionType
         );
         setQuestions(generatedQuestions);
       } else {
@@ -157,7 +112,16 @@ const AIPromptModal = ({
   };
 
   const parseQuestions = (response, type, currentQuestionType) => {
-    if (
+    if (type === "activity") {
+      const activityRegex =
+        /(\d+)\. Activity: (.*?)\s+Output: (.*?)(?=\s+\d+\. Activity:|$)/gs;
+      const matches = [...response.matchAll(activityRegex)];
+      return matches.map((match) => ({
+        type: "programming",
+        problem: match[2].trim(),
+        output: match[3].trim(),
+      }));
+    } else if (
       type === "quiz" ||
       (type === "exam" && currentQuestionType === "multiple_choice")
     ) {
@@ -188,7 +152,6 @@ const AIPromptModal = ({
         output: match[3].trim(),
       }));
     } else if (type === "exam") {
-      // Only parse mixed types if no specific questionType was provided
       const examRegex =
         /(\d+)\. \[(PROGRAMMING|MULTIPLE CHOICE)\] (.*?)(?:\s+Output: (.*?)|(?:\s+A\) (.*?)\s+B\) (.*?)\s+C\) (.*?)\s+D\) (.*?)\s+Answer: (.*?)))(?=\s+\d+\. \[|$)/gs;
       const matches = [...response.matchAll(examRegex)];
@@ -285,7 +248,10 @@ const AIPromptModal = ({
           key={index}
           className="border border-gray-200 rounded-lg p-3 bg-gray-50"
         >
-          <p className="font-medium mb-1">{question.problem}</p>
+          <p className="font-medium mb-1">
+            {activityType === "activity" ? "Activity" : "Problem"}:{" "}
+            {question.problem}
+          </p>
           <div className="text-sm">
             <div>
               <span className="text-gray-500">Expected output:</span>
@@ -320,6 +286,8 @@ const AIPromptModal = ({
               : questionType === "programming"
               ? "Programming Exam"
               : "Exam"
+            : activityType === "activity"
+            ? "Programming Activities"
             : "Programming"}{" "}
           Questions
         </h3>

@@ -41,7 +41,7 @@ const CreateAssignmentModal = ({
     expectedOutput: "",
     options: [],
     answer: "",
-    type: "multiple_choice", // default to multiple choice
+    type: "multiple_choice",
   });
 
   const steps = [
@@ -54,13 +54,19 @@ const CreateAssignmentModal = ({
     const { name, value } = e.target;
     setAssignmentData((prev) => ({ ...prev, [name]: value }));
 
-    // Reset question type when activity type changes
     if (name === "type") {
+      const newType =
+        value === "activity"
+          ? "programming"
+          : value === "programming"
+          ? "programming"
+          : "multiple_choice";
+
       setNewQuestion((prev) => ({
         ...prev,
-        type: value === "programming" ? "programming" : "multiple_choice",
-        options: value === "programming" ? [] : prev.options,
-        answer: value === "programming" ? "" : prev.answer,
+        type: newType,
+        options: newType === "programming" ? [] : prev.options,
+        answer: newType === "programming" ? "" : prev.answer,
       }));
     }
   };
@@ -99,20 +105,15 @@ const CreateAssignmentModal = ({
     const updatedOptions = [...newQuestion.options];
     updatedOptions.splice(index, 1);
 
-    // Reassign letters and adjust answer if needed
     const reletteredOptions = updatedOptions.map((opt, idx) => ({
       letter: String.fromCharCode(65 + idx),
       text: opt.text,
     }));
 
     let updatedAnswer = newQuestion.answer;
-
-    // If we deleted the correct answer, clear it
     if (newQuestion.answer === String.fromCharCode(65 + index)) {
       updatedAnswer = "";
-    }
-    // If we deleted an option before the correct answer, adjust the answer letter
-    else if (newQuestion.answer > String.fromCharCode(65 + index)) {
+    } else if (newQuestion.answer > String.fromCharCode(65 + index)) {
       updatedAnswer = String.fromCharCode(newQuestion.answer.charCodeAt(0) - 1);
     }
 
@@ -153,13 +154,13 @@ const CreateAssignmentModal = ({
       ...(newQuestion.type === "programming"
         ? {
             expectedOutput: newQuestion.expectedOutput,
-            options: [], // Ensure no options are saved for programming questions
-            answer: "", // Ensure no answer is saved for programming questions
+            options: [],
+            answer: "",
           }
         : {
             options: newQuestion.options,
             answer: newQuestion.answer,
-            expectedOutput: "", // Ensure no expected output for multiple choice
+            expectedOutput: "",
           }),
     };
 
@@ -176,7 +177,9 @@ const CreateAssignmentModal = ({
       options: [],
       answer: "",
       type:
-        assignmentData.type === "programming"
+        assignmentData.type === "activity"
+          ? "programming"
+          : assignmentData.type === "programming"
           ? "programming"
           : "multiple_choice",
     });
@@ -199,8 +202,14 @@ const CreateAssignmentModal = ({
     setIsSubmitting(true);
     setError(null);
 
-    if (!assignmentData.title || !assignmentData.timeLimit) {
-      setError("Title and time limit are required");
+    if (!assignmentData.title) {
+      setError("Title is required");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (assignmentData.type !== "activity" && !assignmentData.timeLimit) {
+      setError("Time limit is required");
       setIsSubmitting(false);
       return;
     }
@@ -254,8 +263,12 @@ const CreateAssignmentModal = ({
 
   const nextStep = () => {
     if (currentStep === 1) {
-      if (!assignmentData.title || !assignmentData.timeLimit) {
-        setError("Please fill all required fields");
+      if (!assignmentData.title) {
+        setError("Title is required");
+        return;
+      }
+      if (assignmentData.type !== "activity" && !assignmentData.timeLimit) {
+        setError("Time limit is required");
         return;
       }
       if (assignmentData.type === "exam" && !assignmentData.grading_breakdown) {
@@ -270,8 +283,6 @@ const CreateAssignmentModal = ({
     }
 
     setError(null);
-
-    // Only proceed if there are more steps
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -284,19 +295,16 @@ const CreateAssignmentModal = ({
 
   const handleQuestionSelect = (question) => {
     setNewQuestion({
-      text: question.text || "",
-      points: 1, // Reset points to default
-      expectedOutput: question.expectedOutput || "",
-      options: question.options
-        ? question.options.map((opt, idx) => ({
-            letter: String.fromCharCode(65 + idx), // Ensure proper lettering
-            text: opt.text || "",
-          }))
-        : [],
+      text: question.text || question.problem || "",
+      points: 1,
+      expectedOutput: question.expectedOutput || question.output || "",
+      options: question.options || [],
       answer: question.answer || "",
       type:
         question.type ||
-        (assignmentData.type === "programming"
+        (assignmentData.type === "activity"
+          ? "programming"
+          : assignmentData.type === "programming"
           ? "programming"
           : "multiple_choice"),
     });
@@ -380,7 +388,11 @@ const CreateAssignmentModal = ({
               onChange={handleQuestionChange}
               rows="3"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Example: Write a function to calculate the sum of even numbers in a list"
+              placeholder={
+                assignmentData.type === "activity"
+                  ? "Example: Create a function that calculates the average of a list of numbers"
+                  : "Example: Write a function to calculate the sum of even numbers in a list"
+              }
               required
             />
           </div>
@@ -395,7 +407,11 @@ const CreateAssignmentModal = ({
               onChange={handleQuestionChange}
               rows="2"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Example: For input [1, 2, 3, 4, 5], the output should be 6"
+              placeholder={
+                assignmentData.type === "activity"
+                  ? "Example: For input [1, 2, 3, 4, 5], the function should return 3"
+                  : "Example: For input [1, 2, 3, 4, 5], the output should be 6"
+              }
               required
             />
           </div>
@@ -405,42 +421,43 @@ const CreateAssignmentModal = ({
   };
 
   const renderQuestionPreview = (question) => {
-    if (question.type === "multiple_choice") {
-      return (
-        <div className="w-full">
-          <div className="flex justify-between items-start w-full">
-            <h4 className="font-medium">
-              {question.text} ({question.points} point
-              {question.points !== 1 ? "s" : ""})
-            </h4>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setNewQuestion({
-                    text: question.text,
-                    points: question.points,
-                    options: [], // Always empty for programming questions
-                    answer: "", // Always empty for programming questions
-                    type: "programming", // Always programming for programming questions
-                  });
-                  setEditingQuestionId(question.id);
-                }}
-                className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
-                title="Edit question"
-              >
-                <FiEdit2 size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeQuestion(question.id)}
-                className="cursor-pointer text-red-600 hover:text-red-800 p-1"
-                title="Delete question"
-              >
-                <FiTrash2 size={16} />
-              </button>
-            </div>
+    return (
+      <div className="w-full">
+        <div className="flex justify-between items-start w-full">
+          <h4 className="font-medium">
+            {question.text} ({question.points} point
+            {question.points !== 1 ? "s" : ""})
+          </h4>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => {
+                setNewQuestion({
+                  text: question.text,
+                  points: question.points,
+                  expectedOutput: question.expectedOutput,
+                  options: question.options || [],
+                  answer: question.answer || "",
+                  type: question.type,
+                });
+                setEditingQuestionId(question.id);
+              }}
+              className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+              title="Edit question"
+            >
+              <FiEdit2 size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => removeQuestion(question.id)}
+              className="cursor-pointer text-red-600 hover:text-red-800 p-1"
+              title="Delete question"
+            >
+              <FiTrash2 size={16} />
+            </button>
           </div>
+        </div>
+        {question.type === "multiple_choice" ? (
           <div className="space-y-2 mt-2">
             {question.options.map((option, idx) => (
               <div
@@ -456,70 +473,31 @@ const CreateAssignmentModal = ({
               </div>
             ))}
           </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="w-full">
-          <div className="flex justify-between items-start w-full">
-            <h4 className="font-medium">
-              {question.text} ({question.points} point
-              {question.points !== 1 ? "s" : ""})
-            </h4>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setNewQuestion({
-                    text: question.text,
-                    points: question.points,
-                    expectedOutput: question.expectedOutput,
-                    options: [],
-                    answer: "",
-                    type: "programming",
-                  });
-                  setEditingQuestionId(question.id);
-                }}
-                className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
-                title="Edit question"
-              >
-                <FiEdit2 size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeQuestion(question.id)}
-                className="cursor-pointer text-red-600 hover:text-red-800 p-1"
-                title="Delete question"
-              >
-                <FiTrash2 size={16} />
-              </button>
-            </div>
-          </div>
-          <p className="text-gray-700 mt-1">{question.text}</p>
-          {question.expectedOutput && (
-            <>
-              <h5 className="font-medium mt-2 text-sm">Expected Output:</h5>
-              <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
-                {question.expectedOutput}
-              </pre>
-            </>
-          )}
-        </div>
-      );
-    }
+        ) : (
+          <>
+            <p className="text-gray-700 mt-1">{question.text}</p>
+            {question.expectedOutput && (
+              <>
+                <h5 className="font-medium mt-2 text-sm">Expected Output:</h5>
+                <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
+                  {question.expectedOutput}
+                </pre>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    );
   };
 
   const renderReviewQuestion = (question, index) => {
-    if (question.type === "multiple_choice") {
-      return (
-        <div
-          key={question.id}
-          className="border border-gray-200 rounded-lg p-4"
-        >
-          <h5 className="font-medium">
-            Question {index + 1} ({question.points} points)
-          </h5>
-          <p className="text-gray-700 mt-1">{question.text}</p>
+    return (
+      <div key={question.id} className="border border-gray-200 rounded-lg p-4">
+        <h5 className="font-medium">
+          Question {index + 1} ({question.points} points)
+        </h5>
+        <p className="text-gray-700 mt-1">{question.text}</p>
+        {question.type === "multiple_choice" ? (
           <div className="space-y-2 mt-3">
             {question.options.map((option, idx) => (
               <div
@@ -535,29 +513,18 @@ const CreateAssignmentModal = ({
               </div>
             ))}
           </div>
-        </div>
-      );
-    } else {
-      return (
-        <div
-          key={question.id}
-          className="border border-gray-200 rounded-lg p-4"
-        >
-          <h5 className="font-medium">
-            Question {index + 1} ({question.points} points)
-          </h5>
-          <p className="text-gray-700 mt-1">{question.text}</p>
-          {question.expectedOutput && (
+        ) : (
+          question.expectedOutput && (
             <>
               <h6 className="font-medium mt-2 text-sm">Expected Output:</h6>
               <pre className="text-gray-700 bg-gray-50 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
                 {question.expectedOutput}
               </pre>
             </>
-          )}
-        </div>
-      );
-    }
+          )
+        )}
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -656,6 +623,7 @@ const CreateAssignmentModal = ({
                       >
                         <option value="quiz">Quiz</option>
                         <option value="exam">Exam</option>
+                        <option value="activity">Activity</option>
                       </select>
                     </div>
 
@@ -677,23 +645,25 @@ const CreateAssignmentModal = ({
                       </div>
                     )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Time Limit (minutes) *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          name="timeLimit"
-                          value={assignmentData.timeLimit}
-                          onChange={handleAssignmentChange}
-                          min="1"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
-                          required
-                        />
-                        <FiClock className="absolute left-3 top-3 text-gray-400" />
+                    {assignmentData.type !== "activity" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Time Limit (minutes) *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            name="timeLimit"
+                            value={assignmentData.timeLimit}
+                            onChange={handleAssignmentChange}
+                            min="1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
+                            required
+                          />
+                          <FiClock className="absolute left-3 top-3 text-gray-400" />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -725,6 +695,7 @@ const CreateAssignmentModal = ({
                                   }))
                                 }
                                 className="px-3 py-1 border border-gray-300 rounded-lg"
+                                disabled={assignmentData.type === "activity"}
                               >
                                 <option value="multiple_choice">
                                   Multiple Choice
@@ -832,15 +803,10 @@ const CreateAssignmentModal = ({
                         }))
                       }
                       className="px-3 py-1 border border-gray-300 rounded-lg"
-                      disabled={assignmentData.type === "programming"}
+                      disabled={assignmentData.type === "activity"}
                     >
                       <option value="multiple_choice">Multiple Choice</option>
-                      <option
-                        value="programming"
-                        disabled={assignmentData.type === "quiz"}
-                      >
-                        Programming
-                      </option>
+                      <option value="programming">Programming</option>
                     </select>
                   </div>
 
@@ -887,9 +853,7 @@ const CreateAssignmentModal = ({
 
             {currentStep === 3 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">
-                  Review Assignment
-                </h3>
+                <h3 className="text-lg font-semibold mb-4">Review Activity</h3>
 
                 <div className="space-y-6">
                   <div>
@@ -909,12 +873,14 @@ const CreateAssignmentModal = ({
                             ` (${assignmentData.grading_breakdown})`}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Time Limit</p>
-                        <p className="font-medium">
-                          {assignmentData.timeLimit} minutes
-                        </p>
-                      </div>
+                      {assignmentData.type !== "activity" && (
+                        <div>
+                          <p className="text-sm text-gray-500">Time Limit</p>
+                          <p className="font-medium">
+                            {assignmentData.timeLimit} minutes
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm text-gray-500">Total Points</p>
                         <p className="font-medium">
@@ -959,7 +925,7 @@ const CreateAssignmentModal = ({
               <div className="flex space-x-3">
                 {currentStep < steps.length ? (
                   <button
-                    type="button" // Important: type="button" not "submit"
+                    type="button"
                     onClick={nextStep}
                     className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                   >
@@ -969,8 +935,8 @@ const CreateAssignmentModal = ({
 
                 {currentStep == 3 ? (
                   <button
-                    type="submit" // Only the final button should be type="submit"
-                    className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    type="submit"
+                    className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -1014,7 +980,7 @@ const CreateAssignmentModal = ({
             onSelectQuestion={handleQuestionSelect}
             activityType={assignmentData.type}
             progLanguage={progLanguage}
-            questionType={newQuestion.type} // Add this line
+            questionType={newQuestion.type}
           />
         )}
       </div>
