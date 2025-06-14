@@ -523,10 +523,10 @@ export const specificQuiz = async (quiz_id) => {
 
 
 
-export const specificActivitySpecificAnswer = async (material_id, student_id) => {
+export const specificActivitySpecificAnswer = async (activity_id, student_id) => {
   try {
     const response = await axios.get(`
-      ${BASE_URL}/materials/get_specific_material_specific_answer/${material_id}/${student_id}`);
+      ${BASE_URL}/activities/get_specific_activity_specific_answer/${activity_id}/${student_id}`);
 
     return {
       success: true,
@@ -597,7 +597,7 @@ export const allAnswerQuizSpecificStudentSpecificClassroom = async (
 ) => {
   try {
     const response = await axios.get(`
-      ${BASE_URL}/answer_quizzes/get_all_answer_specific_user_specific_classroom/${classroom_id}/${student_id}`);
+      ${BASE_URL}/answer_quizzes/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
 
     return {
       success: true,
@@ -611,13 +611,35 @@ export const allAnswerQuizSpecificStudentSpecificClassroom = async (
   }
 };
 
+export const allAnswerActivitySpecificStudentSpecificClassroom = async (
+  classroom_id,
+  student_id
+) => {
+  try {
+    const response = await axios.get(`
+      
+      ${BASE_URL}/answer_activities/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get all answers",
+    };
+  }
+};
+
+
 export const allAnswerExamSpecificStudentSpecificClassroom = async (
   classroom_id,
   student_id
 ) => {
   try {
     const response = await axios.get(`
-      ${BASE_URL}/answer_exams/get_all_answer_specific_user_specific_classroom/${classroom_id}/${student_id}`);
+      ${BASE_URL}/answer_exams/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
 
     return {
       success: true,
@@ -938,6 +960,26 @@ export const addMaterial = async (file, classroom_id, description, title) => {
     };
   }
 };
+
+
+export const specificActivity = async (activity_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/activities/get_specific_activity/${activity_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching materials",
+    };
+  }
+};
+
 
 export const specificMaterial = async (materialId) => {
   try {
@@ -1334,9 +1376,9 @@ export const specificActivityAnswer = async (answer_id) => {
   }
 };
 
-export const activityAnswer = async (material_id, student_id, array_answers) => {
+export const activityAnswer = async (activity_id, student_id, array_answers) => {
   try {
-    const response = await axios.post(`${BASE_URL}/answer_activities/add_answer/${material_id}/${student_id}`, {
+    const response = await axios.post(`${BASE_URL}/answer_activities/add_answer/${activity_id}/${student_id}`, {
       array_answers,
     });
 

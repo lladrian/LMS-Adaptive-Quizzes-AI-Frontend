@@ -16,6 +16,7 @@ import CodeEditor from "../../components/CodeEditor";
 import {specificClassroom, 
 allAnswerExamSpecificStudentSpecificClassroom,
 allAnswerQuizSpecificStudentSpecificClassroom,
+allAnswerActivitySpecificStudentSpecificClassroom,
 leaveClassroom,
 compute_grade
 } from "../../utils/authService";
@@ -60,29 +61,31 @@ const ClassDetailPage = () => {
         const result = await specificClassroom(classId);
         const result2 = await allAnswerExamSpecificStudentSpecificClassroom(classId, studentId);
         const result3 = await allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId);
-        const result4 = await compute_grade(classId, studentId);
+        const result4 = await allAnswerActivitySpecificStudentSpecificClassroom(classId, studentId);
+        const result5 = await compute_grade(classId, studentId);
+   
 
       
 
-        if (result.success && result2.success && result3.success && result4.success) {
+        if (result.success && result2.success && result3.success && result4.success && result5.success) {
           setClassroom(result.data.data);
           setMaterial(result.data.data.materials);
           setStudent(result.data.data.students);
-          setGrade(result4.data.data)
+          setGrade(result5.data.data)
           setAssignment(
             [
               ...(result.data.data.exams || []),
-              ...(result.data.data.quizzes || [])
+              ...(result.data.data.quizzes || []),
+              ...(result.data.data.activities || [])
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
           );
           setAnswer(
             [
               ...(result2.data.data || []),
-              ...(result3.data.data || [])
+              ...(result3.data.data || []),
+              ...(result4.data.data || [])
             ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // sort ascending by date
           );
-
-        
         }
       } catch (error) {
         console.error("Error fetching admins:", error);
@@ -92,34 +95,16 @@ const ClassDetailPage = () => {
       }
     };
 
-    const filterAnswer = () => {
-    return assignments.filter((assignment) => {
-      const isAnswered = answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.submitted_at
-      );
-
-      const isOngoing= answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.opened_at
-      );
-
-      if (selectedStatus === 'all') return true;
-      if (selectedStatus === 'not yet') return !isAnswered && !isOngoing;
-      if (selectedStatus === 'ongoing') return isOngoing && !isAnswered;
-      if (selectedStatus === 'completed') return isAnswered;
-
-      return true;
-    });
-  };
 
   const filterAssignments = () => {
     return assignments.filter((assignment) => {
 
       const isAnswered = answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.submitted_at
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id || ans?.activity?._id === assignment?._id && ans?.submitted_at
       );
 
       const isOngoing= answers.some(
-        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id && ans?.opened_at
+        (ans) => ans?.quiz?._id === assignment?._id || ans?.exam?._id === assignment?._id || ans?.activity?._id === assignment?._id && ans?.opened_at
       );
 
       if (selectedStatus === 'all') return true;
@@ -306,7 +291,7 @@ const ClassDetailPage = () => {
                             </Link>
                           </div>
 
-                          {/* {material && (
+                          {material && (
                             <div className="mt-4 border-t pt-4">
                               <Link
                                 to={`/student/class/${classId}/${material._id}/practice_with_lesson`}
@@ -316,7 +301,7 @@ const ClassDetailPage = () => {
                                 Start Practice Exercises
                               </Link>
                             </div>
-                          )} */}
+                          )}
 
                         </div>
                       )}  
@@ -367,10 +352,12 @@ const ClassDetailPage = () => {
                       className={`pl-2 py-2 pr-4 rounded-full text-xs capitalize 
                         ${assignment.type === 'quiz' ? 'bg-yellow-100 text-yellow-800' : ''}
                         ${assignment.type === 'exam' ? 'bg-green-100 text-green-800' : ''}
+                        ${assignment.type === 'activity' ? 'bg-blue-100 text-blue-800' : ''}
                       `}
                     >
-                      {assignment.type}
+                      {assignment.type} - {assignment?.grading_breakdown}
                     </span>
+              
                     <h3 className="font-medium text-base">{assignment.title}</h3>
                     <div className="mt-1">
                       <p className="text-sm italic text-gray-700 whitespace-pre-wrap break-words">
@@ -380,7 +367,7 @@ const ClassDetailPage = () => {
                     <div className="flex items-center text-sm text-gray-500 mt-2">
                       <FiClock />
                       <span className="ml-3">
-                        Submission Time: {assignment.submission_time} minutes
+                        Submission Time: {assignment.submission_time || 0} minutes
                       </span>
                     </div>
                     <div>
@@ -408,6 +395,18 @@ const ClassDetailPage = () => {
                       >
                         <FiCode className="mr-2" />
                         {assignment.type === 'quiz' ? 'Take Quiz' : 'Take Exam'}
+                      </Link>
+                    </div>
+                  )}
+
+                  {(assignment.type === 'activity') && (
+                    <div className="mt-4 border-t pt-4">
+                      <Link
+                        to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                      >
+                        <FiCode className="mr-2" />
+                        Take Activity
                       </Link>
                     </div>
                   )}
@@ -459,13 +458,13 @@ const ClassDetailPage = () => {
 
                     <div>
                       🎯 Activity: {
-                        120 > 0
-                          ? (120 / 120 * classroom.classroom.grading_system.activity).toFixed(1)
+                        grades.activity.totalPoints > 0
+                          ? (grades.activity.earnedPoints / grades.activity.totalPoints * classroom.classroom.grading_system.activity).toFixed(1)
                           : 0
                       } / {classroom.classroom.grading_system.activity}
                     </div>
 
-                    <div  div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
+                    <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
                         🔢 Total: {
                           (
                             (grades.quiz.totalPoints > 0
@@ -477,11 +476,12 @@ const ClassDetailPage = () => {
                             (grades.final.totalPoints > 0
                               ? (grades.final.earnedPoints / grades.final.totalPoints) * classroom.classroom.grading_system.final
                               : 0) +
-                            (120 > 0
-                              ? (120 / 120) * classroom.classroom.grading_system.activity
+                            (grades.activity.totalPoints > 0
+                              ? (grades.activity.earnedPoints / grades.activity.totalPoints)
+                               * classroom.classroom.grading_system.activity
                               : 0)
                           ).toFixed(1)
-                        } / 100%
+                        } / 100
                       </div>
                   </div>
                 </div>
@@ -515,12 +515,26 @@ const ClassDetailPage = () => {
                             <tr key={answer._id}>
                               <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                 {(() => {
-                                  const type = (answer.quiz?.type || answer.exam?.type || '').toUpperCase();
+                                  const type = (answer.quiz?.type || answer.exam?.type || answer.activity?.type || '').toUpperCase();
                                   const isQuiz = type === 'QUIZ';
                                   const isExam = type === 'EXAM';
+                                  const isActivity = type === 'ACTIVITY';
 
-                                  const bgColor = isQuiz ? 'bg-yellow-100' : isExam ? 'bg-green-100' : 'bg-gray-100';
-                                  const textColor = isQuiz ? 'text-yellow-800' : isExam ? 'text-green-800' : 'text-gray-800';
+                                 const bgColor = isQuiz
+                                  ? 'bg-yellow-100'
+                                  : isExam
+                                  ? 'bg-green-100'
+                                  : isActivity
+                                  ? 'bg-blue-100'
+                                  : 'bg-gray-100';
+
+                                const textColor = isQuiz
+                                  ? 'text-yellow-800'
+                                  : isExam
+                                  ? 'text-green-800'
+                                  : isActivity
+                                  ? 'text-blue-800'
+                                  : 'text-gray-800';
 
                                   return (
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
@@ -530,17 +544,17 @@ const ClassDetailPage = () => {
                                 })()}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                {(answer.quiz?.grading_breakdown || answer.exam?.grading_breakdown)?.toUpperCase()}
+                                {(answer.quiz?.grading_breakdown || answer.exam?.grading_breakdown || answer.activity?.grading_breakdown)?.toUpperCase()}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {answer.quiz?.title || answer.exam?.title}
+                                {answer.quiz?.title || answer.exam?.title || answer.activity?.title}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {answer.quiz?.submission_time || answer.exam?.submission_time} minutes
+                                {answer.quiz?.submission_time || answer.exam?.submission_time || 0} minutes
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {(answer.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)}/
-                                {(answer.quiz?.question || answer.exam?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
+                                {(answer.quiz?.question || answer.exam?.question || answer.activity?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                               {answer.exam?.type === 'exam' ? (
@@ -557,17 +571,14 @@ const ClassDetailPage = () => {
                                 >
                                   VIEW
                                 </Link>
-                              ) : answer.quiz?.type === 'activity' ? (
+                              ) : answer.activity?.type === 'activity' ? (
                                 <Link
-                                  to={`/student/class/${classId}/${answer.material._id}/activity/view_answer`}
+                                  to={`/student/class/${classId}/${answer.activity._id}/activity/view_answer`}
                                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
                                 >
                                   VIEW
                                 </Link>
                               ) : null}
-
-
-                               
                               </td>
                             </tr>
                           )

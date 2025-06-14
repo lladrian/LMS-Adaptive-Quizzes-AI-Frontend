@@ -40,7 +40,10 @@ import LessonPracticePage from "./pages/student/LessonPracticePage";
 import PracticePage from "./pages/student/PracticePage";
 import AssignmentAnswerPage from "./pages/student/AssignmentAnswerPage";
 import ViewAssignmentAnswerPage from "./pages/student/ViewAssignmentAnswerPage";
+import ActivityAnswerPage from "./pages/student/ActivityAnswerPage";
 import GradesPage from "./pages/student/GradesPage";
+
+
 
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
@@ -165,7 +168,12 @@ function App() {
             />
             <Route
               path="class/:classId/:lessonId/activity/view_answer"
-              element={<LessonPracticePage />}
+              element={<ActivityAnswerPage />}
+            />
+
+            <Route
+              path="class/:classId/:lessonId/activity/answer"
+              element={<ActivityAnswerPage />}
             />
 
 
