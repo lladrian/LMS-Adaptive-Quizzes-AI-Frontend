@@ -12,7 +12,7 @@ import {
 import { toast } from "react-toastify";
 
 
-const LessonPracticePage = () => {
+const ActivityAnswerPage = () => {
   const { classId, lessonId } = useParams();
   const [code, setCode] = useState("");
   const [languages, setLanguages] = useState([]);
@@ -297,4 +297,4 @@ const LessonPracticePage = () => {
   );
 };
 
-export default LessonPracticePage;
+export default ActivityAnswerPage;
