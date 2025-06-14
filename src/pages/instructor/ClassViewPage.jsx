@@ -663,7 +663,7 @@ const calculateActivityPoints = (activity) => {
                                 : "bg-green-100 text-green-800"
                             }`}
                           >
-                            {activity.type}
+                            {activity.type} - {activity.grading_breakdown}
                           </span>
 
                           {activity.type !== "activity" && (
