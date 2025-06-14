@@ -635,9 +635,14 @@ const ClassDetailPage = () => {
                   <p className="text-2xl font-bold">{classroom.exams.length}</p>
                 </div> 
 
-                  <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+                <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
                   <h3 className="text-sm font-medium">Total Materials</h3>
                   <p className="text-2xl font-bold">{classroom.materials.length}</p>
+                </div> 
+
+                 <div className="bg-gray-100 text-gray-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Activities</h3>
+                  <p className="text-2xl font-bold">{classroom.activities.length}</p>
                 </div> 
               </div>
 
