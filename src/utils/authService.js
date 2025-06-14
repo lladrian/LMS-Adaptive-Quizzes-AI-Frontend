@@ -870,7 +870,28 @@ export const updateClassroom = async (
   }
 };
 
-export const compute_grade = async (classroom_id, student_id) => {
+
+
+export const getAllStudentGradeSpecificClassroom = async (classroom_id) => {
+  try {
+    const response = await axios.get(
+      `
+      ${BASE_URL}/grades/get_all_Student_grade_specific_classroom/${classroom_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to archive classroom",
+    };
+  }
+};
+
+export const computeStudentGrade = async (classroom_id, student_id) => {
   try {
     const response = await axios.get(
       `

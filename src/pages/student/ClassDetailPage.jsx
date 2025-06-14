@@ -18,7 +18,7 @@ allAnswerExamSpecificStudentSpecificClassroom,
 allAnswerQuizSpecificStudentSpecificClassroom,
 allAnswerActivitySpecificStudentSpecificClassroom,
 leaveClassroom,
-compute_grade
+computeStudentGrade
 } from "../../utils/authService";
 import { BASE_URL } from "../../utils/config";
 import Modal from '../../components/Modal'; // Adjust the path as necessary
@@ -62,7 +62,7 @@ const ClassDetailPage = () => {
         const result2 = await allAnswerExamSpecificStudentSpecificClassroom(classId, studentId);
         const result3 = await allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId);
         const result4 = await allAnswerActivitySpecificStudentSpecificClassroom(classId, studentId);
-        const result5 = await compute_grade(classId, studentId);
+        const result5 = await computeStudentGrade(classId, studentId);
    
 
       
@@ -429,59 +429,24 @@ const ClassDetailPage = () => {
                 <div className="bg-white p-6 rounded shadow-md">
                   <h2 className="text-xl font-bold mb-4 text-gray-800">Your Grades</h2>
                   <div className="space-y-2 text-lg font-semibold text-gray-700">
-                    {/* <div>📘 Quiz: {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.quiz}</div>
-                    <div>📝 Midterm:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.midterm}</div>
-                    <div>📚 Final:  {"120 / 120 * 30 = " + 120 / 120 * 30}/{classroom.classroom.grading_system.final}</div>
-                    <div>🎯 Activity:  {"120 / 120 * 20 = " + 120 / 120 * 20}/{classroom.classroom.grading_system.activity}</div> */}
                     <div>
-                      📘 Quiz: {
-                        grades.quiz.totalPoints > 0
-                          ? (grades.quiz.earnedPoints / grades.quiz.totalPoints * classroom.classroom.grading_system.quiz).toFixed(1)
-                          : 0
-                      } / {classroom.classroom.grading_system.quiz}
+                      📘 Quiz: {grades.quiz.earnedPoints} / {grades.quiz.totalPoints} = {grades.quiz.quiz} / {classroom.classroom.grading_system.quiz}
                     </div>
-                   <div>
-                      📝 Midterm: {
-                        grades.midterm.totalPoints > 0
-                          ? (grades.midterm.earnedPoints / grades.midterm.totalPoints * classroom.classroom.grading_system.midterm).toFixed(1)
-                          : 0
-                      } / {classroom.classroom.grading_system.midterm}
+                    
+                    <div>
+                      🎯 Activity: {grades.activity.earnedPoints} / {grades.activity.totalPoints} = {grades.activity.activity} / {classroom.classroom.grading_system.activity}
+                    </div>
+                    
+                    <div>
+                      📝 Midterm: {grades.midterm.earnedPoints} / {grades.midterm.totalPoints} = {grades.midterm.midterm} / {classroom.classroom.grading_system.midterm}
                     </div>
 
                     <div>
-                      📚 Final: {
-                        grades.final.totalPoints > 0
-                          ? (grades.final.earnedPoints / grades.final.totalPoints * classroom.classroom.grading_system.final).toFixed(1)
-                          : 0
-                      } / {classroom.classroom.grading_system.final}
-                    </div>
-
-                    <div>
-                      🎯 Activity: {
-                        grades.activity.totalPoints > 0
-                          ? (grades.activity.earnedPoints / grades.activity.totalPoints * classroom.classroom.grading_system.activity).toFixed(1)
-                          : 0
-                      } / {classroom.classroom.grading_system.activity}
+                      📚 Final: {grades.final.earnedPoints} / {grades.final.totalPoints} = {grades.final.final} / {classroom.classroom.grading_system.final}
                     </div>
 
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                        🔢 Total: {
-                          (
-                            (grades.quiz.totalPoints > 0
-                              ? (grades.quiz.earnedPoints / grades.quiz.totalPoints) * classroom.classroom.grading_system.quiz
-                              : 0) +
-                            (grades.midterm.totalPoints > 0
-                              ? (grades.midterm.earnedPoints / grades.midterm.totalPoints) * classroom.classroom.grading_system.midterm
-                              : 0) +
-                            (grades.final.totalPoints > 0
-                              ? (grades.final.earnedPoints / grades.final.totalPoints) * classroom.classroom.grading_system.final
-                              : 0) +
-                            (grades.activity.totalPoints > 0
-                              ? (grades.activity.earnedPoints / grades.activity.totalPoints)
-                               * classroom.classroom.grading_system.activity
-                              : 0)
-                          ).toFixed(1)
-                        } / 100
+                      🔢 Total: {grades.student_grade.grade} / 100
                       </div>
                   </div>
                 </div>

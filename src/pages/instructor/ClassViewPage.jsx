@@ -19,6 +19,7 @@ import {
   specificMaterial,
   deleteActivity,
   removeStudentClassroom,
+  getAllStudentGradeSpecificClassroom
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
@@ -41,10 +42,13 @@ const ClassDetailPage = () => {
   const [showActivityDeletionModal, setShowActivityDeletionModal] =
     useState(false);
   const [activityToDelete, setActivityToDelete] = useState(null);
-
+  const [studentData, setStudentData] = useState(null);
   const [ClassroomData, setClassroomData] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Helper function to calculate activity points
  // Updated calculateActivityPoints function
@@ -98,6 +102,21 @@ const calculateActivityPoints = (activity) => {
     fetchClasses();
   }, [fetchClasses]);
 
+  useEffect(() => {
+    allStudentData();
+  }, []);
+
+  const allStudentData = async () => {
+    try {
+        const result = await getAllStudentGradeSpecificClassroom(classId);
+        console.log(result.data.data);
+        setStudentData(result.data.data);
+    } catch (error) {
+        console.error("Error removing student:", error);
+        toast.error("An error occurred while removing student");
+    } 
+  }
+  
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
@@ -245,6 +264,16 @@ const calculateActivityPoints = (activity) => {
     navigator.clipboard.writeText(ClassroomData?.classroom.classroom_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleViewClick = (student) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedStudent(null);
   };
 
   return (
@@ -426,36 +455,34 @@ const calculateActivityPoints = (activity) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {ClassroomData.students?.length > 0 ? (
-                    ClassroomData.students.map((student) => (
-                      <tr key={student._id} className="hover:bg-gray-50">
+                  {studentData?.length > 0 ? (
+                    studentData.map((student) => (
+                      <tr key={student.student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.fullname}
+                          {student.student.fullname}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.email}
+                          {student.student.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-              bg-green-100 text-green-800
-            `}
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800`}
                           >
                             active
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <button
-                            onClick={() => handleRemoveClick(student)}
-                            className="cursor-pointer text-red-600 hover:text-red-900"
+                            onClick={() => handleViewClick(student)}
+                            className="text-blue-600 hover:text-blue-900"
                           >
-                            Remove
+                            VIEW
                           </button>
                         </td>
                       </tr>
@@ -473,6 +500,73 @@ const calculateActivityPoints = (activity) => {
                 </tbody>
               </table>
             </div>
+
+            
+            {isModalOpen && selectedStudent && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+                <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Grade Details</h2>
+
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <p><span className="font-semibold">Full Name:</span> {selectedStudent.student.fullname}</p>
+                    <p><span className="font-semibold">Email:</span> {selectedStudent.student.email}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                            <p className="font-semibold capitalize">Quiz:</p>
+                            <p>
+                              { selectedStudent.grades.quiz.earnedPoints } / { selectedStudent.grades.quiz.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.quiz.quiz }</span> / { selectedStudent.classroom.grading_system.quiz }
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                            <p className="font-semibold capitalize">Activity:</p>
+                            <p>
+                              { selectedStudent.grades.activity.earnedPoints } / { selectedStudent.grades.activity.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.activity.activity }</span> / { selectedStudent.classroom.grading_system.activity }
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                            <p className="font-semibold capitalize">Midterm:</p>
+                            <p>
+                              { selectedStudent.grades.midterm.earnedPoints } / { selectedStudent.grades.midterm.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.midterm.midterm }</span> / { selectedStudent.classroom.grading_system.midterm }
+                            </p>
+                          </div>
+                           <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                            <p className="font-semibold capitalize">Final:</p>
+                            <p>
+                              { selectedStudent.grades.final.earnedPoints } / { selectedStudent.grades.final.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.final.final }</span> / { selectedStudent.classroom.grading_system.final }
+                            </p>
+                          </div>
+                    </div>
+
+                    <div className="mt-6 border-t pt-4">
+                      <p className="text-lg font-semibold">
+                        Student Grade:
+                        <span className="text-indigo-700 ml-2">
+                          { selectedStudent.grades.student_grade.grade } / 100
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 flex justify-end gap-4">
+                    <button
+                      onClick={() => handleRemoveClick(selectedStudent.student)}
+                      className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      onClick={closeModal}
+                      className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
 
             {showRemoveStudentModal && studentToRemove && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
