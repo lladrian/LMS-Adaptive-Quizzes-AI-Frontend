@@ -1262,6 +1262,27 @@ export const allStudentMissingAnswerSpecificQuiz = async (quizId) => {
   }
 };
 
+
+export const allStudentMissingAnswerSpecificActivity = async (activity_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_activities/get_all_student_missing_answer_specific_activity/${activity_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        "Failed to get the students missing exam answers",
+    };
+  }
+};
+
 export const allStudentMissingAnswerSpecificExam = async (examId) => {
   try {
     const response = await axios.get(
@@ -1278,6 +1299,25 @@ export const allStudentMissingAnswerSpecificExam = async (examId) => {
       error:
         error.response?.data?.error ||
         "Failed to get the students missing exam answers",
+    };
+  }
+};
+
+
+export const allAnswerSpecificActivity = async (activity_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_activities/get_all_answer_specific_activity/${activity_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the quiz answers",
     };
   }
 };

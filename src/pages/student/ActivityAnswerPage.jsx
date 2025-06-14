@@ -28,7 +28,6 @@ const ActivityAnswerPage = () => {
 
   useEffect(() => {
     fetchSpecificClassroom();
-   // fetchActivity();
     GetAnswers();
   }, []);
 
@@ -61,14 +60,6 @@ const ActivityAnswerPage = () => {
   };
 
 
-  // const fetchActivity = async () => {
-  //     try {
-  //         const result = await specificMaterial(lessonId);
-  //         setQuestions(result.data?.data?.question || []);
-  //     } catch (error) {
-  //       console.error("Failed to fetch material:", error);
-  //     }
-  // };
 
   const fetchSpecificClassroom = async () => {
       try {

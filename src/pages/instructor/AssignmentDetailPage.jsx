@@ -17,9 +17,11 @@ import {
   specificClassroom,
   allAnswerSpecificQuiz,
   allAnswerSpecificExam,
+  allAnswerSpecificActivity,
   updateActivity,
   allStudentMissingAnswerSpecificQuiz,
   allStudentMissingAnswerSpecificExam,
+  allStudentMissingAnswerSpecificActivity,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
@@ -216,12 +218,13 @@ const AssignmentDetailPage = () => {
       const classroomResult = await specificClassroom(classId);
       const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
       const answersExamResult = await allAnswerSpecificExam(assignmentId);
-      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(
-        assignmentId
-      );
-      const missingExamResult = await allStudentMissingAnswerSpecificExam(
-        assignmentId
-      );
+      const answersActivityResult = await allAnswerSpecificActivity(assignmentId);
+
+      
+      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(assignmentId);
+      const missingExamResult = await allStudentMissingAnswerSpecificExam(assignmentId);
+      const missingActivityResult = await allStudentMissingAnswerSpecificActivity(assignmentId);
+
 
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
@@ -237,7 +240,12 @@ const AssignmentDetailPage = () => {
           type: "exam",
         }));
 
-        const combinedActivities = [...quizzes, ...exams];
+        const activities = (classroom.activities || []).map((e) => ({
+          ...e,
+          type: "activity",
+        }));
+
+        const combinedActivities = [...quizzes, ...exams, ...activities];
 
         const activity = combinedActivities.find(
           (activity) => activity._id === assignmentId
@@ -245,8 +253,8 @@ const AssignmentDetailPage = () => {
         setActivityData(activity || null);
       }
 
-      if (answersQuizResult.success || answersExamResult.success) {
-        const responseData = answersQuizResult.data || answersExamResult.data;
+      if (answersQuizResult.success || answersExamResult.success || answersActivityResult.success) {
+        const responseData = answersQuizResult.data || answersExamResult.data || answersActivityResult.data;
         let studentAnswers = [];
 
         if (Array.isArray(responseData)) {
@@ -278,6 +286,8 @@ const AssignmentDetailPage = () => {
         setMissingStudents(missingQuizResult.data.data || []);
       } else if (missingExamResult.success) {
         setMissingStudents(missingExamResult.data.data || []);
+      } else if(missingActivityResult.success) {
+        setMissingStudents(missingActivityResult.data.data || []);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -403,7 +413,7 @@ const AssignmentDetailPage = () => {
                         ? `${Math.floor(activityData.submission_time / 60)}h ${
                             activityData.submission_time % 60
                           }m`
-                        : `${activityData.submission_time}m`}
+                        : `${activityData.submission_time || 0}m`}
                     </p>
                   </div>
                 </div>
@@ -623,7 +633,7 @@ const AssignmentDetailPage = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium">
-                            -/
+                            0/
                             {activityData.question?.reduce(
                               (total, q) => total + (q.points || 0),
                               0
