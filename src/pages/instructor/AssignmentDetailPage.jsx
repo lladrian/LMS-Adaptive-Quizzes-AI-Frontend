@@ -164,14 +164,14 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                           </p>
                         </div>
 
-                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                        {/* <div className="bg-white p-3 rounded-md border border-gray-200">
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Student's Output:
                           </p>
                           <p className="font-mono bg-gray-100 p-2 rounded">
                             {answer?.output || "No output"}
                           </p>
-                        </div>
+                        </div> */}
 
                         <div className="mt-2">
                           <div className="flex items-center">
