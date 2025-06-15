@@ -116,6 +116,26 @@ export const deleteStudent = async (id) => {
   }
 };
 
+
+export const getAllActivitiesSpecificStudentSpecificClassroom = async (
+  classroom_id,
+  student_id
+) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/classrooms/get_all_activities_specific_student_specific_classroom/${classroom_id}/${student_id}`
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed add student in classroom.",
+    };
+  }
+};
+
 export const addStudentsToClassroom = async (
   classroom_id,
   student_id_number

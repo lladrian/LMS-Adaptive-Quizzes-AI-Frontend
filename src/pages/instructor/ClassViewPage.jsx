@@ -19,7 +19,8 @@ import {
   specificMaterial,
   deleteActivity,
   removeStudentClassroom,
-  getAllStudentGradeSpecificClassroom
+  getAllStudentGradeSpecificClassroom,
+  getAllActivitiesSpecificStudentSpecificClassroom
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
@@ -48,7 +49,9 @@ const ClassDetailPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudentActivities, setSelectedStudentActivities] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
 
   // Helper function to calculate activity points
  // Updated calculateActivityPoints function
@@ -105,6 +108,19 @@ const calculateActivityPoints = (activity) => {
   useEffect(() => {
     allStudentData();
   }, []);
+
+  
+  const allStudentActivities = async (student_id) => {
+    try {
+        const result = await getAllActivitiesSpecificStudentSpecificClassroom(classId, student_id);
+        //console.log(student_id)
+        //console.log(result.data.data);
+        setSelectedStudentActivities(result.data.data);
+    } catch (error) {
+        console.error("Error removing student:", error);
+        toast.error("An error occurred while removing student");
+    } 
+  }
 
   const allStudentData = async () => {
     try {
@@ -273,6 +289,18 @@ const calculateActivityPoints = (activity) => {
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setSelectedStudent(null);
+  };
+
+
+  
+  const handleViewClickActivities = (student) => {
+    allStudentActivities(student.student._id)
+    setIsModalOpenActivities(true);
+  };
+
+  const closeModalActivities = () => {
+    setSelectedStudentActivities(false);
     setSelectedStudent(null);
   };
 
@@ -482,8 +510,16 @@ const calculateActivityPoints = (activity) => {
                             onClick={() => handleViewClick(student)}
                             className="text-blue-600 hover:text-blue-900"
                           >
+                            GRADES
+                          </button>
+
+                          <button
+                            onClick={() => handleViewClickActivities(student)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
                             VIEW
                           </button>
+                           
                         </td>
                       </tr>
                     ))
@@ -502,7 +538,35 @@ const calculateActivityPoints = (activity) => {
             </div>
 
             
-            {isModalOpen && selectedStudent && (
+            {isModalOpenActivities && selectedStudentActivities && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+                <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Activities</h2>
+
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <p><span className="font-semibold">Full Name:</span> {selectedStudentActivities.student.fullname}</p>
+                    <p><span className="font-semibold">Email:</span> {selectedStudentActivities.student.email}</p>
+                  </div>
+
+                  <div className="mt-8 flex justify-end gap-4">
+                    <button
+                      onClick={() => handleRemoveClick(selectedStudentActivities.student)}
+                      className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      onClick={closeModalActivities}
+                      className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+              {isModalOpen && selectedStudent && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
                 <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
                   <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Grade Details</h2>
