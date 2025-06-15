@@ -52,6 +52,8 @@ const ClassDetailPage = () => {
   const [selectedStudentActivities, setSelectedStudentActivities] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
+  const [activityFilter, setActivityFilter] = useState('all');
+
 
   // Helper function to calculate activity points
  // Updated calculateActivityPoints function
@@ -304,6 +306,14 @@ const calculateActivityPoints = (activity) => {
     setSelectedStudent(null);
   };
 
+
+  const getFilteredActivities = () => {
+    if (activityFilter === 'answered') return selectedStudentActivities.answered_activities;
+    if (activityFilter === 'unanswered') return selectedStudentActivities.unanswered_activities;
+    return selectedStudentActivities.all_activities;
+  };
+
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -537,27 +547,88 @@ const calculateActivityPoints = (activity) => {
               </table>
             </div>
 
-            
             {isModalOpenActivities && selectedStudentActivities && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
-                <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Activities</h2>
+                <div className="bg-white w-full max-w-4xl h-[80vh] overflow-y-auto rounded-lg shadow-xl p-8">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">Student Activities</h2>
 
-                  <div className="space-y-3 text-sm text-gray-700">
+                  <div className="space-y-4 text-md text-gray-700">
+                    <div className="font-semibold">Student Information:</div>
                     <p><span className="font-semibold">Full Name:</span> {selectedStudentActivities.student.fullname}</p>
                     <p><span className="font-semibold">Email:</span> {selectedStudentActivities.student.email}</p>
                   </div>
 
-                  <div className="mt-8 flex justify-end gap-4">
+                   <div className="mt-6 border-t pt-4">
+                      <div className="font-semibold mb-2">Activities:</div>
+
+                      {/* Filter Buttons */}
+                      <div className="mb-4 flex gap-2">
+                       <button
+                          onClick={() => setActivityFilter('all')}
+                          className={`px-4 py-2 rounded-md text-sm font-medium ${
+                            activityFilter === 'all'
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          }`}
+                        >
+                          ALL ({selectedStudentActivities.all_activities.length})
+                        </button>
+
+                        <button
+                          onClick={() => setActivityFilter('answered')}
+                          className={`px-4 py-2 rounded-md text-sm font-medium ${
+                            activityFilter === 'answered'
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          }`}
+                        >
+                          ANSWERED ({selectedStudentActivities.answered_activities.length})
+                        </button>
+
+                        <button
+                          onClick={() => setActivityFilter('unanswered')}
+                          className={`px-4 py-2 rounded-md text-sm font-medium ${
+                            activityFilter === 'unanswered'
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          }`}
+                        >
+                          UNANSWERED ({selectedStudentActivities.unanswered_activities.length})
+                        </button>
+                       
+
+                      </div>
+
+                      {/* Activities List */}
+                      {getFilteredActivities().map((activity) => (
+                        <div
+                          key={activity._id}
+                          className="mt-3 p-3 border rounded-md shadow-sm bg-gray-50"
+                        >
+                          <div className="font-medium">
+                            Title: <span className="font-normal">{activity.title}</span>
+                          </div>
+                          <div>
+                            Type: <span className="font-normal">{activity.type.toUpperCase()}</span>
+                          </div>
+                          <div>
+                            Grading Breakdown:{' '}
+                            <span className="font-normal">{activity.grading_breakdown.toUpperCase()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                  <div className="mt-8 flex justify-end space-x-4">
                     <button
                       onClick={() => handleRemoveClick(selectedStudentActivities.student)}
-                      className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 ease-in-out"
                     >
                       Remove
                     </button>
                     <button
                       onClick={closeModalActivities}
-                      className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 ease-in-out"
                     >
                       Close
                     </button>
@@ -565,6 +636,11 @@ const calculateActivityPoints = (activity) => {
                 </div>
               </div>
             )}
+
+           
+          
+ 
+
 
               {isModalOpen && selectedStudent && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
