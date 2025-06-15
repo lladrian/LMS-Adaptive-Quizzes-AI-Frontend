@@ -612,9 +612,14 @@ const calculateActivityPoints = (activity) => {
                             Type: <span className="font-normal">{activity.type.toUpperCase()}</span>
                           </div>
                           <div>
-                            Grading Breakdown:{' '}
-                            <span className="font-normal">{activity.grading_breakdown.toUpperCase()}</span>
+                            Grading Breakdown: <span className="font-normal">{activity.grading_breakdown.toUpperCase()}</span>
                           </div>
+                          <Link
+                            to={`/instructor/class/${classId}/activity/${activity._id}`}
+                            className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                          >
+                            VISIT {activity.type.toUpperCase()}
+                          </Link>
                         </div>
                       ))}
                     </div>
