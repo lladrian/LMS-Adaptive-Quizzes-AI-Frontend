@@ -43,7 +43,7 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <div>
             <h3 className="text-lg font-semibold">
-              {submission.student}'s Submission
+              {submission.first_name} {submission.middle_name} {submission.last_name}'s Submission
             </h3>
             <div className="flex items-center mt-1">
               <span className="text-sm font-medium text-gray-700">
@@ -268,7 +268,9 @@ const AssignmentDetailPage = () => {
         setSubmissions(
           studentAnswers.map((answer) => ({
             id: answer._id,
-            student: answer.student?.fullname || "Unknown Student",
+            first_name: answer.student?.first_name || "",
+            middle_name: answer.student?.middle_name || "",
+            last_name: answer.student?.last_name || "",
             email: answer.student?.email || "No email",
             submitted: answer.submitted_at
               ? new Date(answer.submitted_at).toLocaleString()
@@ -567,7 +569,7 @@ const AssignmentDetailPage = () => {
                         <tr key={submission.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="font-medium text-gray-900">
-                              {submission.student}
+                              {submission.first_name} {submission.middle_name} {submission.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
                               {submission.email}
@@ -623,7 +625,7 @@ const AssignmentDetailPage = () => {
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">
-                            {student.fullname}1
+                            {student.first_name} {student.middle_name} {student.last_name}
                           </div>
                           <div className="text-sm text-gray-500">
                             {student.email}

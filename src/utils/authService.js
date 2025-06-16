@@ -33,15 +33,20 @@ export const loginUser = async ({ email, password }) => {
 
 /* STUDENT */
 
+
 export const registerStudent = async (
-  fullname,
+  first_name,
+  middle_name,
+  last_name,
   email,
   password,
   student_id_number
 ) => {
   try {
     const response = await axios.post(`${BASE_URL}/students/add_student`, {
-      fullname,
+      first_name,
+      middle_name,
+      last_name,
       email,
       password,
       student_id_number,
@@ -67,19 +72,23 @@ export const getAllStudents = async () => {
     };
   }
 };
-export const updateStudent = async (id, email, fullname, student_id_number) => {
+
+
+export const updateStudent = async (id, email, first_name, middle_name, last_name, student_id_number) => {
   try {
     const response = await axios.put(
       `${BASE_URL}/students/update_student/${id}`,
-      { email, fullname, student_id_number }
+      { email, student_id_number, first_name, middle_name, last_name }
     );
+
+
 
     return { success: true, data: response.data };
   } catch (error) {
     return {
       success: false,
       error:
-        error.response?.data?.message || "Failed to update specific student.",
+        error?.message || "Failed to update specific student.",
     };
   }
 };
@@ -157,12 +166,15 @@ export const addStudentsToClassroom = async (
 
 /* INSTRUCTOR */
 
-export const registerInstructor = async (fullname, email, password) => {
+
+export const registerInstructor = async (first_name, middle_name, last_name, email, password) => {
   try {
     const response = await axios.post(
       `${BASE_URL}/instructors/add_instructor`,
       {
-        fullname,
+        first_name,
+        middle_name,
+        last_name,
         email,
         password,
       }
@@ -177,12 +189,15 @@ export const registerInstructor = async (fullname, email, password) => {
   }
 };
 
+
 export const updateInstructor = async (id, data) => {
   try {
     const response = await axios.put(
       `${BASE_URL}/instructors/update_instructor/${id}`,
       {
-        fullname: data.fullname,
+        first_name: data.first_name,
+        middle_name: data.middle_name,
+        last_name: data.last_name,
         email: data.email,
       }
     );
@@ -322,10 +337,13 @@ export const registerAdmin = async (fullname, email, password) => {
   }
 };
 
+
 export const updateAdmin = async (id, data) => {
   try {
     const response = await axios.put(`${BASE_URL}/admins/update_admin/${id}`, {
-      fullname: data.fullname,
+      first_name: data.first_name,
+      middle_name: data.middle_name,
+      last_name: data.last_name,
       email: data.email,
     });
 

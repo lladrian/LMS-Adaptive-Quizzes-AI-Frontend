@@ -25,11 +25,16 @@ const InstructorLayout = () => {
     { path: "/instructor/settings", icon: FiSettings, label: "Settings" },
   ];
 
-  const instructorName = localStorage.getItem("fullname");
+  const instructorFirstName = localStorage.getItem("first_name");
+  const instructorMiddleName = localStorage.getItem("middle_name");
+  const instructorLastName = localStorage.getItem("last_name");
+
   const handleLogout = () => {
     navigate("/");
     localStorage.removeItem("role");
-    localStorage.removeItem("fullname");
+    localStorage.removeItem("first_name");
+    localStorage.removeItem("middle_name");
+    localStorage.removeItem("last_name");
     localStorage.removeItem("userId");
     localStorage.removeItem("email");
     localStorage.removeItem("status");
@@ -121,11 +126,11 @@ const InstructorLayout = () => {
                   className="flex items-center hover:bg-gray-100 p-1 rounded transition"
                 >
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                    {instructorName?.charAt(0).toUpperCase()}
+                    {instructorFirstName?.charAt(0).toUpperCase()}
                   </div>
                   {sidebarOpen && (
                     <span className="ml-2 text-sm font-medium text-gray-700">
-                      {instructorName}
+                      {instructorFirstName} {instructorLastName}
                     </span>
                   )}
                 </Link>

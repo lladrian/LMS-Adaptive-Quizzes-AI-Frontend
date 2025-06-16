@@ -26,7 +26,9 @@ const AdminsManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [newAdmin, setNewAdmin] = useState({
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     password: "",
     role: "admin",
@@ -34,7 +36,9 @@ const AdminsManagement = () => {
 
   const [editAdminData, setEditAdminData] = useState({
     id: "",
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     role: "admin",
   });
@@ -62,7 +66,9 @@ const AdminsManagement = () => {
 
   const filteredAdmins = admins.filter(
     (admin) =>
-      admin?.fullname?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      admin?.first_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      admin?.middle_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      admin?.last_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
       admin?.email?.toLowerCase()?.includes(searchTerm.toLowerCase())
   );
 
@@ -70,16 +76,18 @@ const AdminsManagement = () => {
     e.preventDefault();
     try {
       const response = await registerAdmin(
-        newAdmin.fullname,
+        newAdmin.first_name,
+        newAdmin.middle_name,
+        newAdmin.last_name,
         newAdmin.email,
         newAdmin.password,
         newAdmin.role
       );
 
       if (response.success) {
-        toast.success(`Admin ${newAdmin.fullname} added successfully!`);
+        toast.success(`Admin ${newAdmin.first_name} ${newAdmin.middle_name} ${newAdmin.last_name} added successfully!`);
         setShowAddAdminModal(false);
-        setNewAdmin({ fullname: "", email: "", password: "", role: "admin" });
+        setNewAdmin({ first_name: "", middle_name: "",  last_name: "",  email: "", password: "", role: "admin" });
         await fetchAdmins();
       } else {
         toast.error(response.error);
@@ -96,7 +104,9 @@ const AdminsManagement = () => {
   const handleEditAdmin = (admin) => {
     setEditAdminData({
       id: admin._id,
-      fullname: admin.fullname,
+      first_name: admin.first_name,
+      middle_name: admin.middle_name,
+      last_name: admin.last_name,
       email: admin.email,
       role: admin.role,
     });
@@ -109,13 +119,15 @@ const AdminsManagement = () => {
      */ e.preventDefault();
     try {
       const response = await updateAdmin(editAdminData.id, {
-        fullname: editAdminData.fullname,
+        first_name: editAdminData.first_name,
+        middle_name: editAdminData.middle_name,
+        last_name: editAdminData.last_name,
         email: editAdminData.email,
         role: editAdminData.role,
       });
 
       if (response.success) {
-        toast.success(`Admin ${editAdminData.fullname} updated successfully!`);
+        toast.success(`Admin ${editAdminData.first_name} ${editAdminData.middle_name} ${editAdminData.last_name} updated successfully!`);
         setShowEditAdminModal(false);
         await fetchAdmins();
       } else {
@@ -222,7 +234,7 @@ const AdminsManagement = () => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {admin.fullname}
+                              {admin.first_name} {admin.middle_name} {admin.last_name}
                             </div>
                           </div>
                         </div>
@@ -286,14 +298,42 @@ const AdminsManagement = () => {
               <form onSubmit={handleAddAdmin}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newAdmin.fullname}
+                    value={newAdmin.first_name}
                     onChange={(e) =>
-                      setNewAdmin({ ...newAdmin, fullname: e.target.value })
+                      setNewAdmin({ ...newAdmin, first_name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                 <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newAdmin.middle_name}
+                    onChange={(e) =>
+                      setNewAdmin({ ...newAdmin, middle_name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                  <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newAdmin.last_name}
+                    onChange={(e) =>
+                      setNewAdmin({ ...newAdmin, last_name: e.target.value })
                     }
                     required
                   />
@@ -373,16 +413,50 @@ const AdminsManagement = () => {
               <form onSubmit={handleUpdateAdmin}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editAdminData.fullname}
+                    value={editAdminData.first_name}
                     onChange={(e) =>
                       setEditAdminData({
                         ...editAdminData,
-                        fullname: e.target.value,
+                        first_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editAdminData.middle_name}
+                    onChange={(e) =>
+                      setEditAdminData({
+                        ...editAdminData,
+                        middle_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                 <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editAdminData.last_name}
+                    onChange={(e) =>
+                      setEditAdminData({
+                        ...editAdminData,
+                        last_name: e.target.value,
                       })
                     }
                     required
@@ -459,7 +533,7 @@ const AdminsManagement = () => {
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalAdmin.fullname}
+                      {deleteModalAdmin.first_name}  {deleteModalAdmin.middle_name}  {deleteModalAdmin.last_name}
                     </span>
                     ?
                   </p>

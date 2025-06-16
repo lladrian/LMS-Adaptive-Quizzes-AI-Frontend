@@ -28,7 +28,9 @@ const Students = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [newStudent, setNewStudent] = useState({
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     password: "",
     student_id_number: "",
@@ -37,7 +39,9 @@ const Students = () => {
 
   const [editStudentData, setEditStudentData] = useState({
     id: "",
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     student_id_number: "",
     role: "Student",
@@ -65,12 +69,16 @@ const Students = () => {
   };
 
 const filteredStudents = students.filter((student) => {
-  const name = student.fullname?.toLowerCase() || "";
+  const first_name = student.first_name?.toLowerCase() || "";
+  const middle_name = student.middle_name?.toLowerCase() || "";
+  const last_name = student.last_name?.toLowerCase() || "";
   const email = student.email?.toLowerCase() || "";
   const idNumber = student.student_id_number?.toString().toLowerCase() || "";
 
   return (
-    name.includes(searchTerm.toLowerCase()) ||
+    first_name.includes(searchTerm.toLowerCase()) ||
+    middle_name.includes(searchTerm.toLowerCase()) ||
+    last_name.includes(searchTerm.toLowerCase()) ||
     email.includes(searchTerm.toLowerCase()) ||
     idNumber.includes(searchTerm.toLowerCase())
   );
@@ -81,17 +89,21 @@ const filteredStudents = students.filter((student) => {
     e.preventDefault();
     try {
       const response = await registerStudent(
-        newStudent.fullname,
+        newStudent.first_name,
+        newStudent.middle_name,
+        newStudent.last_name,
         newStudent.email,
         newStudent.password,
         newStudent.student_id_number
       );
 
       if (response.success) {
-        toast.success(`Student ${newStudent.fullname} added successfully!`);
+        toast.success(`Student ${newStudent.first_name} ${newStudent.middle_name} ${newStudent.last_name} added successfully!`);
         setShowAddStudentModal(false);
         setNewStudent({
-          fullname: "",
+          first_name: "",
+          middle_name: "",
+          last_name: "",
           email: "",
           password: "",
           student_id_number: "",
@@ -113,7 +125,9 @@ const filteredStudents = students.filter((student) => {
   const handleEditStudent = (student) => {
     setEditStudentData({
       id: student._id,
-      fullname: student.fullname,
+      first_name: student.first_name,
+      middle_name: student.middle_name,
+      last_name: student.last_name,
       email: student.email,
       student_id_number: student.student_id_number,
       role: student.role,
@@ -127,13 +141,15 @@ const filteredStudents = students.filter((student) => {
       const response = await updateStudent(
         editStudentData.id,
         editStudentData.email,
-        editStudentData.fullname,
+        editStudentData.first_name,
+        editStudentData.middle_name,
+        editStudentData.last_name,
         editStudentData.student_id_number
       );
 
       if (response.success) {
         toast.success(
-          `Student ${editStudentData.fullname} updated successfully!`
+          `Student ${editStudentData.first_name} ${editStudentData.middle_name} ${editStudentData.last_name} updated successfully!`
         );
         setShowEditStudentModal(false);
         await fetchStudents();
@@ -269,7 +285,7 @@ const filteredStudents = students.filter((student) => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {student.fullname}
+                              {student.first_name} {student.middle_name} {student.last_name}
                             </div>
                           </div>
                         </div>
@@ -347,16 +363,50 @@ const filteredStudents = students.filter((student) => {
               <form onSubmit={handleAddStudent}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newStudent.fullname}
+                    value={newStudent.first_name}
                     onChange={(e) =>
                       setNewStudent({
                         ...newStudent,
-                        fullname: e.target.value,
+                        first_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newStudent.middle_name}
+                    onChange={(e) =>
+                      setNewStudent({
+                        ...newStudent,
+                        middle_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                  <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newStudent.last_name}
+                    onChange={(e) =>
+                      setNewStudent({
+                        ...newStudent,
+                        last_name: e.target.value,
                       })
                     }
                     required
@@ -446,16 +496,50 @@ const filteredStudents = students.filter((student) => {
               <form onSubmit={handleUpdateStudent}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editStudentData.fullname}
+                    value={editStudentData.first_name}
                     onChange={(e) =>
                       setEditStudentData({
                         ...editStudentData,
-                        fullname: e.target.value,
+                        first_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editStudentData.middle_name}
+                    onChange={(e) =>
+                      setEditStudentData({
+                        ...editStudentData,
+                        middle_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editStudentData.last_name}
+                    onChange={(e) =>
+                      setEditStudentData({
+                        ...editStudentData,
+                        last_name: e.target.value,
                       })
                     }
                     required
@@ -532,7 +616,7 @@ const filteredStudents = students.filter((student) => {
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalStudent.fullname}
+                      {deleteModalStudent.first_name} {deleteModalStudent.middle_name} {deleteModalStudent.last_name}
                     </span>
                     ?
                   </p>
@@ -579,7 +663,7 @@ const filteredStudents = students.filter((student) => {
                   <p>
                     Are you sure you want to promote{" "}
                     <span className="font-semibold">
-                      {promoteModalStudent.fullname}
+                      {promoteModalStudent.first_name} {promoteModalStudent.middle_name} {promoteModalStudent.last_name}
                     </span>{" "}
                     to Instructor?
                   </p>

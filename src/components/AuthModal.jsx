@@ -15,7 +15,9 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     email: "",
     password: "",
     student_id_number: 0,
-    name: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     role: "student",
   });
   const [otp, setOtp] = useState("");
@@ -38,7 +40,9 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     setFormData({
       email: "",
       password: "",
-      name: "",
+      first_name: "",
+      middle_name: "",
+      last_name: "",
       student_id_number: 0,
       role: "student",
     });
@@ -221,12 +225,16 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
   };
 
   const completeLogin = (userData) => {
-    toast.success(`Welcome, ${userData.fullname}!`);
+    toast.success(`Welcome, ${userData.first_name} ${userData.last_name}!`);
     onClose();
 
     localStorage.setItem("userId", userData._id);
     localStorage.setItem("role", userData.role);
     localStorage.setItem("fullname", userData.fullname);
+    localStorage.setItem("first_name", userData.first_name);
+    localStorage.setItem("middle_name", userData.middle_name);
+    localStorage.setItem("last_name", userData.last_name);
+    localStorage.setItem("student_id_number", userData.student_id_number || 0);
     localStorage.setItem("email", userData.email);
     localStorage.setItem("status", userData.status);
 
@@ -242,7 +250,9 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (
-      !formData.name ||
+      !formData.first_name ||
+      !formData.middle_name ||
+      !formData.last_name ||
       !formData.email ||
       !formData.password ||
       !confirmPassword
@@ -270,25 +280,29 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
     try {
       if (formData.role === "student") {
         const result = await registerStudent(
-          formData.name,
+          formData.first_name,
+          formData.middle_name,
+          formData.last_name,
           formData.email,
           formData.password,
           formData.student_id_number
         );
         if (result.success) {
-          toast.success(`Account created for ${formData.name}!`);
+          toast.success(`Account created for ${formData.first_name}!`);
           setActiveTab("login");
         } else {
           toast.error(result.error);
         }
       } else {
         const result = await registerInstructor(
-          formData.name,
+          formData.first_name,
+          formData.middle_name,
+          formData.last_name,
           formData.email,
           formData.password
         );
         if (result.success) {
-          toast.success(`Account created for ${formData.name}!`);
+          toast.success(`Account created for ${formData.first_name}!`);
           setActiveTab("login");
         } else {
           toast.error(result.error);
@@ -313,7 +327,7 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl w-[80vh]">
         {/* Modal Header */}
         <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <div className="flex space-x-4">
@@ -470,231 +484,240 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
               </div>
             </form>
           ) : (
-            <form onSubmit={handleRegister}>
-              <h3 className="text-lg font-medium text-gray-900 mb-6">
-                Create a new account
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="register-name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Full name
-                  </label>
-                  <input
-                    type="text"
-                    id="register-name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="register-email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    id="register-email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="you@example.com"
-                    required
-                  />
-                </div>
+            <div className="max-h-[80vh] overflow-y-auto w-full bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <form onSubmit={handleRegister}>
+                <h3 className="text-xl font-semibold text-indigo-700 mb-6">
+                  Create a New Account
+                </h3>
 
-                {/* Student ID field - only shown when role is student */}
-                {formData.role === "student" && (
+                <div className="space-y-5">
+                  {/* First Name */}
                   <div>
-                    <label
-                      htmlFor="student-id"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Student ID Number
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
                     </label>
                     <input
-                      type="number"
-                      id="student-id"
-                      name="student_id_number"
-                      value={formData.student_id_number}
+                      type="text"
+                      name="first_name"
+                      value={formData.first_name}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Enter your student ID"
-                      required={formData.role === "student"}
+                      placeholder="First Name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
-                )}
-                <div>
-                  <label
-                    htmlFor="register-password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    id="register-password"
-                    name="password"
-                    value={formData.password}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setPasswordStrength(
-                        checkPasswordStrength(e.target.value)
-                      );
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="••••••••"
-                    required
-                    minLength={8}
-                  />
-                  {formData.password && (
-                    <div className="mt-1">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${
+
+                  {/* Middle Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Middle Name
+                    </label>
+                    <input
+                      type="text"
+                      name="middle_name"
+                      value={formData.middle_name}
+                      onChange={handleChange}
+                      placeholder="Middle Name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      placeholder="Last Name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="you@example.com"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Student ID (conditional) */}
+                  {formData.role === "student" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Student ID Number
+                      </label>
+                      <input
+                        type="number"
+                        name="student_id_number"
+                        value={formData.student_id_number}
+                        onChange={handleChange}
+                        placeholder="Enter your student ID"
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setPasswordStrength(checkPasswordStrength(e.target.value));
+                      }}
+                      placeholder="••••••••"
+                      required
+                      minLength={8}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                    {formData.password && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                passwordStrength.score >= 5
+                                  ? "bg-green-500"
+                                  : passwordStrength.score >= 3
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                              }`}
+                              style={{
+                                width: `${(passwordStrength.score / 5) * 100}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <span
+                            className={`text-xs font-medium ${
                               passwordStrength.score >= 5
-                                ? "bg-green-500"
+                                ? "text-green-600"
                                 : passwordStrength.score >= 3
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
+                                ? "text-yellow-600"
+                                : "text-red-600"
                             }`}
-                            style={{
-                              width: `${(passwordStrength.score / 5) * 100}%`,
-                            }}
-                          ></div>
+                          >
+                            {passwordStrength.message}
+                          </span>
                         </div>
-                        <span
-                          className={`text-xs ${
-                            passwordStrength.score >= 5
-                              ? "text-green-600"
-                              : passwordStrength.score >= 3
-                              ? "text-yellow-600"
-                              : "text-red-600"
+                        <p className="text-xs text-gray-500 mt-1">
+                          Use at least 8 characters with uppercase, numbers, and symbols.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={8}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                    {confirmPassword && formData.password !== confirmPassword && (
+                      <p className="mt-1 text-xs text-red-600">
+                        Passwords do not match
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Role Selector */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      I am a
+                    </label>
+                    <div className="grid grid-cols-2 gap-4 mt-1">
+                      {["student", "instructor"].map((roleOption) => (
+                        <button
+                          key={roleOption}
+                          type="button"
+                          onClick={() =>
+                            setFormData({ ...formData, role: roleOption })
+                          }
+                          className={`py-2 px-4 rounded-md text-sm font-medium border focus:outline-none transition ${
+                            formData.role === roleOption
+                              ? "bg-indigo-600 text-white border-transparent"
+                              : "bg-white border-gray-300 text-gray-700"
                           }`}
                         >
-                          {passwordStrength.message}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Use at least 8 characters with uppercase, numbers, and
-                        symbols
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="confirm-password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    id="confirm-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="••••••••"
-                    required
-                    minLength={8}
-                  />
-                  {confirmPassword && formData.password !== confirmPassword && (
-                    <p className="mt-1 text-xs text-red-600">
-                      Passwords do not match
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    I am a
-                  </label>
-                  <div className="mt-1 grid grid-cols-2 gap-3">
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, role: "student" })
-                        }
-                        className={`cursor-pointer w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                          formData.role === "student"
-                            ? "bg-indigo-600 text-white border-transparent"
-                            : "bg-white text-gray-700 border-gray-300"
-                        }`}
-                      >
-                        Student
-                      </button>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, role: "instructor" })
-                        }
-                        className={`cursor-pointer w-full py-2 px-4 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                          formData.role === "instructor"
-                            ? "bg-indigo-600 text-white border-transparent"
-                            : "bg-white text-gray-700 border-gray-300"
-                        }`}
-                      >
-                        Instructor
-                      </button>
+                          {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
+                        </button>
+                      ))}
                     </div>
                   </div>
+
+                  {/* Submit */}
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={loadingRegister}
+                      className={`w-full flex justify-center items-center py-2 px-4 rounded-md text-sm font-semibold text-white shadow ${
+                        loadingRegister
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-indigo-600 hover:bg-indigo-700"
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    >
+                      {loadingRegister ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 mr-2 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                          </svg>
+                          Registering account...
+                        </>
+                      ) : (
+                        "Create Account"
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <button
-                    type="submit"
-                    disabled={loadingRegister}
-                    className={`cursor-pointer w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                      loadingRegister
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-indigo-600 hover:bg-indigo-700"
-                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-                  >
-                    {loadingRegister ? (
-                      <div className="flex items-center gap-2">
-                        <svg
-                          className="animate-spin h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                          ></path>
-                        </svg>
-                        <span>Registering account...</span>
-                      </div>
-                    ) : (
-                      "Create account"
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
+              </form>
+            </div>
+
+            
           )}
         </div>
       </div>

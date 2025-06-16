@@ -34,7 +34,9 @@ const Instructors = () => {
   const [originalRoles, setOriginalRoles] = useState({});
 
   const [newInstructor, setNewInstructor] = useState({
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     password: "",
     role: "Instructor",
@@ -42,7 +44,9 @@ const Instructors = () => {
 
   const [editInstructorData, setEditInstructorData] = useState({
     id: "",
-    fullname: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
     email: "",
     role: "Instructor",
   });
@@ -85,26 +89,32 @@ const Instructors = () => {
 
   const filteredInstructors = instructors.filter(
     (instructor) =>
-      instructor.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
+      instructor?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      instructor?.middle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      instructor?.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      instructor?.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddInstructor = async (e) => {
     e.preventDefault();
     try {
       const response = await registerInstructor(
-        newInstructor.fullname,
+        newInstructor.first_name,
+        newInstructor.middle_name,
+        newInstructor.last_name,
         newInstructor.email,
         newInstructor.password
       );
 
       if (response.success) {
         toast.success(
-          `Instructor ${newInstructor.fullname} added successfully!`
+          `Instructor ${newInstructor.first_name} added successfully!`
         );
         setShowAddInstructorModal(false);
         setNewInstructor({
-          fullname: "",
+          first_name: "",
+          middle_name: "",
+          last_name: "",
           email: "",
           password: "",
           role: "Instructor",
@@ -125,7 +135,9 @@ const Instructors = () => {
   const handleEditInstructor = (instructor) => {
     setEditInstructorData({
       id: instructor._id,
-      fullname: instructor.fullname,
+      first_name: instructor.first_name,
+      middle_name: instructor.first_name,
+      last_name: instructor.first_name,
       email: instructor.email,
       role: instructor.role,
     });
@@ -136,14 +148,15 @@ const Instructors = () => {
     e.preventDefault();
     try {
       const response = await updateInstructor(editInstructorData.id, {
-        fullname: editInstructorData.fullname,
-        email: editInstructorData.email,
-        role: editInstructorData.role,
+        first_name: editInstructorData.first_name,
+        middle_name: editInstructorData.middle_name,
+        last_name: editInstructorData.last_name,
+        email: editInstructorData.email
       });
 
       if (response.success) {
         toast.success(
-          `Instructor ${editInstructorData.fullname} updated successfully!`
+          `Instructor ${editInstructorData.first_name} updated successfully!`
         );
         setShowEditInstructorModal(false);
         await fetchInstructors();
@@ -302,7 +315,7 @@ const Instructors = () => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {instructor.fullname}
+                              {instructor.first_name} {instructor.middle_name} {instructor.last_name}
                             </div>
                           </div>
                         </div>
@@ -391,16 +404,50 @@ const Instructors = () => {
               <form onSubmit={handleAddInstructor}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newInstructor.fullname}
+                    value={newInstructor.first_name}
                     onChange={(e) =>
                       setNewInstructor({
                         ...newInstructor,
-                        fullname: e.target.value,
+                        first_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newInstructor.middle_name}
+                    onChange={(e) =>
+                      setNewInstructor({
+                        ...newInstructor,
+                        middle_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                   <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newInstructor.last_name}
+                    onChange={(e) =>
+                      setNewInstructor({
+                        ...newInstructor,
+                        last_name: e.target.value,
                       })
                     }
                     required
@@ -490,16 +537,50 @@ const Instructors = () => {
               <form onSubmit={handleUpdateInstructor}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
+                    First Name
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editInstructorData.fullname}
+                    value={editInstructorData.first_name}
                     onChange={(e) =>
                       setEditInstructorData({
                         ...editInstructorData,
-                        fullname: e.target.value,
+                        first_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editInstructorData.middle_name}
+                    onChange={(e) =>
+                      setEditInstructorData({
+                        ...editInstructorData,
+                        middle_name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editInstructorData.last_name}
+                    onChange={(e) =>
+                      setEditInstructorData({
+                        ...editInstructorData,
+                        last_name: e.target.value,
                       })
                     }
                     required
@@ -576,7 +657,7 @@ const Instructors = () => {
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalInstructor.fullname}
+                      {deleteModalInstructor.first_name}
                     </span>
                     ?
                   </p>
@@ -623,7 +704,7 @@ const Instructors = () => {
                   <p>
                     Are you sure you want to promote{" "}
                     <span className="font-semibold">
-                      {promoteModalAdmin.fullname}
+                      {promoteModalAdmin.first_name}
                     </span>{" "}
                     to Admin?
                   </p>
@@ -667,7 +748,7 @@ const Instructors = () => {
                   <p>
                     Are you sure you want to demote{" "}
                     <span className="font-semibold">
-                      {demoteModalInstructor.fullname}
+                      {demoteModalInstructor.first_name}
                     </span>{" "}
                     back to Student?
                   </p>

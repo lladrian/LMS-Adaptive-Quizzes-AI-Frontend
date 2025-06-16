@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import {
   updateStudent,
   updateInstructor,
+  updateAdmin,
   updateStudentPassword,
   updateInstructorPassword,
-  updateAdmin,
   updateAdminPassword,
   checkPromotedUser,
   promoteUser,
@@ -15,7 +15,10 @@ import { FiArrowDown } from "react-icons/fi";
 
 export default function AccountSettings() {
   const [account, setAccount] = useState({
-    fullname: localStorage.getItem("fullname") || "",
+    first_name: localStorage.getItem("first_name") || "",
+    middle_name: localStorage.getItem("middle_name") || "",
+    last_name: localStorage.getItem("last_name") || "",
+    student_id_number: localStorage.getItem("student_id_number") || "",
     email: "",
     newPassword: "",
     confirmPassword: "",
@@ -90,24 +93,33 @@ export default function AccountSettings() {
         response = await updateStudent(
           userId,
           account.email,
-          account.fullname,
-          localStorage.getItem("student_id_number") || ""
+          account.first_name,
+          account.middle_name,
+          account.last_name,
+          account.student_id_number
         );
       } else if (isAdmin) {
         response = await updateAdmin(userId, {
-          fullname: account.fullname,
+          first_name: account.first_name,
+          middle_name: account.middle_name,
+          last_name: account.last_name,
           email: account.email,
         });
       } else {
         response = await updateInstructor(userId, {
-          fullname: account.fullname,
+          first_name: account.first_name,
+          middle_name: account.middle_name,
+          last_name: account.last_name,
           email: account.email,
         });
       }
 
       if (response.success) {
         // Update localStorage with new values
-        localStorage.setItem("fullname", account.fullname);
+        localStorage.setItem("first_name", account.first_name);
+        localStorage.setItem("middle_name", account.middle_name);
+        localStorage.setItem("last_name", account.last_name);
+        localStorage.setItem("student_id_number", account.student_id_number || 0);
         localStorage.setItem("email", account.email);
 
         toast.success("Profile updated successfully!");
@@ -116,7 +128,7 @@ export default function AccountSettings() {
       }
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Failed to update profile. Please try again.");
+      toast.error("1Failed to update profile. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -256,16 +268,52 @@ export default function AccountSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
-                  htmlFor="fullname"
+                  htmlFor="first_name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Full Name
+                  First Name
                 </label>
                 <input
-                  id="fullname"
-                  name="fullname"
+                  id="first_name"
+                  name="first_name"
                   type="text"
-                  value={account.fullname}
+                  value={account.first_name}
+                  onChange={handleAccountChange}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="middle_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Middle Name
+                </label>
+                <input
+                  id="middle_name"
+                  name="middle_name"
+                  type="text"
+                  value={account.middle_name}
+                  onChange={handleAccountChange}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400"
+                  required
+                />
+              </div>
+
+                  <div>
+                <label
+                  htmlFor="middle_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Middle Name
+                </label>
+                <input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  value={account.last_name}
                   onChange={handleAccountChange}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400"
                   required

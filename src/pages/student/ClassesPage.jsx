@@ -111,7 +111,7 @@ const ClassesPage = () => {
                   {classroom?.classroom_name}
                 </h3>
                 <p className="text-gray-600 mb-3">
-                  {classroom?.classroom_code} • {classroom.instructor?.fullname}
+                  {classroom?.classroom_code} • {classroom?.instructor?.first_name} {classroom?.instructor?.middle_name} {classroom?.instructor?.last_name}
                 </p>
 
                 {/* <div className="flex justify-between text-sm text-gray-500 mb-4">

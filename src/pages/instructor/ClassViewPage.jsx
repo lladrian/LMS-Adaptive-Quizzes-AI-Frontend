@@ -485,7 +485,7 @@ const calculateActivityPoints = (activity) => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                      Complete Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
@@ -503,7 +503,7 @@ const calculateActivityPoints = (activity) => {
                     studentData.map((student) => (
                       <tr key={student.student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.student.fullname}
+                          {student.student.first_name} {student.student.middle_name} {student.student.last_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {student.student.email}
@@ -553,7 +553,7 @@ const calculateActivityPoints = (activity) => {
 
                   <div className="space-y-4 text-md text-gray-700">
                     <div className="font-semibold">Student Information:</div>
-                    <p><span className="font-semibold">Full Name:</span> {selectedStudentActivities.student.fullname}</p>
+                    <p><span className="font-semibold">Complete Name:</span> {selectedStudentActivities.student.first_name} {selectedStudentActivities.student.middle_name} {selectedStudentActivities.student.last_name}</p>
                     <p><span className="font-semibold">Email:</span> {selectedStudentActivities.student.email}</p>
                   </div>
 
@@ -657,7 +657,7 @@ const calculateActivityPoints = (activity) => {
                   <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Grade Details</h2>
 
                   <div className="space-y-3 text-sm text-gray-700">
-                    <p><span className="font-semibold">Full Name:</span> {selectedStudent.student.fullname}</p>
+                    <p><span className="font-semibold">Complete Name: </span>{selectedStudent.student.first_name} {selectedStudent.student.middle_name} {selectedStudent.student.last_name}</p>
                     <p><span className="font-semibold">Email:</span> {selectedStudent.student.email}</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">

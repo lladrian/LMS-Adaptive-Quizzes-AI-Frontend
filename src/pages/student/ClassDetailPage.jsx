@@ -161,7 +161,7 @@ const ClassDetailPage = () => {
                 {classroom?.classroom.classroom_name}
               </h1>
               <p className="text-gray-600">
-                {classroom?.classroom?.subject_code} • {classroom?.classroom?.instructor?.fullname}
+                {classroom?.classroom?.subject_code} • {classroom?.classroom?.instructor?.first_name} {classroom?.classroom?.instructor?.middle_name} {classroom?.classroom?.instructor?.last_name}
               </p>
               <p className="mt-2 text-gray-700">{classroom?.classroom.description}</p>
               <div className="flex items-center gap-2 mt-2">
@@ -628,24 +628,13 @@ const ClassDetailPage = () => {
               </div>
 
 
-              {/* <div>
-                <h3 className="text-lg font-semibold mb-2">Students</h3>
-                <ul className="bg-white border rounded-lg divide-y">
-                  {students.map((student) => (
-                    <li key={student._id} className="p-2">
-                      {student.fullname}
-                    </li>
-                  ))}
-                </ul>
-              </div> */}
-
               <div className="overflow-x-auto">
               <h3 className="text-lg font-semibold mb-2">Students</h3>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                      Complete Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
@@ -660,7 +649,7 @@ const ClassDetailPage = () => {
                     students.map((student) => (
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.fullname}
+                          {student.first_name} {student.middle_name} {student.last_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {student.email}
@@ -709,7 +698,7 @@ const ClassDetailPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                       <tr className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {classroom.classroom.instructor.fullname}
+                            {classroom.classroom.instructor.first_name} {classroom.classroom.instructor.middle_name} {classroom.classroom.instructor.last_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {classroom.classroom.instructor.email}
