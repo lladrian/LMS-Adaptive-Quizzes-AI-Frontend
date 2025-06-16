@@ -496,6 +496,7 @@ const AssignmentDetailPage = () => {
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
+                  
                   All ({submissions.length + missingStudents.length})
                 </button>
                 <button
@@ -622,7 +623,7 @@ const AssignmentDetailPage = () => {
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">
-                            {student.fullname}
+                            {student.fullname}1
                           </div>
                           <div className="text-sm text-gray-500">
                             {student.email}
@@ -646,14 +647,7 @@ const AssignmentDetailPage = () => {
                           </div>
                           <div className="text-sm text-gray-500">-</div>
                         </td>
-                       {/*  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a
-                            href={`mailto:${student.email}`}
-                            className="text-gray-600 hover:text-gray-900 flex items-center justify-end"
-                          >
-                            <FiMail className="mr-1" /> Remind
-                          </a>
-                        </td> */}
+                      
                       </tr>
                     ))}
 
