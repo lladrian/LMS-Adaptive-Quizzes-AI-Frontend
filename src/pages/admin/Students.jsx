@@ -64,12 +64,18 @@ const Students = () => {
     }
   };
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.student_id_number.toLowerCase().includes(searchTerm.toLowerCase())
+const filteredStudents = students.filter((student) => {
+  const name = student.fullname?.toLowerCase() || "";
+  const email = student.email?.toLowerCase() || "";
+  const idNumber = student.student_id_number?.toString().toLowerCase() || "";
+
+  return (
+    name.includes(searchTerm.toLowerCase()) ||
+    email.includes(searchTerm.toLowerCase()) ||
+    idNumber.includes(searchTerm.toLowerCase())
   );
+});
+
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
