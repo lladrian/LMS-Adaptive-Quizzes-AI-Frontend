@@ -302,8 +302,8 @@ const calculateActivityPoints = (activity) => {
   };
 
   const closeModalActivities = () => {
-    setSelectedStudentActivities(false);
-    setSelectedStudent(null);
+    setIsModalOpenActivities(false);
+    setSelectedStudentActivities(null);
   };
 
 
@@ -515,21 +515,20 @@ const calculateActivityPoints = (activity) => {
                             active
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                           <button
                             onClick={() => handleViewClick(student)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
                           >
                             GRADES
                           </button>
 
                           <button
                             onClick={() => handleViewClickActivities(student)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="px-4 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition"
                           >
                             VIEW
                           </button>
-                           
                         </td>
                       </tr>
                     ))
@@ -602,23 +601,28 @@ const calculateActivityPoints = (activity) => {
                       {/* Activities List */}
                       {getFilteredActivities().map((activity) => (
                         <div
-                          key={activity._id}
+                          key={activity?._id || activity?.activity?._id}
                           className="mt-3 p-3 border rounded-md shadow-sm bg-gray-50"
                         >
                           <div className="font-medium">
-                            Title: <span className="font-normal">{activity.title}</span>
+                            Title: <span className="font-normal">{activity?.title || activity?.activity?.title }</span>
                           </div>
                           <div>
-                            Type: <span className="font-normal">{activity.type.toUpperCase()}</span>
+                            Type: <span className="font-normal">{(activity?.type || activity?.activity?.type || 'N/A').toUpperCase()} </span>
                           </div>
                           <div>
-                            Grading Breakdown: <span className="font-normal">{activity.grading_breakdown.toUpperCase()}</span>
-                          </div>
+                            Grading Breakdown: <span className="font-normal">{(activity?.grading_breakdown || activity?.activity?.grading_breakdown || 'N/A').toUpperCase()} </span>
+                          </div> 
+                          {activityFilter !== 'all' && (
+                            <div>
+                              Score: {(activity?.answer?.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)} / {(activity?.quiz?.question || activity?.exam?.question || activity?.activity?.question || activity?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
+                            </div>
+                          )}
                           <Link
-                            to={`/instructor/class/${classId}/activity/${activity._id}`}
+                            to={`/instructor/class/${classId}/activity/${activity?._id || activity?.activity?._id}`}
                             className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                           >
-                            VISIT {activity.type.toUpperCase()}
+                            VISIT {(activity?.type || activity?.activity?.type).toUpperCase()}
                           </Link>
                         </div>
                       ))}
