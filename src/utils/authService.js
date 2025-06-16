@@ -320,10 +320,13 @@ export const getSpecificAdmin = async (id) => {
   }
 };
 
-export const registerAdmin = async (fullname, email, password) => {
+ 
+export const registerAdmin = async (first_name, middle_name, last_name, email, password) => {
   try {
     const response = await axios.post(`${BASE_URL}/admins/add_admin`, {
-      fullname,
+      first_name,
+      middle_name,
+      last_name,
       email,
       password,
     });
