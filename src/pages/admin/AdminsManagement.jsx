@@ -80,8 +80,7 @@ const AdminsManagement = () => {
         newAdmin.middle_name,
         newAdmin.last_name,
         newAdmin.email,
-        newAdmin.password,
-        newAdmin.role
+        newAdmin.password
       );
 
       if (response.success) {
