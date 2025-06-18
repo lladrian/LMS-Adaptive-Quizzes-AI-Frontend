@@ -22,7 +22,7 @@ const InstructorLayout = () => {
     { path: "/instructor/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/instructor/classes", icon: FiBook, label: "Classes" },
     { path: "/instructor/archive", icon: FiBook, label: "Archive" },
-    { path: "/instructor/settings", icon: FiSettings, label: "Settings" },
+    /*     { path: "/instructor/settings", icon: FiSettings, label: "Settings" }, */
   ];
 
   const instructorFirstName = localStorage.getItem("first_name");

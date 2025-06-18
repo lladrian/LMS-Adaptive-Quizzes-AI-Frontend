@@ -584,7 +584,9 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                       value={formData.password}
                       onChange={(e) => {
                         handleChange(e);
-                        setPasswordStrength(checkPasswordStrength(e.target.value));
+                        setPasswordStrength(
+                          checkPasswordStrength(e.target.value)
+                        );
                       }}
                       placeholder="••••••••"
                       required
@@ -621,7 +623,8 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Use at least 8 characters with uppercase, numbers, and symbols.
+                          Use at least 8 characters with uppercase, numbers, and
+                          symbols.
                         </p>
                       </div>
                     )}
@@ -641,11 +644,12 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                       minLength={8}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
-                    {confirmPassword && formData.password !== confirmPassword && (
-                      <p className="mt-1 text-xs text-red-600">
-                        Passwords do not match
-                      </p>
-                    )}
+                    {confirmPassword &&
+                      formData.password !== confirmPassword && (
+                        <p className="mt-1 text-xs text-red-600">
+                          Passwords do not match
+                        </p>
+                      )}
                   </div>
 
                   {/* Role Selector */}
@@ -667,7 +671,8 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                               : "bg-white border-gray-300 text-gray-700"
                           }`}
                         >
-                          {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
+                          {roleOption.charAt(0).toUpperCase() +
+                            roleOption.slice(1)}
                         </button>
                       ))}
                     </div>
@@ -716,8 +721,6 @@ export default function AuthModal({ activeTab, setActiveTab, onClose }) {
                 </div>
               </form>
             </div>
-
-            
           )}
         </div>
       </div>

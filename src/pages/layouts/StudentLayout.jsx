@@ -23,7 +23,7 @@ const StudentLayout = () => {
   const navItems = [
     { path: "/student/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/student/classes", icon: FiBook, label: "My Classes" },
-    { path: "/student/settings", icon: FiSettings, label: "Settings" },
+    /*     { path: "/student/settings", icon: FiSettings, label: "Settings" }, */
     // { path: "/student/grades", icon: FiAward, label: "Grades" },
   ];
 
@@ -121,7 +121,7 @@ const StudentLayout = () => {
                   className="flex items-center hover:bg-gray-100 p-1 rounded transition"
                 >
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                    {studentFirstName?.charAt(0).toUpperCase()} 
+                    {studentFirstName?.charAt(0).toUpperCase()}
                   </div>
                   {sidebarOpen && (
                     <span className="ml-2 text-sm font-medium text-gray-700">

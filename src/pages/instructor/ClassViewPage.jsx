@@ -20,7 +20,8 @@ import {
   deleteActivity,
   removeStudentClassroom,
   getAllStudentGradeSpecificClassroom,
-  getAllActivitiesSpecificStudentSpecificClassroom
+  getAllActivitiesSpecificStudentSpecificClassroom,
+  updateActivity,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
@@ -28,6 +29,7 @@ import EditMaterialModal from "../../components/EditMaterialModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import ActivityDeletionModal from "../../components/ActivityDeletionModal";
 import AddStudentsModal from "../../components/AddStudentsModal";
+import EditActivityModal from "../../components/EditActivityModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -49,32 +51,33 @@ const ClassDetailPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [selectedStudentActivities, setSelectedStudentActivities] = useState(null);
+  const [selectedStudentActivities, setSelectedStudentActivities] =
+    useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
-  const [activityFilter, setActivityFilter] = useState('all');
-
+  const [activityFilter, setActivityFilter] = useState("all");
 
   // Helper function to calculate activity points
- // Updated calculateActivityPoints function
-// Updated calculateActivityPoints function
-const calculateActivityPoints = (activity) => {
-  console.log(activity)
-  // First check if activity has direct points property
-  if (activity.points !== undefined && activity.points !== null) {
-    return activity.points;
-  }
-  
-  // Check if it has questions array with points
-  if (Array.isArray(activity.question)) {  // Note: your data uses 'question' not 'questions'
-    return activity.question.reduce((total, q) => {
-      return total + (Number(q.points) || 0);  // Ensure points is treated as number
-    }, 0);
-  }
-  
-  // Default to 0 if no points can be calculated
-  return 0;
-};
+  // Updated calculateActivityPoints function
+  // Updated calculateActivityPoints function
+  const calculateActivityPoints = (activity) => {
+    console.log(activity);
+    // First check if activity has direct points property
+    if (activity.points !== undefined && activity.points !== null) {
+      return activity.points;
+    }
+
+    // Check if it has questions array with points
+    if (Array.isArray(activity.question)) {
+      // Note: your data uses 'question' not 'questions'
+      return activity.question.reduce((total, q) => {
+        return total + (Number(q.points) || 0); // Ensure points is treated as number
+      }, 0);
+    }
+
+    // Default to 0 if no points can be calculated
+    return 0;
+  };
   // Combine and sort all activities (quizzes, exams, and activities)
   const quizzes = Array.isArray(ClassroomData.quizzes)
     ? ClassroomData.quizzes
@@ -111,34 +114,75 @@ const calculateActivityPoints = (activity) => {
     allStudentData();
   }, []);
 
-  
   const allStudentActivities = async (student_id) => {
     try {
-        const result = await getAllActivitiesSpecificStudentSpecificClassroom(classId, student_id);
-        //console.log(student_id)
-        //console.log(result.data.data);
-        setSelectedStudentActivities(result.data.data);
+      const result = await getAllActivitiesSpecificStudentSpecificClassroom(
+        classId,
+        student_id
+      );
+      //console.log(student_id)
+      //console.log(result.data.data);
+      setSelectedStudentActivities(result.data.data);
     } catch (error) {
-        console.error("Error removing student:", error);
-        toast.error("An error occurred while removing student");
-    } 
-  }
+      console.error("Error removing student:", error);
+      toast.error("An error occurred while removing student");
+    }
+  };
 
   const allStudentData = async () => {
     try {
-        const result = await getAllStudentGradeSpecificClassroom(classId);
-        console.log(result.data.data);
-        setStudentData(result.data.data);
+      const result = await getAllStudentGradeSpecificClassroom(classId);
+      console.log(result.data.data);
+      setStudentData(result.data.data);
     } catch (error) {
-        console.error("Error removing student:", error);
-        toast.error("An error occurred while removing student");
-    } 
-  }
-  
+      console.error("Error removing student:", error);
+      toast.error("An error occurred while removing student");
+    }
+  };
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [activityToEdit, setActivityToEdit] = useState(null);
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState(null);
+
+  /* const handleEditActivity = async () => {
+    try {
+      if (!activityToEdit) {
+        toast.error("No activity data to update");
+        return;
+      }
+
+      const payload = {
+        classroom_id: classId,
+        question: activityToEdit.question,
+        time_limit: activityToEdit.submission_time,
+        title: activityToEdit.title,
+        description: activityToEdit.description,
+        grading_breakdown: activityToEdit.grading_breakdown,
+      };
+
+      const result = await updateActivity(
+        activityToEdit._id,
+        activityToEdit.type,
+        payload
+      );
+
+      if (result.success) {
+        toast.success("Activity updated successfully");
+        // setActivityToEdit(activityToEdit);
+        setShowEditModal(false);
+        fetchClasses();
+      } else {
+        toast.error(result.error || "Failed to update activity");
+      }
+    } catch (error) {
+      console.error("Error updating activity:", error);
+      toast.error("An error occurred while updating");
+    }
+  }; */
 
   const handleRemoveClick = (student) => {
     setStudentToRemove(student);
@@ -294,10 +338,8 @@ const calculateActivityPoints = (activity) => {
     setSelectedStudent(null);
   };
 
-
-  
   const handleViewClickActivities = (student) => {
-    allStudentActivities(student.student._id)
+    allStudentActivities(student.student._id);
     setIsModalOpenActivities(true);
   };
 
@@ -306,13 +348,13 @@ const calculateActivityPoints = (activity) => {
     setSelectedStudentActivities(null);
   };
 
-
   const getFilteredActivities = () => {
-    if (activityFilter === 'answered') return selectedStudentActivities.answered_activities;
-    if (activityFilter === 'unanswered') return selectedStudentActivities.unanswered_activities;
+    if (activityFilter === "answered")
+      return selectedStudentActivities.answered_activities;
+    if (activityFilter === "unanswered")
+      return selectedStudentActivities.unanswered_activities;
     return selectedStudentActivities.all_activities;
   };
-
 
   return (
     <>
@@ -501,9 +543,14 @@ const calculateActivityPoints = (activity) => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {studentData?.length > 0 ? (
                     studentData.map((student) => (
-                      <tr key={student.student._id} className="hover:bg-gray-50">
+                      <tr
+                        key={student.student._id}
+                        className="hover:bg-gray-50"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.student.first_name} {student.student.middle_name} {student.student.last_name}
+                          {student.student.first_name}{" "}
+                          {student.student.middle_name}{" "}
+                          {student.student.last_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {student.student.email}
@@ -549,88 +596,135 @@ const calculateActivityPoints = (activity) => {
             {isModalOpenActivities && selectedStudentActivities && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
                 <div className="bg-white w-full max-w-4xl h-[80vh] overflow-y-auto rounded-lg shadow-xl p-8">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">Student Activities</h2>
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">
+                    Student Activities
+                  </h2>
 
                   <div className="space-y-4 text-md text-gray-700">
                     <div className="font-semibold">Student Information:</div>
-                    <p><span className="font-semibold">Complete Name:</span> {selectedStudentActivities.student.first_name} {selectedStudentActivities.student.middle_name} {selectedStudentActivities.student.last_name}</p>
-                    <p><span className="font-semibold">Email:</span> {selectedStudentActivities.student.email}</p>
+                    <p>
+                      <span className="font-semibold">Complete Name:</span>{" "}
+                      {selectedStudentActivities.student.first_name}{" "}
+                      {selectedStudentActivities.student.middle_name}{" "}
+                      {selectedStudentActivities.student.last_name}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Email:</span>{" "}
+                      {selectedStudentActivities.student.email}
+                    </p>
                   </div>
 
-                   <div className="mt-6 border-t pt-4">
-                      <div className="font-semibold mb-2">Activities:</div>
+                  <div className="mt-6 border-t pt-4">
+                    <div className="font-semibold mb-2">Activities:</div>
 
-                      {/* Filter Buttons */}
-                      <div className="mb-4 flex gap-2">
-                       <button
-                          onClick={() => setActivityFilter('all')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium ${
-                            activityFilter === 'all'
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                          }`}
-                        >
-                          ALL ({selectedStudentActivities.all_activities.length})
-                        </button>
+                    {/* Filter Buttons */}
+                    <div className="mb-4 flex gap-2">
+                      <button
+                        onClick={() => setActivityFilter("all")}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          activityFilter === "all"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        ALL ({selectedStudentActivities.all_activities.length})
+                      </button>
 
-                        <button
-                          onClick={() => setActivityFilter('answered')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium ${
-                            activityFilter === 'answered'
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                          }`}
-                        >
-                          ANSWERED ({selectedStudentActivities.answered_activities.length})
-                        </button>
+                      <button
+                        onClick={() => setActivityFilter("answered")}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          activityFilter === "answered"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        ANSWERED (
+                        {selectedStudentActivities.answered_activities.length})
+                      </button>
 
-                        <button
-                          onClick={() => setActivityFilter('unanswered')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium ${
-                            activityFilter === 'unanswered'
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                          }`}
-                        >
-                          UNANSWERED ({selectedStudentActivities.unanswered_activities.length})
-                        </button>
-                       
-
-                      </div>
-
-                      {/* Activities List */}
-                      {getFilteredActivities().map((activity) => (
-                        <div
-                          key={activity?._id || activity?.activity?._id}
-                          className="mt-3 p-3 border rounded-md shadow-sm bg-gray-50"
-                        >
-                          <div className="font-medium">
-                            Title: <span className="font-normal">{activity?.title || activity?.activity?.title }</span>
-                          </div>
-                          <div>
-                            Type: <span className="font-normal">{(activity?.type || activity?.activity?.type || 'N/A').toUpperCase()} </span>
-                          </div>
-                          <div>
-                            Grading Breakdown: <span className="font-normal">{(activity?.grading_breakdown || activity?.activity?.grading_breakdown || 'N/A').toUpperCase()} </span>
-                          </div> 
-                          {activityFilter !== 'all' && (
-                            <div>
-                              Score: {(activity?.answer?.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)} / {(activity?.quiz?.question || activity?.exam?.question || activity?.activity?.question || activity?.question || []).reduce((acc, q) => acc + (q.points || 0), 0)}
-                            </div>
-                          )}
-                          <Link
-                            to={`/instructor/class/${classId}/activity/${activity?._id || activity?.activity?._id}`}
-                            className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
-                          >
-                            VISIT {(activity?.type || activity?.activity?.type).toUpperCase()}
-                          </Link>
-                        </div>
-                      ))}
+                      <button
+                        onClick={() => setActivityFilter("unanswered")}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          activityFilter === "unanswered"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        UNANSWERED (
+                        {selectedStudentActivities.unanswered_activities.length}
+                        )
+                      </button>
                     </div>
+
+                    {/* Activities List */}
+                    {getFilteredActivities().map((activity) => (
+                      <div
+                        key={activity?._id || activity?.activity?._id}
+                        className="mt-3 p-3 border rounded-md shadow-sm bg-gray-50"
+                      >
+                        <div className="font-medium">
+                          Title:{" "}
+                          <span className="font-normal">
+                            {activity?.title || activity?.activity?.title}
+                          </span>
+                        </div>
+                        <div>
+                          Type:{" "}
+                          <span className="font-normal">
+                            {(
+                              activity?.type ||
+                              activity?.activity?.type ||
+                              "N/A"
+                            ).toUpperCase()}{" "}
+                          </span>
+                        </div>
+                        <div>
+                          Grading Breakdown:{" "}
+                          <span className="font-normal">
+                            {(
+                              activity?.grading_breakdown ||
+                              activity?.activity?.grading_breakdown ||
+                              "N/A"
+                            ).toUpperCase()}{" "}
+                          </span>
+                        </div>
+                        {activityFilter !== "all" && (
+                          <div>
+                            Score:{" "}
+                            {(activity?.answer?.answers || []).reduce(
+                              (acc, q) => acc + (q.points || 0),
+                              0
+                            )}{" "}
+                            /{" "}
+                            {(
+                              activity?.quiz?.question ||
+                              activity?.exam?.question ||
+                              activity?.activity?.question ||
+                              activity?.question ||
+                              []
+                            ).reduce((acc, q) => acc + (q.points || 0), 0)}
+                          </div>
+                        )}
+                        <Link
+                          to={`/instructor/class/${classId}/activity/${
+                            activity?._id || activity?.activity?._id
+                          }`}
+                          className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                        >
+                          VISIT{" "}
+                          {(
+                            activity?.type || activity?.activity?.type
+                          ).toUpperCase()}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
 
                   <div className="mt-8 flex justify-end space-x-4">
                     <button
-                      onClick={() => handleRemoveClick(selectedStudentActivities.student)}
+                      onClick={() =>
+                        handleRemoveClick(selectedStudentActivities.student)
+                      }
                       className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 ease-in-out"
                     >
                       Remove
@@ -646,52 +740,77 @@ const calculateActivityPoints = (activity) => {
               </div>
             )}
 
-           
-          
- 
-
-
-              {isModalOpen && selectedStudent && (
+            {isModalOpen && selectedStudent && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
                 <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Student Grade Details</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
+                    Student Grade Details
+                  </h2>
 
                   <div className="space-y-3 text-sm text-gray-700">
-                    <p><span className="font-semibold">Complete Name: </span>{selectedStudent.student.first_name} {selectedStudent.student.middle_name} {selectedStudent.student.last_name}</p>
-                    <p><span className="font-semibold">Email:</span> {selectedStudent.student.email}</p>
+                    <p>
+                      <span className="font-semibold">Complete Name: </span>
+                      {selectedStudent.student.first_name}{" "}
+                      {selectedStudent.student.middle_name}{" "}
+                      {selectedStudent.student.last_name}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Email:</span>{" "}
+                      {selectedStudent.student.email}
+                    </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                            <p className="font-semibold capitalize">Quiz:</p>
-                            <p>
-                              { selectedStudent.grades.quiz.earnedPoints }/{ selectedStudent.grades.quiz.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.quiz.quiz }</span>/{ selectedStudent.classroom.grading_system.quiz }
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                            <p className="font-semibold capitalize">Activity:</p>
-                            <p>
-                              { selectedStudent.grades.activity.earnedPoints }/{ selectedStudent.grades.activity.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.activity.activity }</span>/{ selectedStudent.classroom.grading_system.activity }
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                            <p className="font-semibold capitalize">Midterm:</p>
-                            <p>
-                              { selectedStudent.grades.midterm.earnedPoints }/{ selectedStudent.grades.midterm.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.midterm.midterm }</span>/{ selectedStudent.classroom.grading_system.midterm }
-                            </p>
-                          </div>
-                           <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                            <p className="font-semibold capitalize">Final:</p>
-                            <p>
-                              { selectedStudent.grades.final.earnedPoints }/{ selectedStudent.grades.final.totalPoints }  = <span className="font-medium text-indigo-600">{ selectedStudent.grades.final.final }</span>/ { selectedStudent.classroom.grading_system.final }
-                            </p>
-                          </div>
+                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                        <p className="font-semibold capitalize">Quiz:</p>
+                        <p>
+                          {selectedStudent.grades.quiz.earnedPoints}/
+                          {selectedStudent.grades.quiz.totalPoints} ={" "}
+                          <span className="font-medium text-indigo-600">
+                            {selectedStudent.grades.quiz.quiz}
+                          </span>
+                          /{selectedStudent.classroom.grading_system.quiz}
+                        </p>
+                      </div>
+                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                        <p className="font-semibold capitalize">Activity:</p>
+                        <p>
+                          {selectedStudent.grades.activity.earnedPoints}/
+                          {selectedStudent.grades.activity.totalPoints} ={" "}
+                          <span className="font-medium text-indigo-600">
+                            {selectedStudent.grades.activity.activity}
+                          </span>
+                          /{selectedStudent.classroom.grading_system.activity}
+                        </p>
+                      </div>
+                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                        <p className="font-semibold capitalize">Midterm:</p>
+                        <p>
+                          {selectedStudent.grades.midterm.earnedPoints}/
+                          {selectedStudent.grades.midterm.totalPoints} ={" "}
+                          <span className="font-medium text-indigo-600">
+                            {selectedStudent.grades.midterm.midterm}
+                          </span>
+                          /{selectedStudent.classroom.grading_system.midterm}
+                        </p>
+                      </div>
+                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                        <p className="font-semibold capitalize">Final:</p>
+                        <p>
+                          {selectedStudent.grades.final.earnedPoints}/
+                          {selectedStudent.grades.final.totalPoints} ={" "}
+                          <span className="font-medium text-indigo-600">
+                            {selectedStudent.grades.final.final}
+                          </span>
+                          / {selectedStudent.classroom.grading_system.final}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="mt-6 border-t pt-4">
                       <p className="text-lg font-semibold">
                         Student Grade:
                         <span className="text-indigo-700 ml-2">
-                          { selectedStudent.grades.student_grade.grade }/100
+                          {selectedStudent.grades.student_grade.grade}/100
                         </span>
                       </p>
                     </div>
@@ -714,8 +833,6 @@ const calculateActivityPoints = (activity) => {
                 </div>
               </div>
             )}
-
-
 
             {showRemoveStudentModal && studentToRemove && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -940,12 +1057,12 @@ const calculateActivityPoints = (activity) => {
                         </Link>
                         <button
                           onClick={() => {
-                            setActivityToDelete(activity);
-                            setShowActivityDeletionModal(true);
+                            setActivityToEdit(activity);
+                            setShowEditModal(true);
                           }}
-                          className="cursor-pointer px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                          className="cursor-pointer px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
                         >
-                          Delete
+                          Edit
                         </button>
                       </div>
                     </div>
@@ -992,6 +1109,16 @@ const calculateActivityPoints = (activity) => {
           classId={classId}
           onSuccess={handleActivityCreated}
           progLanguage={ClassroomData?.classroom.programming_language}
+        />
+      )}
+
+      {showEditModal && (
+        <EditActivityModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          activity={activityToEdit}
+          onUpdateSuccess={fetchClasses}
+          classId={classId}
         />
       )}
     </>

@@ -43,7 +43,8 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <div>
             <h3 className="text-lg font-semibold">
-              {submission.first_name} {submission.middle_name} {submission.last_name}'s Submission
+              {submission.first_name} {submission.middle_name}{" "}
+              {submission.last_name}'s Submission
             </h3>
             <div className="flex items-center mt-1">
               <span className="text-sm font-medium text-gray-700">
@@ -164,15 +165,6 @@ const SubmissionDetail = ({ submission, activityData, onClose }) => {
                           </p>
                         </div>
 
-                        {/* <div className="bg-white p-3 rounded-md border border-gray-200">
-                          <p className="text-sm font-medium text-gray-700 mb-1">
-                            Student's Output:
-                          </p>
-                          <p className="font-mono bg-gray-100 p-2 rounded">
-                            {answer?.output || "No output"}
-                          </p>
-                        </div> */}
-
                         <div className="mt-2">
                           <div className="flex items-center">
                             <span
@@ -210,7 +202,11 @@ const AssignmentDetailPage = () => {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState(null);
-  const [viewFilter, setViewFilter] = useState("all"); // 'all', 'submitted', 'missing'
+  const [viewFilter, setViewFilter] = useState("all");
+  const [currentQuestionPage, setCurrentQuestionPage] = useState(1);
+  const questionsPerPage = 5;
+  const questionsPerPageEdit = 1;
+  const [currentPage, setCurrentPage] = useState(0);
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -218,13 +214,18 @@ const AssignmentDetailPage = () => {
       const classroomResult = await specificClassroom(classId);
       const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
       const answersExamResult = await allAnswerSpecificExam(assignmentId);
-      const answersActivityResult = await allAnswerSpecificActivity(assignmentId);
+      const answersActivityResult = await allAnswerSpecificActivity(
+        assignmentId
+      );
 
-      
-      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(assignmentId);
-      const missingExamResult = await allStudentMissingAnswerSpecificExam(assignmentId);
-      const missingActivityResult = await allStudentMissingAnswerSpecificActivity(assignmentId);
-
+      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(
+        assignmentId
+      );
+      const missingExamResult = await allStudentMissingAnswerSpecificExam(
+        assignmentId
+      );
+      const missingActivityResult =
+        await allStudentMissingAnswerSpecificActivity(assignmentId);
 
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
@@ -253,8 +254,15 @@ const AssignmentDetailPage = () => {
         setActivityData(activity || null);
       }
 
-      if (answersQuizResult.success || answersExamResult.success || answersActivityResult.success) {
-        const responseData = answersQuizResult.data || answersExamResult.data || answersActivityResult.data;
+      if (
+        answersQuizResult.success ||
+        answersExamResult.success ||
+        answersActivityResult.success
+      ) {
+        const responseData =
+          answersQuizResult.data ||
+          answersExamResult.data ||
+          answersActivityResult.data;
         let studentAnswers = [];
 
         if (Array.isArray(responseData)) {
@@ -283,12 +291,11 @@ const AssignmentDetailPage = () => {
         );
       }
 
-      // Set missing students
       if (missingQuizResult.success) {
         setMissingStudents(missingQuizResult.data.data || []);
       } else if (missingExamResult.success) {
         setMissingStudents(missingExamResult.data.data || []);
-      } else if(missingActivityResult.success) {
+      } else if (missingActivityResult.success) {
         setMissingStudents(missingActivityResult.data.data || []);
       }
     } catch (error) {
@@ -325,10 +332,6 @@ const AssignmentDetailPage = () => {
         payload
       );
 
-    
-
-
-
       if (result.success) {
         toast.success("Activity updated successfully");
         setActivityData(activityToEdit);
@@ -352,6 +355,16 @@ const AssignmentDetailPage = () => {
 
   const filteredMissingStudents =
     viewFilter === "all" || viewFilter === "missing" ? missingStudents : [];
+
+  // Calculate paginated questions
+  const indexOfLastQuestion = currentQuestionPage * questionsPerPage;
+  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+  const currentQuestions =
+    activityData?.question?.slice(indexOfFirstQuestion, indexOfLastQuestion) ||
+    [];
+  const totalQuestionPages = Math.ceil(
+    (activityData?.question?.length || 0) / questionsPerPage
+  );
 
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!activityData) return <div className="p-6">Assignment not found</div>;
@@ -461,7 +474,7 @@ const AssignmentDetailPage = () => {
               <div>
                 <h3 className="text-lg font-semibold mb-2">Questions</h3>
                 <div className="space-y-4">
-                  {activityData.question.map((question, index) => (
+                  {currentQuestions.map((question, index) => (
                     <div
                       key={index}
                       className="flex items-start p-4 bg-gray-50 rounded-lg"
@@ -471,7 +484,7 @@ const AssignmentDetailPage = () => {
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">
-                          Question {index + 1}
+                          Question {indexOfFirstQuestion + index + 1}
                         </p>
                         <p className="text-gray-700 mt-1">{question.text}</p>
                         <p className="text-sm text-gray-500 mt-1">
@@ -481,6 +494,62 @@ const AssignmentDetailPage = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* Pagination controls */}
+                {totalQuestionPages > 1 && (
+                  <div className="flex justify-baseline mt-6">
+                    <nav className="flex items-center space-x-2">
+                      <button
+                        onClick={() =>
+                          setCurrentQuestionPage((prev) =>
+                            Math.max(prev - 1, 1)
+                          )
+                        }
+                        disabled={currentQuestionPage === 1}
+                        className={`p-2 rounded-md ${
+                          currentQuestionPage === 1
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        Previous
+                      </button>
+
+                      {Array.from(
+                        { length: totalQuestionPages },
+                        (_, i) => i + 1
+                      ).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentQuestionPage(page)}
+                          className={`w-10 h-10 rounded-md ${
+                            currentQuestionPage === page
+                              ? "bg-indigo-600 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() =>
+                          setCurrentQuestionPage((prev) =>
+                            Math.min(prev + 1, totalQuestionPages)
+                          )
+                        }
+                        disabled={currentQuestionPage === totalQuestionPages}
+                        className={`p-2 rounded-md ${
+                          currentQuestionPage === totalQuestionPages
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -498,7 +567,6 @@ const AssignmentDetailPage = () => {
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  
                   All ({submissions.length + missingStudents.length})
                 </button>
                 <button
@@ -547,7 +615,6 @@ const AssignmentDetailPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {/* Submitted answers */}
                   {filteredSubmissions.length > 0 &&
                     filteredSubmissions.map((submission) => {
                       const totalPoints =
@@ -569,7 +636,8 @@ const AssignmentDetailPage = () => {
                         <tr key={submission.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="font-medium text-gray-900">
-                              {submission.first_name} {submission.middle_name} {submission.last_name}
+                              {submission.first_name} {submission.middle_name}{" "}
+                              {submission.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
                               {submission.email}
@@ -608,24 +676,18 @@ const AssignmentDetailPage = () => {
                                 View Details
                               </button>
                             ) : null}
-                            {/*    <a
-                              href={`mailto:${submission.email}`}
-                              className="text-gray-600 hover:text-gray-900 flex items-center justify-end"
-                            >
-                              <FiMail className="mr-1" /> Remind
-                            </a> */}
                           </td>
                         </tr>
                       );
                     })}
 
-                  {/* Missing students */}
                   {filteredMissingStudents.length > 0 &&
                     filteredMissingStudents.map((student) => (
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">
-                            {student.first_name} {student.middle_name} {student.last_name}
+                            {student.first_name} {student.middle_name}{" "}
+                            {student.last_name}
                           </div>
                           <div className="text-sm text-gray-500">
                             {student.email}
@@ -649,7 +711,6 @@ const AssignmentDetailPage = () => {
                           </div>
                           <div className="text-sm text-gray-500">-</div>
                         </td>
-                      
                       </tr>
                     ))}
 
@@ -744,57 +805,118 @@ const AssignmentDetailPage = () => {
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />
                 </div>
-              {activityToEdit.type && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      Questions
-    </label>
-    {activityToEdit.question?.map((q, index) => (
-      <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg">
-        <div className="flex justify-between mb-2">
-          <span className="font-medium">Question {index + 1}</span>
-        </div>
-        <textarea
-          defaultValue={q.text}
-          onChange={(e) => {
-            const updatedQuestions = [...activityToEdit.question];
-            updatedQuestions[index].text = e.target.value;
-            setActivityToEdit((prev) => ({
-              ...prev,
-              question: updatedQuestions,
-            }));
+                {activityToEdit.type && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Questions
+                    </label>
 
-            // Auto-resize functionality
-            e.target.style.height = 'auto'; // Reset height
-            e.target.style.height = `${e.target.scrollHeight}px`; // Set new height
-          }}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2 resize-none overflow-hidden"
-          rows={6}
-          // Add a style to make it more user-friendly
-          style={{ minHeight: '40px' }} 
-        />
+                    {/* Pagination controls */}
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="text-sm text-gray-600">
+                        Showing {currentPage * questionsPerPageEdit + 1}-
+                        {Math.min(
+                          (currentPage + 1) * questionsPerPageEdit,
+                          activityToEdit.question?.length
+                        )}{" "}
+                        of {activityToEdit.question?.length} questions
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 0))
+                          }
+                          disabled={currentPage === 0}
+                          className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              (prev + 1) * questionsPerPageEdit <
+                              activityToEdit.question?.length
+                                ? prev + 1
+                                : prev
+                            )
+                          }
+                          disabled={
+                            (currentPage + 1) * questionsPerPageEdit >=
+                            activityToEdit.question?.length
+                          }
+                          className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
 
-        <div className="flex items-center">
-          <span className="text-sm text-gray-600 mr-2">Points:</span>
-          <input
-            type="number"
-            defaultValue={q.points}
-            onChange={(e) => {
-              const updatedQuestions = [...activityToEdit.question];
-              updatedQuestions[index].points = parseInt(e.target.value);
-              setActivityToEdit((prev) => ({
-                ...prev,
-                question: updatedQuestions,
-              }));
-            }}
-            className="w-20 border border-gray-300 rounded-md px-3 py-1"
-          />
-        </div>
-      </div>
-    ))}
-  </div>
-)}
+                    {/* Paginated questions */}
+                    {activityToEdit.question
+                      ?.slice(
+                        currentPage * questionsPerPageEdit,
+                        (currentPage + 1) * questionsPerPageEdit
+                      )
+                      .map((q, index) => {
+                        const originalIndex =
+                          currentPage * questionsPerPageEdit + index;
+                        return (
+                          <div
+                            key={originalIndex}
+                            className="mb-4 p-4 border border-gray-200 rounded-lg"
+                          >
+                            <div className="flex justify-between mb-2">
+                              <span className="font-medium">
+                                Question {originalIndex + 1}
+                              </span>
+                            </div>
+                            <textarea
+                              defaultValue={q.text}
+                              onChange={(e) => {
+                                const updatedQuestions = [
+                                  ...activityToEdit.question,
+                                ];
+                                updatedQuestions[originalIndex].text =
+                                  e.target.value;
+                                setActivityToEdit((prev) => ({
+                                  ...prev,
+                                  question: updatedQuestions,
+                                }));
 
+                                e.target.style.height = "auto";
+                                e.target.style.height = `${e.target.scrollHeight}px`;
+                              }}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2 resize-none overflow-hidden"
+                              rows={6}
+                              style={{ minHeight: "40px" }}
+                            />
+
+                            <div className="flex items-center">
+                              <span className="text-sm text-gray-600 mr-2">
+                                Points:
+                              </span>
+                              <input
+                                type="number"
+                                defaultValue={q.points}
+                                onChange={(e) => {
+                                  const updatedQuestions = [
+                                    ...activityToEdit.question,
+                                  ];
+                                  updatedQuestions[originalIndex].points =
+                                    parseInt(e.target.value);
+                                  setActivityToEdit((prev) => ({
+                                    ...prev,
+                                    question: updatedQuestions,
+                                  }));
+                                }}
+                                className="w-20 border border-gray-300 rounded-md px-3 py-1"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
               <div className="mt-6 flex justify-end space-x-3">
                 <button
@@ -814,8 +936,6 @@ const AssignmentDetailPage = () => {
           </div>
         </div>
       )}
-
-
     </div>
   );
 };

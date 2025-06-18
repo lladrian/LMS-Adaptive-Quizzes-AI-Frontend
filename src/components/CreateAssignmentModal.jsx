@@ -645,25 +645,23 @@ const CreateAssignmentModal = ({
                       </div>
                     )}
 
-                    {assignmentData.type !== "activity" && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Time Limit (minutes) *
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            name="timeLimit"
-                            value={assignmentData.timeLimit}
-                            onChange={handleAssignmentChange}
-                            min="1"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
-                            required
-                          />
-                          <FiClock className="absolute left-3 top-3 text-gray-400" />
-                        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Time Limit (minutes) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          name="timeLimit"
+                          value={assignmentData.timeLimit}
+                          onChange={handleAssignmentChange}
+                          min="1"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10"
+                          required
+                        />
+                        <FiClock className="absolute left-3 top-3 text-gray-400" />
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
