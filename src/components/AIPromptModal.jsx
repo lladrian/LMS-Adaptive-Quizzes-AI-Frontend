@@ -28,117 +28,63 @@ const AIPromptModal = ({
       let prompt = "";
       const topic = progLanguage || "programming";
 
+      if (questionType === "multiple_choice") {
+        prompt = `Generate 3 multiple choice questions about ${topic} with these requirements:
+        - Each question should have 1 correct answer and 3 incorrect answers
+        - Assign points based on question difficulty (1 for easy, 2 for medium, 3 for hard)
+        - Format exactly like this:
 
-      if (activityType === "quiz") {
-          prompt = `Generate 3 multiple choice quiz questions about ${topic} with these requirements:
-          - Each question should have 1 correct answer and 3 incorrect answers
-          - Format exactly like this:
+        1. Question: [question text]
+        Points: [number]
+        A) [option 1]
+        B) [option 2]
+        C) [option 3]
+        D) [option 4]
+        Answer: [correct letter]
 
-          1. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
+        2. Question: [question text]
+        Points: [number]
+        A) [option 1]
+        B) [option 2]
+        C) [option 3]
+        D) [option 4]
+        Answer: [correct letter]
 
-          2. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-
-          3. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]`;
-      } else if (activityType === "activity") {
-          prompt = `Generate 3 practical programming activities with these requirements:
-          - Each activity should be a clear, practical coding task
-          - Include one sample input/output pair
-          - Focus on real-world application
-          - Format exactly like this:
-          
-          1. Activity: [description] (Input: [example])
-          Output: [value]
-          
-          2. Activity: [description] (Input: [example])
-          Output: [value]
-          
-          3. Activity: [description] (Input: [example])
-          Output: [value]`;
-      } else if (activityType === "exam") {
-        if (questionType === "multiple_choice") {
-          // prompt = `Generate 3 multiple choice exam questions about ${topic} with these requirements:
-          // - Each question should have 1 correct answer and 3 incorrect answers
-          // - Questions should be exam-level difficulty
-          // - Format exactly like the quiz format above`;
-
-          prompt = `Generate 3 multiple choice quiz questions about ${topic} with these requirements:
-          - Each question should have 1 correct answer and 3 incorrect answers
-          - Format exactly like this:
-
-          1. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-
-          2. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]
-
-          3. Question: [question text]
-          A) [option 1]
-          B) [option 2]
-          C) [option 3]
-          D) [option 4]
-          Answer: [correct letter]`;
-          
-        } else if (questionType === "programming") {
-          // prompt = `Generate 3 programming exam questions with these requirements:
-          // - Each question should be one clear sentence
-          // - Include one sample input in parentheses
-          // - Only provide the output value in the output field
-          // - Questions should be exam-level difficulty
-          // - Format exactly like the activity format above`;
-
-          prompt = `Generate 3 practical programming activities with these requirements:
-          - Each activity should be a clear, practical coding task
-          - Include one sample input/output pair
-          - Focus on real-world application
-          - Format exactly like this:
-          
-          1. Activity: [description] (Input: [example])
-          Output: [value]
-          
-          2. Activity: [description] (Input: [example])
-          Output: [value]
-          
-          3. Activity: [description] (Input: [example])
-          Output: [value]`;
-
-        } 
+        3. Question: [question text]
+        Points: [number]
+        A) [option 1]
+        B) [option 2]
+        C) [option 3]
+        D) [option 4]
+        Answer: [correct letter]`;
+      } else {
+        prompt = `Generate 3 programming problems about ${topic} with these requirements:
+        - Each problem should be a clear, practical coding task
+        - Include one sample input/output pair
+        - Assign points based on problem difficulty (1 for easy, 2 for medium, 3 for hard)
+        - Focus on real-world application
+        - Format exactly like this:
         
-        // else {
-        //   prompt = `Generate 3 questions with mixed types (programming and multiple choice) for an exam:
-        //   - For programming questions: include sample input in parentheses and just the output value
-        //   - For multiple choice: make sure the question is related to the topic: "${topic}"
-        //   - Format exactly like the mixed format above`;
-        // }
+        1. Problem: [description] 
+        Points: [number]
+        Input: [example]
+        Output: [value]
+        
+        2. Problem: [description]
+        Points: [number]
+        Input: [example]
+        Output: [value]
+        
+        3. Problem: [description]
+        Points: [number]
+        Input: [example]
+        Output: [value]`;
       }
 
       const result = await askPrompt(prompt);
       if (result.success) {
         const generatedQuestions = parseQuestions(
           result.data.data,
-          activityType,
           questionType
         );
         setQuestions(generatedQuestions);
@@ -156,126 +102,33 @@ const AIPromptModal = ({
     }
   };
 
-  const parseQuestions = (response, type, currentQuestionType) => {
-    
-    if (type === "exam" && currentQuestionType === "programming") {
-      const activityRegex =
-        /(\d+)\. Activity: (.*?)\s+Output: (.*?)(?=\s+\d+\. Activity:|$)/gs;
-      const matches = [...response.matchAll(activityRegex)];
-      return matches.map((match) => ({
-        type: "programming",
-        problem: match[2].trim(),
-        output: match[3].trim(),
-      }));
-    } 
-
-    if (type === "exam" && currentQuestionType === "multiple_choice") {
-       const quizRegex =
-        /(\d+)\. Question: (.*?)\s+A\) (.*?)\s+B\) (.*?)\s+C\) (.*?)\s+D\) (.*?)\s+Answer: (.*?)(?=\s+\d+\. Question:|$)/gs;
-      const matches = [...response.matchAll(quizRegex)];
-      return matches.map((match) => ({
-        type: "multiple_choice",
-        question: match[2].trim(),
-        options: [
-          { letter: "A", text: match[3].trim() },
-          { letter: "B", text: match[4].trim() },
-          { letter: "C", text: match[5].trim() },
-          { letter: "D", text: match[6].trim() },
-        ],
-        answer: match[7].trim(),
-      }));
-    } 
-
-  
-    if (type === "activity") {
-      const activityRegex =
-        /(\d+)\. Activity: (.*?)\s+Output: (.*?)(?=\s+\d+\. Activity:|$)/gs;
-      const matches = [...response.matchAll(activityRegex)];
-      return matches.map((match) => ({
-        type: "programming",
-        problem: match[2].trim(),
-        output: match[3].trim(),
-      }));
-    } 
-    
-    if (type === "quiz" && currentQuestionType === "multiple_choice") {
+  const parseQuestions = (response, type) => {
+    if (type === "multiple_choice") {
       const quizRegex =
-        /(\d+)\. Question: (.*?)\s+A\) (.*?)\s+B\) (.*?)\s+C\) (.*?)\s+D\) (.*?)\s+Answer: (.*?)(?=\s+\d+\. Question:|$)/gs;
+        /(\d+)\. Question: (.*?)\s+Points: (\d+)\s+A\) (.*?)\s+B\) (.*?)\s+C\) (.*?)\s+D\) (.*?)\s+Answer: (.*?)(?=\s+\d+\. Question:|$)/gs;
       const matches = [...response.matchAll(quizRegex)];
       return matches.map((match) => ({
         type: "multiple_choice",
-        question: match[2].trim(),
+        text: match[2].trim(),
+        points: parseInt(match[3]) || 1,
         options: [
-          { letter: "A", text: match[3].trim() },
-          { letter: "B", text: match[4].trim() },
-          { letter: "C", text: match[5].trim() },
-          { letter: "D", text: match[6].trim() },
+          { letter: "A", text: match[4].trim() },
+          { letter: "B", text: match[5].trim() },
+          { letter: "C", text: match[6].trim() },
+          { letter: "D", text: match[7].trim() },
         ],
-        answer: match[7].trim(),
+        answer: match[8].trim(),
       }));
-    } 
-
-    // if (type === "exam" && currentQuestionType === "programming") {
-    //   const programmingRegex =
-    //     /(\d+)\. Problem: (.*?)\s+Output: (.*?)(?=\s+\d+\. Problem:|$)/gs;
-    //   const matches = [...response.matchAll(programmingRegex)];
-    //   return matches.map((match) => ({
-    //     type: "programming",
-    //     problem: match[2].trim(),
-    //     output: match[3].trim(),
-    //   }));
-    // }
-    
-    // if (type === "exam") {
-    //   const examRegex =
-    //     /(\d+)\. \[(PROGRAMMING|MULTIPLE CHOICE)\] (.*?)(?:\s+Output: (.*?)|(?:\s+A\) (.*?)\s+B\) (.*?)\s+C\) (.*?)\s+D\) (.*?)\s+Answer: (.*?)))(?=\s+\d+\. \[|$)/gs;
-    //   const matches = [...response.matchAll(examRegex)];
-    //   const questions = [];
-
-    //   for (let i = 0; i < matches.length; i++) {
-    //     const match = matches[i];
-    //     if (match[2] === "PROGRAMMING") {
-    //       questions.push({
-    //         type: "programming",
-    //         problem: match[3].trim(),
-    //         output: match[4].trim(),
-    //       });
-    //     } else {
-    //       questions.push({
-    //         type: "multiple_choice",
-    //         question: match[3].trim(),
-    //         options: [
-    //           { letter: "A", text: match[5].trim() },
-    //           { letter: "B", text: match[6].trim() },
-    //           { letter: "C", text: match[7].trim() },
-    //           { letter: "D", text: match[8].trim() },
-    //         ],
-    //         answer: match[9].trim(),
-    //       });
-    //     }
-    //   }
-    //   return questions;
-    // }
-
-    return [];
-  };
-
-  const handleSelectQuestion = (question) => {
-    if (question.type === "multiple_choice") {
-      onSelectQuestion({
-        text: question.question,
-        options: question.options,
-        answer: question.answer,
-        points: 1,
-        type: "multiple_choice",
-      });
     } else {
-      onSelectQuestion({
-        text: question.problem,
-        expectedOutput: question.output,
-        points: 1,
+      const programmingRegex =
+        /(\d+)\. Problem: (.*?)\s+Points: (\d+)\s+Input: (.*?)\s+Output: (.*?)(?=\s+\d+\. Problem:|$)/gs;
+      const matches = [...response.matchAll(programmingRegex)];
+      return matches.map((match) => ({
         type: "programming",
-      });
+        text: `${match[2].trim()} (Input: ${match[4].trim()})`,
+        points: parseInt(match[3]) || 1,
+        expectedOutput: match[5].trim(),
+      }));
     }
   };
 
@@ -291,59 +144,58 @@ const AIPromptModal = ({
       );
     }
 
-    if (question.type === "multiple_choice") {
-      return (
-        <div
-          key={index}
-          className="border border-gray-200 rounded-lg p-3 bg-gray-50"
-        >
-          <p className="font-medium mb-1">{question.question}</p>
-          <div className="space-y-1 mt-2">
+    return (
+      <div
+        key={index}
+        className="border border-gray-200 rounded-lg p-3 bg-gray-50 mb-3"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <h4 className="font-medium">
+            {question.type === "multiple_choice" ? "Question" : "Problem"} #
+            {index + 1}
+          </h4>
+          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            {question.points} point{question.points !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <p className="text-gray-700 mb-2">{question.text}</p>
+
+        {question.type === "multiple_choice" ? (
+          <div className="space-y-2 mt-3">
             {question.options.map((option) => (
-              <div key={option.letter} className="flex items-center">
+              <div
+                key={option.letter}
+                className={`p-2 border rounded ${
+                  question.answer === option.letter
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200"
+                }`}
+              >
                 <span className="font-medium mr-2">{option.letter})</span>
-                <span>{option.text}</span>
+                {option.text}
               </div>
             ))}
           </div>
-          <p className="text-sm text-green-600 mt-2">
-            Correct answer: {question.answer}
-          </p>
-          <button
-            onClick={() => handleSelectQuestion(question)}
-            className="cursor-pointer mt-2 w-full py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Select
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div
-          key={index}
-          className="border border-gray-200 rounded-lg p-3 bg-gray-50"
-        >
-          <p className="font-medium mb-1">
-            {activityType === "activity" ? "Activity" : "Problem"}:{" "}
-            {question.problem}
-          </p>
-          <div className="text-sm">
-            <div>
-              <span className="text-gray-500">Expected output:</span>
-              <p className="font-mono bg-white p-1 rounded mt-1">
-                {question.output}
-              </p>
-            </div>
+        ) : (
+          <div className="mt-3">
+            <p className="text-sm font-medium text-gray-700">
+              Expected Output:
+            </p>
+            <pre className="bg-gray-100 p-2 rounded text-sm mt-1 whitespace-pre-wrap">
+              {question.expectedOutput}
+            </pre>
           </div>
-          <button
-            onClick={() => handleSelectQuestion(question)}
-            className="cursor-pointer mt-2 w-full py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Select
-          </button>
-        </div>
-      );
-    }
+        )}
+
+        <button
+          onClick={() => onSelectQuestion(question)}
+          className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+        >
+          Use This Question
+        </button>
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -352,17 +204,8 @@ const AIPromptModal = ({
     <div className="bg-white rounded-xl shadow-lg w-96 max-h-[90vh] overflow-y-auto">
       <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
         <h3 className="text-lg font-semibold">
-          Generate{" "}
-          {activityType === "quiz"
-            ? "Quiz"
-            : activityType === "exam"
-            ? questionType === "multiple_choice"
-              ? "Multiple Choice Exam"
-              : questionType === "programming"
-              ? "Programming Exam"
-              : "Exam"
-            : activityType === "activity"
-            ? "Programming Activities"
+          {questionType === "multiple_choice"
+            ? "Multiple Choice"
             : "Programming"}{" "}
           Questions
         </h3>
@@ -377,33 +220,34 @@ const AIPromptModal = ({
           <button
             onClick={generateQuestions}
             disabled={isLoading}
-            className="cursor-pointer flex items-center text-sm text-blue-600"
+            className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
           >
             <FiRefreshCw
               className={`mr-1 ${isLoading ? "animate-spin" : ""}`}
+              size={16}
             />
             Regenerate
           </button>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
           </div>
         ) : (
-          <div className="space-y-3 mb-6">
+          <div className="space-y-4">
             {questions.map((question, index) =>
               renderQuestion(question, index)
             )}
           </div>
         )}
 
-        <div className="flex justify-end space-x-2 mt-4">
+        <div className="flex justify-end mt-4">
           <button
             onClick={onClose}
-            className="cursor-pointer px-4 py-2 border border-gray-300 bg-gray-100 rounded hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Cancel
+            Close
           </button>
         </div>
       </div>

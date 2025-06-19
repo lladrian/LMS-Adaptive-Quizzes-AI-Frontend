@@ -28,7 +28,7 @@ const CreateAssignmentModal = ({
   const [assignmentData, setAssignmentData] = useState({
     title: "",
     description: "",
-    type: "quiz",
+    type: "assignment",
     timeLimit: 60,
     totalPoints: 0,
     questions: [],
@@ -50,25 +50,24 @@ const CreateAssignmentModal = ({
     { id: 3, name: "Review & Submit" },
   ];
 
+  const activityTypes = [
+    {
+      value: "activity",
+      label: "Laboratory Activity",
+      description: "Ungraded practice exercise",
+    },
+    {
+      value: "assignment",
+      label: "Assignment",
+      description: "Graded coding project or problem set",
+    },
+    { value: "quiz", label: "Quiz", description: "Short graded assessment" },
+    { value: "exam", label: "Exam", description: "Major graded assessment" },
+  ];
+
   const handleAssignmentChange = (e) => {
     const { name, value } = e.target;
     setAssignmentData((prev) => ({ ...prev, [name]: value }));
-
-    if (name === "type") {
-      const newType =
-        value === "activity"
-          ? "programming"
-          : value === "programming"
-          ? "programming"
-          : "multiple_choice";
-
-      setNewQuestion((prev) => ({
-        ...prev,
-        type: newType,
-        options: newType === "programming" ? [] : prev.options,
-        answer: newType === "programming" ? "" : prev.answer,
-      }));
-    }
   };
 
   const handleQuestionChange = (e) => {
@@ -124,6 +123,26 @@ const CreateAssignmentModal = ({
     }));
   };
 
+  const handleQuestionSelect = (question) => {
+    const questionToAdd = {
+      id: Date.now(),
+      text: question.text || question.problem || "",
+      points: question.points || 1,
+      expectedOutput: question.expectedOutput || question.output || "",
+      options: question.options || [],
+      answer: question.answer || "",
+      type: question.type || "multiple_choice",
+    };
+
+    setAssignmentData((prev) => ({
+      ...prev,
+      questions: [...prev.questions, questionToAdd],
+      totalPoints: prev.totalPoints + (question.points || 1),
+    }));
+
+    setShowAIPromptModal(false);
+  };
+
   const addQuestion = () => {
     if (!newQuestion.text) {
       setError("Question text is required");
@@ -176,16 +195,10 @@ const CreateAssignmentModal = ({
       expectedOutput: "",
       options: [],
       answer: "",
-      type:
-        assignmentData.type === "activity"
-          ? "programming"
-          : assignmentData.type === "programming"
-          ? "programming"
-          : "multiple_choice",
+      type: newQuestion.type,
     });
 
     setEditingQuestionId(null);
-    setShowAIPromptModal(false);
   };
 
   const removeQuestion = (questionId) => {
@@ -240,7 +253,7 @@ const CreateAssignmentModal = ({
       setAssignmentData({
         title: "",
         description: "",
-        type: "quiz",
+        type: "assignment",
         timeLimit: 60,
         totalPoints: 0,
         questions: [],
@@ -267,7 +280,11 @@ const CreateAssignmentModal = ({
         setError("Title is required");
         return;
       }
-      if (assignmentData.type !== "activity" && !assignmentData.timeLimit) {
+      /*   if (assignmentData.type !== "activity" && !assignmentData.timeLimit) {
+        setError("Time limit is required");
+        return;
+      } */
+      if (!assignmentData.timeLimit) {
         setError("Time limit is required");
         return;
       }
@@ -291,24 +308,6 @@ const CreateAssignmentModal = ({
   const prevStep = () => {
     setError(null);
     setCurrentStep(currentStep - 1);
-  };
-
-  const handleQuestionSelect = (question) => {
-    setNewQuestion({
-      text: question.text || question.problem || "",
-      points: 1,
-      expectedOutput: question.expectedOutput || question.output || "",
-      options: question.options || [],
-      answer: question.answer || "",
-      type:
-        question.type ||
-        (assignmentData.type === "activity"
-          ? "programming"
-          : assignmentData.type === "programming"
-          ? "programming"
-          : "multiple_choice"),
-    });
-    setShowAIPromptModal(false);
   };
 
   const renderQuestionForm = () => {
@@ -388,11 +387,7 @@ const CreateAssignmentModal = ({
               onChange={handleQuestionChange}
               rows="3"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder={
-                assignmentData.type === "activity"
-                  ? "Example: Create a function that calculates the average of a list of numbers"
-                  : "Example: Write a function to calculate the sum of even numbers in a list"
-              }
+              placeholder="Enter the programming problem statement"
               required
             />
           </div>
@@ -407,11 +402,7 @@ const CreateAssignmentModal = ({
               onChange={handleQuestionChange}
               rows="2"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder={
-                assignmentData.type === "activity"
-                  ? "Example: For input [1, 2, 3, 4, 5], the function should return 3"
-                  : "Example: For input [1, 2, 3, 4, 5], the output should be 6"
-              }
+              placeholder="Enter the expected output for the problem"
               required
             />
           </div>
@@ -579,7 +570,43 @@ const CreateAssignmentModal = ({
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4">Activity Details</h3>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Activity Type Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Activity Type *
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {activityTypes.map((activity) => (
+                        <div
+                          key={activity.value}
+                          onClick={() =>
+                            setAssignmentData((prev) => ({
+                              ...prev,
+                              type: activity.value,
+                              timeLimit:
+                                activity.value === "activity"
+                                  ? 0
+                                  : prev.timeLimit,
+                            }))
+                          }
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                            assignmentData.type === activity.value
+                              ? "border-indigo-500 bg-indigo-50"
+                              : "border-gray-300 hover:border-indigo-300"
+                          }`}
+                        >
+                          <h4 className="font-medium text-gray-800">
+                            {activity.label}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {activity.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Title *
@@ -609,42 +636,7 @@ const CreateAssignmentModal = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type *
-                      </label>
-                      <select
-                        name="type"
-                        value={assignmentData.type}
-                        onChange={handleAssignmentChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
-                      >
-                        <option value="quiz">Quiz</option>
-                        <option value="exam">Exam</option>
-                        <option value="activity">Activity</option>
-                      </select>
-                    </div>
-
-                    {assignmentData.type === "exam" && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Grading Breakdown *
-                        </label>
-                        <select
-                          name="grading_breakdown"
-                          value={assignmentData.grading_breakdown}
-                          onChange={handleAssignmentChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
-                        >
-                          <option value="midterm">Midterm</option>
-                          <option value="final">Final</option>
-                        </select>
-                      </div>
-                    )}
-
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Time Limit (minutes) *
@@ -662,6 +654,25 @@ const CreateAssignmentModal = ({
                         <FiClock className="absolute left-3 top-3 text-gray-400" />
                       </div>
                     </div>
+
+                    {assignmentData.type === "exam" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Grading Breakdown *
+                        </label>
+                        <select
+                          name="grading_breakdown"
+                          value={assignmentData.grading_breakdown}
+                          onChange={handleAssignmentChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
+                        >
+                          <option value="midterm">Midterm</option>
+                          <option value="final">Final</option>
+                          <option value="quarterly">Quarterly</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -693,7 +704,6 @@ const CreateAssignmentModal = ({
                                   }))
                                 }
                                 className="px-3 py-1 border border-gray-300 rounded-lg"
-                                disabled={assignmentData.type === "activity"}
                               >
                                 <option value="multiple_choice">
                                   Multiple Choice
@@ -801,7 +811,6 @@ const CreateAssignmentModal = ({
                         }))
                       }
                       className="px-3 py-1 border border-gray-300 rounded-lg"
-                      disabled={assignmentData.type === "activity"}
                     >
                       <option value="multiple_choice">Multiple Choice</option>
                       <option value="programming">Programming</option>
@@ -829,7 +838,7 @@ const CreateAssignmentModal = ({
                     <div className="text-red-600 text-sm mt-2">{error}</div>
                   )}
 
-                  <div className="flex justify-end space-x-3 mt-4">
+                  <div className="flex justify-between space-x-3 mt-4">
                     <button
                       type="button"
                       onClick={() => setShowAIPromptModal(true)}
@@ -842,7 +851,7 @@ const CreateAssignmentModal = ({
                       onClick={addQuestion}
                       className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                     >
-                      <FiPlus className="mr-2" /> Add Question
+                      <FiPlus className="mr-2" /> Add Question Manually
                     </button>
                   </div>
                 </div>

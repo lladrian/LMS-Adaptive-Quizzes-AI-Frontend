@@ -10,6 +10,8 @@ import {
   FiEdit2,
   FiEdit3,
   FiClipboard,
+  FiFile,
+  FiLock,
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
@@ -22,6 +24,7 @@ import {
   getAllStudentGradeSpecificClassroom,
   getAllActivitiesSpecificStudentSpecificClassroom,
   updateActivity,
+  restrictSections,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import CreateAssignmentModal from "../../components/CreateAssignmentModal";
@@ -49,6 +52,8 @@ const ClassDetailPage = () => {
   const [ClassroomData, setClassroomData] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRestrictModal, setShowRestrictModal] = useState(false);
+  const [restrictedSections, setRestrictedSections] = useState([]);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudentActivities, setSelectedStudentActivities] =
@@ -57,28 +62,21 @@ const ClassDetailPage = () => {
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
   const [activityFilter, setActivityFilter] = useState("all");
 
-  // Helper function to calculate activity points
-  // Updated calculateActivityPoints function
-  // Updated calculateActivityPoints function
   const calculateActivityPoints = (activity) => {
-    console.log(activity);
-    // First check if activity has direct points property
     if (activity.points !== undefined && activity.points !== null) {
       return activity.points;
     }
 
-    // Check if it has questions array with points
     if (Array.isArray(activity.question)) {
-      // Note: your data uses 'question' not 'questions'
       return activity.question.reduce((total, q) => {
-        return total + (Number(q.points) || 0); // Ensure points is treated as number
+        return total + (Number(q.points) || 0);
       }, 0);
     }
 
-    // Default to 0 if no points can be calculated
     return 0;
   };
-  // Combine and sort all activities (quizzes, exams, and activities)
+
+  // Combine and sort all activities including assignments
   const quizzes = Array.isArray(ClassroomData.quizzes)
     ? ClassroomData.quizzes
     : [];
@@ -86,8 +84,16 @@ const ClassDetailPage = () => {
   const activities = Array.isArray(ClassroomData.activities)
     ? ClassroomData.activities
     : [];
+  const assignments = Array.isArray(ClassroomData.assignments)
+    ? ClassroomData.assignments
+    : [];
 
-  const allActivities = [...quizzes, ...exams, ...activities].sort((a, b) => {
+  const allActivities = [
+    ...quizzes,
+    ...exams,
+    ...activities,
+    ...assignments,
+  ].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
@@ -97,6 +103,9 @@ const ClassDetailPage = () => {
       const result = await specificClassroom(classId);
       if (result.success) {
         setClassroomData(result.data.data);
+        setRestrictedSections(
+          result.data.data.classroom?.restricted_sections || []
+        );
       }
     } catch (error) {
       console.error("Error fetching classroom:", error);
@@ -120,8 +129,6 @@ const ClassDetailPage = () => {
         classId,
         student_id
       );
-      //console.log(student_id)
-      //console.log(result.data.data);
       setSelectedStudentActivities(result.data.data);
     } catch (error) {
       console.error("Error removing student:", error);
@@ -132,11 +139,32 @@ const ClassDetailPage = () => {
   const allStudentData = async () => {
     try {
       const result = await getAllStudentGradeSpecificClassroom(classId);
-      console.log(result.data.data);
       setStudentData(result.data.data);
     } catch (error) {
       console.error("Error removing student:", error);
       toast.error("An error occurred while removing student");
+    }
+  };
+
+  const handleRestrictSections = async (sections) => {
+    try {
+      const response = await restrictSections(classId, sections);
+      if (response.success) {
+        toast.success("Section restrictions updated successfully");
+        setClassroomData((prev) => ({
+          ...prev,
+          classroom: {
+            ...prev.classroom,
+            restricted_sections: sections,
+          },
+        }));
+      } else {
+        toast.error(response.error);
+      }
+    } catch (error) {
+      toast.error("Failed to update section restrictions");
+    } finally {
+      setShowRestrictModal(false);
     }
   };
 
@@ -147,42 +175,6 @@ const ClassDetailPage = () => {
   const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState(null);
-
-  /* const handleEditActivity = async () => {
-    try {
-      if (!activityToEdit) {
-        toast.error("No activity data to update");
-        return;
-      }
-
-      const payload = {
-        classroom_id: classId,
-        question: activityToEdit.question,
-        time_limit: activityToEdit.submission_time,
-        title: activityToEdit.title,
-        description: activityToEdit.description,
-        grading_breakdown: activityToEdit.grading_breakdown,
-      };
-
-      const result = await updateActivity(
-        activityToEdit._id,
-        activityToEdit.type,
-        payload
-      );
-
-      if (result.success) {
-        toast.success("Activity updated successfully");
-        // setActivityToEdit(activityToEdit);
-        setShowEditModal(false);
-        fetchClasses();
-      } else {
-        toast.error(result.error || "Failed to update activity");
-      }
-    } catch (error) {
-      console.error("Error updating activity:", error);
-      toast.error("An error occurred while updating");
-    }
-  }; */
 
   const handleRemoveClick = (student) => {
     setStudentToRemove(student);
@@ -225,7 +217,6 @@ const ClassDetailPage = () => {
       if (result.success) {
         toast.success("Activity deleted successfully");
 
-        // Update the state to remove the deleted activity
         if (activityType === "quiz") {
           setClassroomData((prev) => ({
             ...prev,
@@ -241,6 +232,12 @@ const ClassDetailPage = () => {
             ...prev,
             activities:
               prev.activities?.filter((a) => a._id !== activityId) || [],
+          }));
+        } else if (activityType === "assignment") {
+          setClassroomData((prev) => ({
+            ...prev,
+            assignments:
+              prev.assignments?.filter((a) => a._id !== activityId) || [],
           }));
         }
       } else {
@@ -258,7 +255,6 @@ const ClassDetailPage = () => {
       return;
     }
 
-    // Create a complete activity object with all required fields
     const completeActivity = {
       _id: newActivity._id,
       title: newActivity.title || "Untitled Activity",
@@ -270,7 +266,6 @@ const ClassDetailPage = () => {
       ...newActivity,
     };
 
-    // Update the appropriate array based on activity type
     if (completeActivity.type === "quiz") {
       setClassroomData((prev) => ({
         ...prev,
@@ -285,6 +280,11 @@ const ClassDetailPage = () => {
       setClassroomData((prev) => ({
         ...prev,
         activities: [...(prev.activities || []), completeActivity],
+      }));
+    } else if (completeActivity.type === "assignment") {
+      setClassroomData((prev) => ({
+        ...prev,
+        assignments: [...(prev.assignments || []), completeActivity],
       }));
     }
 
@@ -375,15 +375,28 @@ const ClassDetailPage = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setShowEditClassModal(true);
-            setClassData(ClassroomData.classroom);
-          }}
-          className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
-        >
-          <FiEdit2 className="mr-2" /> Edit Class
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              setShowEditClassModal(true);
+              setClassData(ClassroomData.classroom);
+            }}
+            className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+          >
+            <FiEdit2 className="mr-2" /> Edit Class
+          </button>
+          <button
+            onClick={() => {
+              setRestrictedSections(
+                ClassroomData.classroom?.restricted_sections || []
+              );
+              setShowRestrictModal(true);
+            }}
+            className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+          >
+            <FiLock className="mr-2" /> Restrict Sections
+          </button>
+        </div>
       </div>
       <div className="py-4">
         {/* Class Navigation */}
@@ -469,7 +482,8 @@ const ClassDetailPage = () => {
                         const total =
                           (ClassroomData.quizzes?.length || 0) +
                           (ClassroomData.exams?.length || 0) +
-                          (ClassroomData.activities?.length || 0);
+                          (ClassroomData.activities?.length || 0) +
+                          (ClassroomData.assignments?.length || 0);
                         return `${total} ${
                           total <= 1 ? "Activity" : "Activities"
                         }`;
@@ -503,6 +517,17 @@ const ClassDetailPage = () => {
                       {(ClassroomData.activities?.length || 0) !== 1
                         ? "ies"
                         : "y"}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiFile className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {ClassroomData.assignments?.length || 0} Assignment
+                      {(ClassroomData.assignments?.length || 0) !== 1
+                        ? "s"
+                        : ""}
                     </span>
                   </div>
                 </div>
@@ -565,14 +590,14 @@ const ClassDetailPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                           <button
                             onClick={() => handleViewClick(student)}
-                            className="px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                            className="cursor-pointer px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
                           >
                             GRADES
                           </button>
 
                           <button
                             onClick={() => handleViewClickActivities(student)}
-                            className="px-4 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition"
+                            className="cursor-pointer px-4 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition"
                           >
                             VIEW
                           </button>
@@ -594,7 +619,7 @@ const ClassDetailPage = () => {
             </div>
 
             {isModalOpenActivities && selectedStudentActivities && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white w-full max-w-4xl h-[80vh] overflow-y-auto rounded-lg shadow-xl p-8">
                   <h2 className="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">
                     Student Activities
@@ -617,7 +642,6 @@ const ClassDetailPage = () => {
                   <div className="mt-6 border-t pt-4">
                     <div className="font-semibold mb-2">Activities:</div>
 
-                    {/* Filter Buttons */}
                     <div className="mb-4 flex gap-2">
                       <button
                         onClick={() => setActivityFilter("all")}
@@ -656,7 +680,6 @@ const ClassDetailPage = () => {
                       </button>
                     </div>
 
-                    {/* Activities List */}
                     {getFilteredActivities().map((activity) => (
                       <div
                         key={activity?._id || activity?.activity?._id}
@@ -707,13 +730,14 @@ const ClassDetailPage = () => {
                         )}
                         <Link
                           to={`/instructor/class/${classId}/activity/${
-                            activity?._id || activity?.activity?._id
+                            (activity?._id || activity?.activity?._id) ?? ""
                           }`}
-                          className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                         >
                           VISIT{" "}
                           {(
-                            activity?.type || activity?.activity?.type
+                            activity?.type ||
+                            activity?.activity?.type ||
+                            "ACTIVITY"
                           ).toUpperCase()}
                         </Link>
                       </div>
@@ -725,13 +749,13 @@ const ClassDetailPage = () => {
                       onClick={() =>
                         handleRemoveClick(selectedStudentActivities.student)
                       }
-                      className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 ease-in-out"
+                      className="cursor-pointer px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 ease-in-out"
                     >
                       Remove
                     </button>
                     <button
                       onClick={closeModalActivities}
-                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 ease-in-out"
+                      className="cursor-pointer px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 ease-in-out"
                     >
                       Close
                     </button>
@@ -741,7 +765,7 @@ const ClassDetailPage = () => {
             )}
 
             {isModalOpen && selectedStudent && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
                   <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
                     Student Grade Details
@@ -819,13 +843,13 @@ const ClassDetailPage = () => {
                   <div className="mt-8 flex justify-end gap-4">
                     <button
                       onClick={() => handleRemoveClick(selectedStudent.student)}
-                      className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                      className="cursor-pointer px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                     >
                       Remove
                     </button>
                     <button
                       onClick={closeModal}
-                      className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                      className="cursor-pointer px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
                     >
                       Close
                     </button>
@@ -1020,27 +1044,26 @@ const ClassDetailPage = () => {
                                 ? "bg-blue-100 text-blue-800"
                                 : activity.type === "exam"
                                 ? "bg-purple-100 text-purple-800"
+                                : activity.type === "assignment"
+                                ? "bg-orange-100 text-orange-800"
                                 : "bg-green-100 text-green-800"
                             }`}
                           >
-                            {activity.type} - {activity.grading_breakdown}
+                            {activity.type} -{" "}
+                            {activity.grading_breakdown || "N/A"}
                           </span>
 
-                          {activity.type !== "activity" && (
-                            <>
-                              <span className="text-gray-700 flex items-center">
-                                <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
-                                <strong className="font-medium mr-2">
-                                  Duration:
-                                </strong>
-                                {activity.submission_time >= 60
-                                  ? `${Math.floor(
-                                      activity.submission_time / 60
-                                    )}h ${activity.submission_time % 60}m`
-                                  : `${activity.submission_time}m`}
-                              </span>
-                            </>
-                          )}
+                          <span className="text-gray-700 flex items-center">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
+                            <strong className="font-medium mr-2">
+                              Duration:
+                            </strong>
+                            {activity.submission_time >= 60
+                              ? `${Math.floor(
+                                  activity.submission_time / 60
+                                )}h ${activity.submission_time % 60}m`
+                              : `${activity.submission_time}m`}
+                          </span>
 
                           <span className="ml-2 text-gray-700">
                             <strong className="font-medium">Points:</strong>{" "}
@@ -1096,6 +1119,8 @@ const ClassDetailPage = () => {
               ? "Quiz"
               : activityToDelete.type === "exam"
               ? "Exam"
+              : activityToDelete.type === "assignment"
+              ? "Assignment"
               : "Activity"
           }`}
           message={`Are you sure you want to delete "${activityToDelete.title}"? All associated data will be permanently removed.`}
@@ -1120,6 +1145,65 @@ const ClassDetailPage = () => {
           onUpdateSuccess={fetchClasses}
           classId={classId}
         />
+      )}
+
+      {showRestrictModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">
+              Restrict Classroom Sections
+            </h3>
+            <p className="mb-4">Select which sections students can access:</p>
+
+            <div className="space-y-2">
+              {["lessons", "assignments", "grades", "practice"].map(
+                (section) => (
+                  <div key={section} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={section}
+                      checked={!restrictedSections.includes(section)}
+                      onChange={() => {
+                        if (restrictedSections.includes(section)) {
+                          setRestrictedSections(
+                            restrictedSections.filter((s) => s !== section)
+                          );
+                        } else {
+                          setRestrictedSections([
+                            ...restrictedSections,
+                            section,
+                          ]);
+                        }
+                      }}
+                      className="cursor-pointer h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor={section}
+                      className="ml-2 block text-sm text-gray-900 capitalize"
+                    >
+                      {section}
+                    </label>
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRestrictModal(false)}
+                className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleRestrictSections(restrictedSections)}
+                className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              >
+                Save Restrictions
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -33,7 +33,6 @@ export const loginUser = async ({ email, password }) => {
 
 /* STUDENT */
 
-
 export const registerStudent = async (
   first_name,
   middle_name,
@@ -73,22 +72,25 @@ export const getAllStudents = async () => {
   }
 };
 
-
-export const updateStudent = async (id, email, first_name, middle_name, last_name, student_id_number) => {
+export const updateStudent = async (
+  id,
+  email,
+  first_name,
+  middle_name,
+  last_name,
+  student_id_number
+) => {
   try {
     const response = await axios.put(
       `${BASE_URL}/students/update_student/${id}`,
       { email, student_id_number, first_name, middle_name, last_name }
     );
 
-
-
     return { success: true, data: response.data };
   } catch (error) {
     return {
       success: false,
-      error:
-        error?.message || "Failed to update specific student.",
+      error: error?.message || "Failed to update specific student.",
     };
   }
 };
@@ -124,7 +126,6 @@ export const deleteStudent = async (id) => {
     };
   }
 };
-
 
 export const getAllActivitiesSpecificStudentSpecificClassroom = async (
   classroom_id,
@@ -166,8 +167,13 @@ export const addStudentsToClassroom = async (
 
 /* INSTRUCTOR */
 
-
-export const registerInstructor = async (first_name, middle_name, last_name, email, password) => {
+export const registerInstructor = async (
+  first_name,
+  middle_name,
+  last_name,
+  email,
+  password
+) => {
   try {
     const response = await axios.post(
       `${BASE_URL}/instructors/add_instructor`,
@@ -188,7 +194,6 @@ export const registerInstructor = async (first_name, middle_name, last_name, ema
     };
   }
 };
-
 
 export const updateInstructor = async (id, data) => {
   try {
@@ -320,8 +325,13 @@ export const getSpecificAdmin = async (id) => {
   }
 };
 
- 
-export const registerAdmin = async (first_name, middle_name, last_name, email, password) => {
+export const registerAdmin = async (
+  first_name,
+  middle_name,
+  last_name,
+  email,
+  password
+) => {
   try {
     const response = await axios.post(`${BASE_URL}/admins/add_admin`, {
       first_name,
@@ -339,7 +349,6 @@ export const registerAdmin = async (first_name, middle_name, last_name, email, p
     };
   }
 };
-
 
 export const updateAdmin = async (id, data) => {
   try {
@@ -911,7 +920,28 @@ export const updateClassroom = async (
   }
 };
 
+export const restrictSections = async (id, sections) => {
+  // Changed parameter name to plural
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/classrooms/restrict_sections/${id}`,
+      { sections } // Changed to send the array as "sections"
+    );
 
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error restricting sections:", error);
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        "Failed to restrict sections in classroom",
+    };
+  }
+};
 
 export const getAllStudentGradeSpecificClassroom = async (classroom_id) => {
   try {
@@ -1155,80 +1185,65 @@ export const addActivity = async (
   timeLimit,
   title,
   description,
-  type = "quiz",
+  type = "assignment", // Changed default to assignment
   grading_breakdown
 ) => {
   try {
     let response;
+    const basePayload = {
+      classroom_id: classId,
+      question: questions.map((q) => ({
+        text: q.text,
+        points: Number(q.points),
+        answer_type: q.type === "multiple_choice" ? "options" : "programming",
+        ...(q.type === "multiple_choice"
+          ? {
+              options: {
+                option_1: q.options[0]?.text || "",
+                option_2: q.options[1]?.text || "",
+                option_3: q.options[2]?.text || "",
+                option_4: q.options[3]?.text || "",
+              },
+              correct_option:
+                q.options.find((opt) => opt.letter === q.answer)?.text || "",
+            }
+          : {
+              expected_output: q.expectedOutput || "",
+            }),
+      })),
+      title,
+      description,
+    };
 
-    if (type === "quiz") {
-      response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
-        classroom_id: classId,
-        question: questions.map((q) => ({
-          text: q.text,
-          options:
-            q.type === "multiple_choice"
-              ? {
-                  option_1: q.options[0]?.text || "",
-                  option_2: q.options[1]?.text || "",
-                  option_3: q.options[2]?.text || "",
-                  option_4: q.options[3]?.text || "",
-                }
-              : undefined,
-          correct_option:
-            q.type === "multiple_choice"
-              ? q.options.find((opt) => opt.letter === q.answer)?.text || ""
-              : undefined,
-          points: Number(q.points),
-          answer_type: q.type === "multiple_choice" ? "options" : "programming",
-        })),
-        time_limit: Number(timeLimit),
-        title,
-        description,
-      });
-    } else if (type === "activity") {
-      response = await axios.post(`${BASE_URL}/activities/add_activity`, {
-        classroom_id: classId,
-  
-        question: questions.map((q) => ({
-          text: q.text,
-          expected_output: q.expectedOutput,
-      
-          points: Number(q.points),
-          answer_type: q.type === "multiple_choice" ? "options" : "programming",
-        })),
-
-
-        title,
-        description,
-      });
-    } else {
-      response = await axios.post(`${BASE_URL}/exams/add_exam`, {
-        classroom_id: classId,
-        question: questions.map((q) => ({
-          text: q.text,
-          expected_output: q.expectedOutput,
-          options:
-            q.type === "multiple_choice"
-              ? {
-                  option_1: q.options[0]?.text || "",
-                  option_2: q.options[1]?.text || "",
-                  option_3: q.options[2]?.text || "",
-                  option_4: q.options[3]?.text || "",
-                }
-              : undefined,
-          correct_option:
-            q.type === "multiple_choice"
-              ? q.options.find((opt) => opt.letter === q.answer)?.text || ""
-              : undefined,
-          points: Number(q.points),
-          answer_type: q.type === "multiple_choice" ? "options" : "programming",
-        })),
-        time_limit: Number(timeLimit),
-        title,
-        description,
-        grading_breakdown,
-      });
+    switch (type) {
+      case "quiz":
+        response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
+          ...basePayload,
+          time_limit: Number(timeLimit),
+        });
+        break;
+      case "assignment":
+        response = await axios.post(`${BASE_URL}/assignments/add_assignment`, {
+          ...basePayload,
+          time_limit: Number(timeLimit),
+        });
+        break;
+      case "activity":
+        response = await axios.post(`${BASE_URL}/activities/add_activity`, {
+          ...basePayload,
+          // Activities can have optional time limits
+          time_limit: timeLimit ? Number(timeLimit) : null,
+        });
+        break;
+      case "exam":
+        response = await axios.post(`${BASE_URL}/exams/add_exam`, {
+          ...basePayload,
+          time_limit: Number(timeLimit),
+          grading_breakdown,
+        });
+        break;
+      default:
+        throw new Error("Invalid activity type");
     }
 
     return {
@@ -1246,28 +1261,43 @@ export const addActivity = async (
 
 export const updateActivity = async (activityId, activityType, data) => {
   try {
-    let response;
-    if (activityType === "quiz") {
-      response = await axios.put(
-        `${BASE_URL}/quizzes/update_quiz/${activityId}`,
-        data
-      );
-    }
-    
-    if (activityType === "exam") {
-      response = await axios.put(
-        `${BASE_URL}/exams/update_exam/${activityId}`,
-        data
-      );
-    }
-
-    if (activityType === "activity") {
-      response = await axios.put(
-        `${BASE_URL}/activities/update_activity/${activityId}`,
-        data
-      );
+    let endpoint;
+    switch (activityType) {
+      case "quiz":
+        endpoint = `${BASE_URL}/quizzes/update_quiz/${activityId}`;
+        break;
+      case "assignment":
+        endpoint = `${BASE_URL}/assignments/update_assignment/${activityId}`;
+        break;
+      case "exam":
+        endpoint = `${BASE_URL}/exams/update_exam/${activityId}`;
+        break;
+      case "activity":
+        endpoint = `${BASE_URL}/activities/update_activity/${activityId}`;
+        break;
+      default:
+        throw new Error("Invalid activity type");
     }
 
+    // Format questions for update - preserve the existing structure
+    const formattedData = {
+      ...data,
+      question: data.question?.map((q) => ({
+        text: q.text,
+        points: Number(q.points),
+        answer_type: q.answer_type, // Use the existing answer_type
+        ...(q.answer_type === "options"
+          ? {
+              options: q.options,
+              correct_option: q.correct_option, // This should already be formatted correctly
+            }
+          : {
+              expected_output: q.expected_output,
+            }),
+      })),
+    };
+
+    const response = await axios.put(endpoint, formattedData);
     return { success: true, data: response?.data };
   } catch (error) {
     return {
@@ -1284,7 +1314,8 @@ export const deleteActivity = async (activityId, activityType) => {
       response = await axios.delete(
         `${BASE_URL}/quizzes/delete_quiz/${activityId}`
       );
-    }if (activityType === "activity") {
+    }
+    if (activityType === "activity") {
       response = await axios.delete(
         `${BASE_URL}/activities/delete_activity/${activityId}`
       );
@@ -1325,7 +1356,6 @@ export const allStudentMissingAnswerSpecificQuiz = async (quizId) => {
   }
 };
 
-
 export const allStudentMissingAnswerSpecificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
@@ -1365,7 +1395,6 @@ export const allStudentMissingAnswerSpecificExam = async (examId) => {
     };
   }
 };
-
 
 export const allAnswerSpecificActivity = async (activity_id) => {
   try {
