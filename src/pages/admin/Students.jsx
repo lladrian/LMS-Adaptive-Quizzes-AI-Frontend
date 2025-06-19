@@ -9,6 +9,8 @@ import {
   FiEdit,
   FiTrash2,
   FiArrowUp,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import {
   getAllStudents,
@@ -26,6 +28,11 @@ const Students = () => {
   const [deleteModalStudent, setDeleteModalStudent] = useState(null);
   const [promoteModalStudent, setPromoteModalStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [studentsPerPage] = useState(5);
+  const [totalStudents, setTotalStudents] = useState(0);
 
   const [newStudent, setNewStudent] = useState({
     first_name: "",
@@ -51,14 +58,15 @@ const Students = () => {
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [currentPage]);
 
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
-      const result = await getAllStudents();
+      const result = await getAllStudents(currentPage, studentsPerPage);
       if (result.success) {
         setStudents(result.data.data);
+        setTotalStudents(result.data.total || result.data.data.length);
       }
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -68,22 +76,68 @@ const Students = () => {
     }
   };
 
-const filteredStudents = students.filter((student) => {
-  const first_name = student.first_name?.toLowerCase() || "";
-  const middle_name = student.middle_name?.toLowerCase() || "";
-  const last_name = student.last_name?.toLowerCase() || "";
-  const email = student.email?.toLowerCase() || "";
-  const idNumber = student.student_id_number?.toString().toLowerCase() || "";
+  const filteredStudents = students.filter((student) => {
+    const first_name = student.first_name?.toLowerCase() || "";
+    const middle_name = student.middle_name?.toLowerCase() || "";
+    const last_name = student.last_name?.toLowerCase() || "";
+    const email = student.email?.toLowerCase() || "";
+    const idNumber = student.student_id_number?.toString().toLowerCase() || "";
 
-  return (
-    first_name.includes(searchTerm.toLowerCase()) ||
-    middle_name.includes(searchTerm.toLowerCase()) ||
-    last_name.includes(searchTerm.toLowerCase()) ||
-    email.includes(searchTerm.toLowerCase()) ||
-    idNumber.includes(searchTerm.toLowerCase())
+    return (
+      first_name.includes(searchTerm.toLowerCase()) ||
+      middle_name.includes(searchTerm.toLowerCase()) ||
+      last_name.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      idNumber.includes(searchTerm.toLowerCase())
+    );
+  });
+
+  // Pagination logic
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(
+    indexOfFirstStudent,
+    indexOfLastStudent
   );
-});
 
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+
+  // Get page numbers to display
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPageButtons = 5;
+
+    if (totalPages <= maxPageButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      pageNumbers.push(1);
+
+      if (startPage > 2) {
+        pageNumbers.push("...");
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+
+    return pageNumbers;
+  };
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
@@ -98,7 +152,9 @@ const filteredStudents = students.filter((student) => {
       );
 
       if (response.success) {
-        toast.success(`Student ${newStudent.first_name} ${newStudent.middle_name} ${newStudent.last_name} added successfully!`);
+        toast.success(
+          `Student ${newStudent.first_name} ${newStudent.middle_name} ${newStudent.last_name} added successfully!`
+        );
         setShowAddStudentModal(false);
         setNewStudent({
           first_name: "",
@@ -227,7 +283,10 @@ const filteredStudents = students.filter((student) => {
             placeholder="Search students..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset to first page when searching
+            }}
           />
         </div>
       </div>
@@ -264,7 +323,7 @@ const filteredStudents = students.filter((student) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.length === 0 ? (
+                {currentStudents.length === 0 ? (
                   <tr>
                     <td
                       colSpan="6"
@@ -276,7 +335,7 @@ const filteredStudents = students.filter((student) => {
                     </td>
                   </tr>
                 ) : (
-                  filteredStudents.map((student) => (
+                  currentStudents.map((student) => (
                     <tr key={student._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -285,7 +344,8 @@ const filteredStudents = students.filter((student) => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {student.first_name} {student.middle_name} {student.last_name}
+                              {student.first_name} {student.middle_name}{" "}
+                              {student.last_name}
                             </div>
                           </div>
                         </div>
@@ -352,6 +412,80 @@ const filteredStudents = students.filter((student) => {
         )}
       </div>
 
+      {/* Pagination */}
+      {filteredStudents.length > studentsPerPage && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 rounded-b-lg">
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{" "}
+                <span className="font-medium">{indexOfFirstStudent + 1}</span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(indexOfLastStudent, filteredStudents.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium">{filteredStudents.length}</span>{" "}
+                results
+              </p>
+            </div>
+            <div>
+              <nav
+                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Previous</span>
+                  <FiChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+
+                {getPageNumbers().map((number, index) => (
+                  <React.Fragment key={index}>
+                    {number === "..." ? (
+                      <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => paginate(number)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === number
+                            ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Next</span>
+                  <FiChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -395,7 +529,7 @@ const filteredStudents = students.filter((student) => {
                     required
                   />
                 </div>
-                  <div className="mb-4">
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
@@ -616,7 +750,9 @@ const filteredStudents = students.filter((student) => {
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalStudent.first_name} {deleteModalStudent.middle_name} {deleteModalStudent.last_name}
+                      {deleteModalStudent.first_name}{" "}
+                      {deleteModalStudent.middle_name}{" "}
+                      {deleteModalStudent.last_name}
                     </span>
                     ?
                   </p>
@@ -663,7 +799,9 @@ const filteredStudents = students.filter((student) => {
                   <p>
                     Are you sure you want to promote{" "}
                     <span className="font-semibold">
-                      {promoteModalStudent.first_name} {promoteModalStudent.middle_name} {promoteModalStudent.last_name}
+                      {promoteModalStudent.first_name}{" "}
+                      {promoteModalStudent.middle_name}{" "}
+                      {promoteModalStudent.last_name}
                     </span>{" "}
                     to Instructor?
                   </p>
