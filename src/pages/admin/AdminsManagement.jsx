@@ -8,6 +8,8 @@ import {
   FiPlus,
   FiEdit,
   FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import {
   getAllAdmins,
@@ -22,8 +24,12 @@ const AdminsManagement = () => {
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [showEditAdminModal, setShowEditAdminModal] = useState(false);
   const [deleteModalAdmin, setDeleteModalAdmin] = useState(null);
-
   const [isLoading, setIsLoading] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [adminsPerPage] = useState(5);
+  const [totalAdmins, setTotalAdmins] = useState(0);
 
   const [newAdmin, setNewAdmin] = useState({
     first_name: "",
@@ -47,14 +53,15 @@ const AdminsManagement = () => {
 
   useEffect(() => {
     fetchAdmins();
-  }, [setEditAdminData]);
+  }, [currentPage, searchTerm]);
 
   const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      const result = await getAllAdmins();
+      const result = await getAllAdmins(currentPage, adminsPerPage, searchTerm);
       if (result.success) {
         setAdmins(result.data.data);
+        setTotalAdmins(result.data.total || result.data.data.length);
       }
     } catch (error) {
       console.error("Error fetching admins:", error);
@@ -64,13 +71,49 @@ const AdminsManagement = () => {
     }
   };
 
-  const filteredAdmins = admins.filter(
-    (admin) =>
-      admin?.first_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-      admin?.middle_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-      admin?.last_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-      admin?.email?.toLowerCase()?.includes(searchTerm.toLowerCase())
-  );
+  // Pagination logic
+  const indexOfLastAdmin = currentPage * adminsPerPage;
+  const indexOfFirstAdmin = indexOfLastAdmin - adminsPerPage;
+  const currentAdmins = admins.slice(indexOfFirstAdmin, indexOfLastAdmin);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalAdmins / adminsPerPage);
+
+  // Get page numbers to display
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPageButtons = 5;
+
+    if (totalPages <= maxPageButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      pageNumbers.push(1);
+
+      if (startPage > 2) {
+        pageNumbers.push("...");
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+
+    return pageNumbers;
+  };
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
@@ -84,9 +127,18 @@ const AdminsManagement = () => {
       );
 
       if (response.success) {
-        toast.success(`Admin ${newAdmin.first_name} ${newAdmin.middle_name} ${newAdmin.last_name} added successfully!`);
+        toast.success(
+          `Admin ${newAdmin.first_name} ${newAdmin.middle_name} ${newAdmin.last_name} added successfully!`
+        );
         setShowAddAdminModal(false);
-        setNewAdmin({ first_name: "", middle_name: "",  last_name: "",  email: "", password: "", role: "admin" });
+        setNewAdmin({
+          first_name: "",
+          middle_name: "",
+          last_name: "",
+          email: "",
+          password: "",
+          role: "admin",
+        });
         await fetchAdmins();
       } else {
         toast.error(response.error);
@@ -109,13 +161,11 @@ const AdminsManagement = () => {
       email: admin.email,
       role: admin.role,
     });
-    console.log(editAdminData.id);
     setShowEditAdminModal(true);
   };
 
   const handleUpdateAdmin = async (e) => {
-    /*     console.log(editAdminData.id);
-     */ e.preventDefault();
+    e.preventDefault();
     try {
       const response = await updateAdmin(editAdminData.id, {
         first_name: editAdminData.first_name,
@@ -126,7 +176,9 @@ const AdminsManagement = () => {
       });
 
       if (response.success) {
-        toast.success(`Admin ${editAdminData.first_name} ${editAdminData.middle_name} ${editAdminData.last_name} updated successfully!`);
+        toast.success(
+          `Admin ${editAdminData.first_name} ${editAdminData.middle_name} ${editAdminData.last_name} updated successfully!`
+        );
         setShowEditAdminModal(false);
         await fetchAdmins();
       } else {
@@ -180,7 +232,10 @@ const AdminsManagement = () => {
             placeholder="Search admins..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset to first page when searching
+            }}
           />
         </div>
       </div>
@@ -206,13 +261,13 @@ const AdminsManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
                   </th>
-                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
-                  </th> */}
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAdmins.length === 0 ? (
+                {currentAdmins.length === 0 ? (
                   <tr>
                     <td
                       colSpan="5"
@@ -224,7 +279,7 @@ const AdminsManagement = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredAdmins.map((admin) => (
+                  currentAdmins.map((admin) => (
                     <tr key={admin._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -233,7 +288,8 @@ const AdminsManagement = () => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {admin.first_name} {admin.middle_name} {admin.last_name}
+                              {admin.first_name} {admin.middle_name}{" "}
+                              {admin.last_name}
                             </div>
                           </div>
                         </div>
@@ -261,22 +317,24 @@ const AdminsManagement = () => {
                           }
                         )}
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEditAdmin(admin)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4 cursor-pointer"
-                          title="Edit"
-                        >
-                          <FiEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteModalAdmin(admin)}
-                          className="text-red-600 hover:text-red-900 cursor-pointer"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
-                      </td> */}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditAdmin(admin)}
+                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
+                            title="Edit"
+                          >
+                            <FiEdit size={18} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteModalAdmin(admin)}
+                            className="text-red-600 hover:text-red-900 cursor-pointer"
+                            title="Delete"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -285,6 +343,77 @@ const AdminsManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalAdmins > adminsPerPage && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 rounded-b-lg">
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{" "}
+                <span className="font-medium">{indexOfFirstAdmin + 1}</span> to{" "}
+                <span className="font-medium">
+                  {Math.min(indexOfLastAdmin, totalAdmins)}
+                </span>{" "}
+                of <span className="font-medium">{totalAdmins}</span> results
+              </p>
+            </div>
+            <div>
+              <nav
+                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Previous</span>
+                  <FiChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+
+                {getPageNumbers().map((number, index) => (
+                  <React.Fragment key={index}>
+                    {number === "..." ? (
+                      <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => paginate(number)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === number
+                            ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Next</span>
+                  <FiChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Admin Modal */}
       {showAddAdminModal && (
@@ -309,7 +438,7 @@ const AdminsManagement = () => {
                     required
                   />
                 </div>
-                 <div className="mb-4">
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Middle Name
                   </label>
@@ -323,7 +452,7 @@ const AdminsManagement = () => {
                     required
                   />
                 </div>
-                  <div className="mb-4">
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
@@ -444,7 +573,7 @@ const AdminsManagement = () => {
                     required
                   />
                 </div>
-                 <div className="mb-4">
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
@@ -532,7 +661,9 @@ const AdminsManagement = () => {
                   <p>
                     Are you sure you want to delete{" "}
                     <span className="font-semibold">
-                      {deleteModalAdmin.first_name}  {deleteModalAdmin.middle_name}  {deleteModalAdmin.last_name}
+                      {deleteModalAdmin.first_name}{" "}
+                      {deleteModalAdmin.middle_name}{" "}
+                      {deleteModalAdmin.last_name}
                     </span>
                     ?
                   </p>
