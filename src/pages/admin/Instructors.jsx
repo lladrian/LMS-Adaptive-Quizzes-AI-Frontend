@@ -10,6 +10,8 @@ import {
   FiTrash2,
   FiArrowUp,
   FiArrowDown,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import {
   getAllInstructors,
@@ -20,18 +22,21 @@ import {
   checkPromotedUser,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
+
 const Instructors = () => {
   const [searchTerm, setSearchTerm] = useState("");
-
   const [showAddInstructorModal, setShowAddInstructorModal] = useState(false);
   const [showEditInstructorModal, setShowEditInstructorModal] = useState(false);
   const [deleteModalInstructor, setDeleteModalInstructor] = useState(null);
   const [promoteModalAdmin, setPromoteModalAdmin] = useState(null);
-
   const [isLoading, setIsLoading] = useState(false);
-
   const [demoteModalInstructor, setDemoteModalInstructor] = useState(null);
   const [originalRoles, setOriginalRoles] = useState({});
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [instructorsPerPage] = useState(5);
+  const [totalInstructors, setTotalInstructors] = useState(0);
 
   const [newInstructor, setNewInstructor] = useState({
     first_name: "",
@@ -55,15 +60,15 @@ const Instructors = () => {
 
   useEffect(() => {
     fetchInstructors();
-  }, []);
+  }, [currentPage]);
 
   const fetchInstructors = async () => {
     setIsLoading(true);
     try {
-      const result = await getAllInstructors();
+      const result = await getAllInstructors(currentPage, instructorsPerPage);
       if (result.success) {
         setInstructors(result.data.data);
-        // Check original roles for each instructor
+        setTotalInstructors(result.data.total || result.data.data.length);
         checkOriginalRoles(result.data.data);
       }
     } catch (error) {
@@ -80,7 +85,7 @@ const Instructors = () => {
       if (instructor.role === "instructor") {
         const response = await checkPromotedUser(instructor._id);
         if (response.success && response.data) {
-          roles[instructor._id] = response.data.data; // "student" or "instructor"
+          roles[instructor._id] = response.data.data;
         }
       }
     }
@@ -89,10 +94,16 @@ const Instructors = () => {
 
   const filteredInstructors = instructors.filter(
     (instructor) =>
-      instructor?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor?.middle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor?.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      instructor?.email.toLowerCase().includes(searchTerm.toLowerCase())
+      instructor?.first_name
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) ||
+      instructor?.middle_name
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) ||
+      instructor?.last_name
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) ||
+      instructor?.email?.toLowerCase()?.includes(searchTerm.toLowerCase())
   );
 
   const handleAddInstructor = async (e) => {
@@ -136,8 +147,8 @@ const Instructors = () => {
     setEditInstructorData({
       id: instructor._id,
       first_name: instructor.first_name,
-      middle_name: instructor.first_name,
-      last_name: instructor.first_name,
+      middle_name: instructor.middle_name,
+      last_name: instructor.last_name,
       email: instructor.email,
       role: instructor.role,
     });
@@ -151,7 +162,7 @@ const Instructors = () => {
         first_name: editInstructorData.first_name,
         middle_name: editInstructorData.middle_name,
         last_name: editInstructorData.last_name,
-        email: editInstructorData.email
+        email: editInstructorData.email,
       });
 
       if (response.success) {
@@ -237,6 +248,53 @@ const Instructors = () => {
     }
   };
 
+  // Pagination logic
+  const indexOfLastInstructor = currentPage * instructorsPerPage;
+  const indexOfFirstInstructor = indexOfLastInstructor - instructorsPerPage;
+  const currentInstructors = filteredInstructors.slice(
+    indexOfFirstInstructor,
+    indexOfLastInstructor
+  );
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredInstructors.length / instructorsPerPage);
+
+  // Get page numbers to display
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPageButtons = 5;
+
+    if (totalPages <= maxPageButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      pageNumbers.push(1);
+
+      if (startPage > 2) {
+        pageNumbers.push("...");
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+
+    return pageNumbers;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -261,7 +319,10 @@ const Instructors = () => {
             placeholder="Search instructors..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset to first page when searching
+            }}
           />
         </div>
       </div>
@@ -269,7 +330,9 @@ const Instructors = () => {
       {/* Instructors Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading admins...</div>
+          <div className="p-8 text-center text-gray-500">
+            Loading instructors...
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -281,7 +344,6 @@ const Instructors = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
@@ -294,7 +356,7 @@ const Instructors = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredInstructors.length === 0 ? (
+                {currentInstructors.length === 0 ? (
                   <tr>
                     <td
                       colSpan="5"
@@ -306,8 +368,8 @@ const Instructors = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredInstructors.map((instructor) => (
-                    <tr key={instructor.id}>
+                  currentInstructors.map((instructor) => (
+                    <tr key={instructor._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-3">
@@ -315,7 +377,8 @@ const Instructors = () => {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {instructor.first_name} {instructor.middle_name} {instructor.last_name}
+                              {instructor.first_name} {instructor.middle_name}{" "}
+                              {instructor.last_name}
                             </div>
                           </div>
                         </div>
@@ -339,7 +402,6 @@ const Instructors = () => {
                           {new Date(instructor.created_at).toLocaleDateString()}
                         </div>
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
@@ -393,6 +455,84 @@ const Instructors = () => {
         )}
       </div>
 
+      {/* Pagination */}
+      {filteredInstructors.length > instructorsPerPage && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 rounded-b-lg">
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{" "}
+                <span className="font-medium">
+                  {indexOfFirstInstructor + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(indexOfLastInstructor, filteredInstructors.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium">
+                  {filteredInstructors.length}
+                </span>{" "}
+                results
+              </p>
+            </div>
+            <div>
+              <nav
+                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Previous</span>
+                  <FiChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+
+                {getPageNumbers().map((number, index) => (
+                  <React.Fragment key={index}>
+                    {number === "..." ? (
+                      <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => paginate(number)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === number
+                            ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="sr-only">Next</span>
+                  <FiChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Instructor Modal */}
       {showAddInstructorModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -436,7 +576,7 @@ const Instructors = () => {
                     required
                   />
                 </div>
-                   <div className="mb-4">
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
@@ -733,6 +873,8 @@ const Instructors = () => {
           </div>
         </div>
       )}
+
+      {/* Demote Confirmation Modal */}
       {demoteModalInstructor && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">

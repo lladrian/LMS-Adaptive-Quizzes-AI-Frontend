@@ -1,7 +1,20 @@
 // pages/admin/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import { FiUsers, FiBook, FiUserPlus, FiTrendingUp, FiXCircle, FiCheckCircle, FiBookOpen, FiShield} from "react-icons/fi";
-import { getAllInstructors, getAllAdmins, allClassrooms  } from "../../utils/authService";
+import {
+  FiUsers,
+  FiBook,
+  FiUserPlus,
+  FiTrendingUp,
+  FiXCircle,
+  FiCheckCircle,
+  FiBookOpen,
+  FiShield,
+} from "react-icons/fi";
+import {
+  getAllInstructors,
+  getAllAdmins,
+  allClassrooms,
+} from "../../utils/authService";
 import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
@@ -13,7 +26,6 @@ const AdminDashboard = () => {
   const [unhiddenClassrooms, setUnHiddenClassrooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const adminFullname = localStorage.getItem("fullname");
-
 
   // Stats for growth changes
   const [instructorStats, setInstructorStats] = useState({
@@ -31,13 +43,12 @@ const AdminDashboard = () => {
     fetchClassroom();
   }, []);
 
-  
   const fetchClassroom = async () => {
     const result = await allClassrooms();
     const all = result.data.data || [];
 
-    const hidden = all.filter(item => item.is_hidden === 1);
-    const unhidden = all.filter(item => item.is_hidden === 0);
+    const hidden = all.filter((item) => item.is_hidden === 1);
+    const unhidden = all.filter((item) => item.is_hidden === 0);
 
     setHiddenClassrooms(hidden);
     setUnHiddenClassrooms(unhidden);
@@ -61,7 +72,7 @@ const AdminDashboard = () => {
       if (adminResult.success) {
         const admins = adminResult.data.data;
         setAdmins(admins);
-        console.log(admins)
+        console.log(admins);
         setAdminStats(calculateGrowth(admins, "created_at"));
       }
 
@@ -78,18 +89,18 @@ const AdminDashboard = () => {
   const prepareRecentActivity = (instructors, admins) => {
     // Combine instructors and admins with their roles
     const allUsers = [
-      ...instructors.map(user => ({ ...user, role: 'Instructor' })),
-      ...admins.map(user => ({ ...user, role: 'Admin' }))
+      ...instructors.map((user) => ({ ...user, role: "Instructor" })),
+      ...admins.map((user) => ({ ...user, role: "Admin" })),
     ];
-    
+
     // Sort by creation date (newest first)
-    const sortedUsers = allUsers.sort((a, b) => 
-      new Date(b.created_at) - new Date(a.created_at)
+    const sortedUsers = allUsers.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
-    
+
     // Take the 4 most recent
     const recent = sortedUsers.slice(0, 4);
-    
+
     setRecentActivity(recent);
   };
 
@@ -131,23 +142,27 @@ const AdminDashboard = () => {
     const now = new Date();
     const date = new Date(dateString);
     const seconds = Math.floor((now - date) / 1000);
-    
+
     let interval = Math.floor(seconds / 31536000);
-    if (interval >= 1) return `${interval} year${interval === 1 ? '' : 's'} ago`;
-    
+    if (interval >= 1)
+      return `${interval} year${interval === 1 ? "" : "s"} ago`;
+
     interval = Math.floor(seconds / 2592000);
-    if (interval >= 1) return `${interval} month${interval === 1 ? '' : 's'} ago`;
-    
+    if (interval >= 1)
+      return `${interval} month${interval === 1 ? "" : "s"} ago`;
+
     interval = Math.floor(seconds / 86400);
-    if (interval >= 1) return `${interval} day${interval === 1 ? '' : 's'} ago`;
-    
+    if (interval >= 1) return `${interval} day${interval === 1 ? "" : "s"} ago`;
+
     interval = Math.floor(seconds / 3600);
-    if (interval >= 1) return `${interval} hour${interval === 1 ? '' : 's'} ago`;
-    
+    if (interval >= 1)
+      return `${interval} hour${interval === 1 ? "" : "s"} ago`;
+
     interval = Math.floor(seconds / 60);
-    if (interval >= 1) return `${interval} minute${interval === 1 ? '' : 's'} ago`;
-    
-    return `${Math.floor(seconds)} second${seconds === 1 ? '' : 's'} ago`;
+    if (interval >= 1)
+      return `${interval} minute${interval === 1 ? "" : "s"} ago`;
+
+    return `${Math.floor(seconds)} second${seconds === 1 ? "" : "s"} ago`;
   };
 
   const stats = [
@@ -172,7 +187,7 @@ const AdminDashboard = () => {
       change: "+5%",
       trend: "up",
     },
-     { 
+    {
       title: "Inactive Classrooms",
       value: hiddenClassrooms.length.toString(),
       icon: FiXCircle, // ❌ Represents inactive status
@@ -197,7 +212,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Welcome back, {adminFullname}</h1>
+      <h1 className="text-2xl font-bold text-gray-800">
+        Welcome back, {adminFullname}
+      </h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -242,11 +259,12 @@ const AdminDashboard = () => {
               className="flex items-start pb-4 border-b border-gray-100 last:border-0"
             >
               <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-4">
-                {activity.fullname ? activity.fullname.charAt(0) : 'U'}
+                {activity.fullname ? activity.fullname.charAt(0) : "U"}
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800">
-                  New {activity.role} registered: {activity.fullname || 'Unknown User'}
+                  New {activity.role} registered:{" "}
+                  {activity.fullname || "Unknown User"}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {formatTimeAgo(activity.created_at)}

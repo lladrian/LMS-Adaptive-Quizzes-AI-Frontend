@@ -11,6 +11,7 @@ import {
   FiCheck,
   FiX,
   FiLogOut,
+  FiLock,
 } from "react-icons/fi";
 import { BASE_URL } from "../../utils/config";
 import {
@@ -58,18 +59,29 @@ const ClassDetailPage = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      const sections = [
-        { id: "lessons", restricted: isSectionRestricted("lessons") },
-        { id: "assignments", restricted: isSectionRestricted("assignments") },
-        { id: "grades", restricted: isSectionRestricted("grades") },
-        { id: "practice_with_ai", restricted: isSectionRestricted("practice") },
-        { id: "classroom_overview", restricted: false },
-      ];
+      // Set the first non-restricted tab as active if the current tab is restricted
+      if (
+        (activeTab === "lessons" && isSectionRestricted("lessons")) ||
+        (activeTab === "assignments" && isSectionRestricted("assignments")) ||
+        (activeTab === "grades" && isSectionRestricted("grades")) ||
+        (activeTab === "practice_with_ai" && isSectionRestricted("practice"))
+      ) {
+        const sections = [
+          { id: "lessons", restricted: isSectionRestricted("lessons") },
+          { id: "assignments", restricted: isSectionRestricted("assignments") },
+          { id: "grades", restricted: isSectionRestricted("grades") },
+          {
+            id: "practice_with_ai",
+            restricted: isSectionRestricted("practice"),
+          },
+          { id: "classroom_overview", restricted: false },
+        ];
 
-      const firstAvailable = sections.find((s) => !s.restricted);
-      setActiveTab(firstAvailable?.id || "classroom_overview");
+        const firstAvailable = sections.find((s) => !s.restricted);
+        setActiveTab(firstAvailable?.id || "classroom_overview");
+      }
     }
-  }, [restrictedSections, isLoading]);
+  }, [restrictedSections, isLoading, activeTab]);
 
   const fetchSpecificClassroom = async () => {
     setIsLoading(true);
@@ -226,57 +238,82 @@ const ClassDetailPage = () => {
       {/* Class Navigation */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         <div className="flex border-b border-gray-200">
-          {!isSectionRestricted("lessons") && (
-            <button
-              onClick={() => setActiveTab("lessons")}
-              className={`px-6 py-3 font-medium ${
-                activeTab === "lessons"
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Lessons
-            </button>
-          )}
+          <button
+            onClick={() =>
+              !isSectionRestricted("lessons") && setActiveTab("lessons")
+            }
+            className={`px-6 py-3 font-medium flex items-center ${
+              activeTab === "lessons"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : isSectionRestricted("lessons")
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            disabled={isSectionRestricted("lessons")}
+          >
+            Lessons
+            {isSectionRestricted("lessons") && (
+              <FiLock className="ml-2 inline text-gray-400" />
+            )}
+          </button>
 
-          {!isSectionRestricted("assignments") && (
-            <button
-              onClick={() => setActiveTab("assignments")}
-              className={`px-6 py-3 font-medium ${
-                activeTab === "assignments"
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Assignments
-            </button>
-          )}
+          <button
+            onClick={() =>
+              !isSectionRestricted("assignments") && setActiveTab("assignments")
+            }
+            className={`px-6 py-3 font-medium flex items-center ${
+              activeTab === "assignments"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : isSectionRestricted("assignments")
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            disabled={isSectionRestricted("assignments")}
+          >
+            Assignments
+            {isSectionRestricted("assignments") && (
+              <FiLock className="ml-2 inline text-gray-400" />
+            )}
+          </button>
 
-          {!isSectionRestricted("grades") && (
-            <button
-              onClick={() => setActiveTab("grades")}
-              className={`px-6 py-3 font-medium ${
-                activeTab === "grades"
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Grades
-            </button>
-          )}
+          <button
+            onClick={() =>
+              !isSectionRestricted("grades") && setActiveTab("grades")
+            }
+            className={`px-6 py-3 font-medium flex items-center ${
+              activeTab === "grades"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : isSectionRestricted("grades")
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            disabled={isSectionRestricted("grades")}
+          >
+            Grades
+            {isSectionRestricted("grades") && (
+              <FiLock className="ml-2 inline text-gray-400" />
+            )}
+          </button>
 
-          {!isSectionRestricted("practice") && (
-            <button
-              onClick={() => setActiveTab("practice_with_ai")}
-              className={`px-6 py-3 font-medium ${
-                activeTab === "practice_with_ai"
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Practice With AI
-            </button>
-          )}
+          <button
+            onClick={() =>
+              !isSectionRestricted("practice") &&
+              setActiveTab("practice_with_ai")
+            }
+            className={`px-6 py-3 font-medium flex items-center ${
+              activeTab === "practice_with_ai"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : isSectionRestricted("practice")
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            disabled={isSectionRestricted("practice")}
+          >
+            Practice With AI
+            {isSectionRestricted("practice") && (
+              <FiLock className="ml-2 inline text-gray-400" />
+            )}
+          </button>
 
           <button
             onClick={() => setActiveTab("classroom_overview")}
@@ -300,275 +337,155 @@ const ClassDetailPage = () => {
 
         {/* Tab Content */}
         <div className="p-6">
-          {isSectionRestricted("lessons") &&
-            isSectionRestricted("assignments") &&
-            isSectionRestricted("grades") &&
-            isSectionRestricted("practice") &&
-            activeTab !== "classroom_overview" && (
-              <div className="p-6 text-center text-gray-500">
-                <p>
-                  No accessible sections available. All sections have been
-                  restricted by the instructor.
-                </p>
-                <button
-                  onClick={() => setActiveTab("classroom_overview")}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  View Classroom Overview
-                </button>
-              </div>
-            )}
-
-          {activeTab === "lessons" && !isSectionRestricted("lessons") && (
+          {activeTab === "lessons" && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Class Materials</h2>
-              {classroom.materials?.length > 0 ? (
-                <div className="space-y-3">
-                  {classroom.materials.map((material) => (
-                    <div
-                      key={material._id}
-                      className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow overflow-hidden"
-                    >
-                      <div
-                        className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
-                        onClick={() =>
-                          setExpandedLesson(
-                            expandedLesson === material._id
-                              ? null
-                              : material._id
-                          )
-                        }
-                      >
-                        <div>
-                          <h3 className="font-medium">{material.title}</h3>
-                          <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <span className="bg-fuchsia-100 text-fuchsia-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
-                              Material
-                            </span>
-                            <span>
-                              Posted:{" "}
-                              {new Date(
-                                material.created_at
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        {expandedLesson === material._id ? (
-                          <FiChevronUp />
-                        ) : (
-                          <FiChevronDown />
-                        )}
-                      </div>
-
-                      {expandedLesson === material._id && (
-                        <div className="border-t border-gray-200 p-4 bg-gray-50">
-                          <div className="mb-4">
-                            <h4 className="font-medium mb-2">Lesson Content</h4>
-                            <p className="text-gray-700">
-                              {material.description}
-                            </p>
-                            {material.material && (
-                              <a
-                                href={`${BASE_URL}/uploads/${material.material}`}
-                                download
-                                className="mt-2 inline-block px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm"
-                              >
-                                <FiDownload className="mr-2" /> Download
-                                Materials
-                              </a>
-                            )}
-                          </div>
-
-                          <div className="mt-4 border-t pt-4">
-                            <Link
-                              to={`/student/class/${classId}/${material._id}/practice_with_lesson`}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                            >
-                              <FiCode className="mr-2" />
-                              Start Practice Exercises
-                            </Link>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              {isSectionRestricted("lessons") ? (
+                <div className="p-6 text-center text-gray-500">
+                  <p className="text-lg font-medium mb-4">
+                    This section has been restricted by the instructor.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("classroom_overview")}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    View Classroom Overview
+                  </button>
                 </div>
               ) : (
-                <p className="text-gray-500">No materials available.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === "assignments" &&
-            !isSectionRestricted("assignments") && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Assignments</h2>
-                <div className="mb-4">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-1"
-                  >
-                    <option value="all">All</option>
-                    <option value="not yet">Not Yet</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-
-                {filterAssignments().length > 0 ? (
-                  <div className="space-y-3">
-                    {filterAssignments().map((assignment) => (
-                      <div
-                        key={assignment._id}
-                        className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
-                      >
+                <>
+                  <h2 className="text-xl font-semibold">Class Materials</h2>
+                  {classroom.materials?.length > 0 ? (
+                    <div className="space-y-3">
+                      {classroom.materials.map((material) => (
                         <div
-                          className="p-4 cursor-pointer hover:bg-gray-50"
-                          onClick={() =>
-                            setExpandedAssignment(
-                              expandedAssignment === assignment._id
-                                ? null
-                                : assignment._id
-                            )
-                          }
+                          key={material._id}
+                          className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow overflow-hidden"
                         >
-                          <div className="flex justify-between items-center">
+                          <div
+                            className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
+                            onClick={() =>
+                              setExpandedLesson(
+                                expandedLesson === material._id
+                                  ? null
+                                  : material._id
+                              )
+                            }
+                          >
                             <div>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs capitalize ${
-                                  assignment.type === "quiz"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : assignment.type === "exam"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
-                              >
-                                {assignment.type} -{" "}
-                                {assignment.grading_breakdown}
-                              </span>
-                              <h3 className="font-medium mt-2">
-                                {assignment.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {assignment.description}
-                              </p>
-                              <div className="flex items-center text-sm text-gray-500 mt-2">
-                                <FiClock className="mr-1" />
-                                <span>
-                                  Time: {assignment.submission_time || 0} mins
+                              <h3 className="font-medium">{material.title}</h3>
+                              <div className="flex items-center text-sm text-gray-500 mt-1">
+                                <span className="bg-fuchsia-100 text-fuchsia-800 px-2 py-1 rounded-full text-xs mr-2 capitalize">
+                                  Material
                                 </span>
-                                <span className="mx-2">•</span>
                                 <span>
                                   Posted:{" "}
                                   {new Date(
-                                    assignment.created_at
+                                    material.created_at
                                   ).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
-                            {expandedAssignment === assignment._id ? (
+                            {expandedLesson === material._id ? (
                               <FiChevronUp />
                             ) : (
                               <FiChevronDown />
                             )}
                           </div>
+
+                          {expandedLesson === material._id && (
+                            <div className="border-t border-gray-200 p-4 bg-gray-50">
+                              <div className="mb-4">
+                                <h4 className="font-medium mb-2">
+                                  Lesson Content
+                                </h4>
+                                <p className="text-gray-700">
+                                  {material.description}
+                                </p>
+                                {material.material && (
+                                  <a
+                                    href={`${BASE_URL}/uploads/${material.material}`}
+                                    download
+                                    className="mt-2 inline-block px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm"
+                                  >
+                                    <FiDownload className="mr-2" /> Download
+                                    Materials
+                                  </a>
+                                )}
+                              </div>
+
+                              <div className="mt-4 border-t pt-4">
+                                <Link
+                                  to={`/student/class/${classId}/${material._id}/practice_with_lesson`}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                >
+                                  <FiCode className="mr-2" />
+                                  Start Practice Exercises
+                                </Link>
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No materials available.</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
-                        {expandedAssignment === assignment._id && (
-                          <div className="border-t border-gray-200 p-4 bg-gray-50">
-                            <Link
-                              to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                            >
-                              <FiCode className="mr-2" />
-                              {assignment.type === "quiz"
-                                ? "Take Quiz"
-                                : assignment.type === "exam"
-                                ? "Take Exam"
-                                : "Take Activity"}
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No assignments available.</p>
-                )}
-              </div>
-            )}
-
-          {activeTab === "grades" && !isSectionRestricted("grades") && (
+          {activeTab === "assignments" && (
             <div className="space-y-4">
-              <div className="bg-white p-6 rounded shadow-md">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Your Grades
-                </h2>
-                {grades.student_grade ? (
-                  <div className="space-y-2 text-lg font-semibold text-gray-700">
-                    <div>
-                      📘 Quiz: {grades.quiz?.earnedPoints || 0}/
-                      {grades.quiz?.totalPoints || 0} = {grades.quiz?.quiz || 0}
-                      /{classroom.classroom?.grading_system?.quiz || 0}
-                    </div>
-                    <div>
-                      🎯 Activity: {grades.activity?.earnedPoints || 0}/
-                      {grades.activity?.totalPoints || 0} ={" "}
-                      {grades.activity?.activity || 0}/
-                      {classroom.classroom?.grading_system?.activity || 0}
-                    </div>
-                    <div>
-                      📝 Midterm: {grades.midterm?.earnedPoints || 0}/
-                      {grades.midterm?.totalPoints || 0} ={" "}
-                      {grades.midterm?.midterm || 0}/
-                      {classroom.classroom?.grading_system?.midterm || 0}
-                    </div>
-                    <div>
-                      📚 Final: {grades.final?.earnedPoints || 0}/
-                      {grades.final?.totalPoints || 0} ={" "}
-                      {grades.final?.final || 0}/
-                      {classroom.classroom?.grading_system?.final || 0}
-                    </div>
-                    <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                      🔢 Total: {grades.student_grade?.grade || 0}/100
-                    </div>
+              {isSectionRestricted("assignments") ? (
+                <div className="p-6 text-center text-gray-500">
+                  <p className="text-lg font-medium mb-4">
+                    This section has been restricted by the instructor.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("classroom_overview")}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    View Classroom Overview
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold">Assignments</h2>
+                  <div className="mb-4">
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="border border-gray-300 rounded-md px-3 py-1"
+                    >
+                      <option value="all">All</option>
+                      <option value="not yet">Not Yet</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
+                    </select>
                   </div>
-                ) : (
-                  <p className="text-gray-500">No grades available yet.</p>
-                )}
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Title
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {answers.length > 0 ? (
-                      answers
-                        .filter((a) => a.submitted_at)
-                        .map((answer) => {
-                          const assignment =
-                            answer.quiz || answer.exam || answer.activity;
-                          return (
-                            <tr key={answer._id}>
-                              <td className="px-4 py-4 whitespace-nowrap">
+                  {filterAssignments().length > 0 ? (
+                    <div className="space-y-3">
+                      {filterAssignments().map((assignment) => (
+                        <div
+                          key={assignment._id}
+                          className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                        >
+                          <div
+                            className="p-4 cursor-pointer hover:bg-gray-50"
+                            onClick={() =>
+                              setExpandedAssignment(
+                                expandedAssignment === assignment._id
+                                  ? null
+                                  : assignment._id
+                              )
+                            }
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
                                 <span
-                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                  className={`px-2 py-1 rounded-full text-xs capitalize ${
                                     assignment.type === "quiz"
                                       ? "bg-yellow-100 text-yellow-800"
                                       : assignment.type === "exam"
@@ -576,53 +493,216 @@ const ClassDetailPage = () => {
                                       : "bg-blue-100 text-blue-800"
                                   }`}
                                 >
-                                  {assignment.type.toUpperCase()}
+                                  {assignment.type} -{" "}
+                                  {assignment.grading_breakdown}
                                 </span>
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap font-medium">
-                                {assignment.title}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                {(answer.answers || []).reduce(
-                                  (acc, q) => acc + (q.points || 0),
-                                  0
-                                )}
-                                /
-                                {(assignment.question || []).reduce(
-                                  (acc, q) => acc + (q.points || 0),
-                                  0
-                                )}
-                              </td>
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                <Link
-                                  to={`/student/class/${classId}/${assignment._id}/${assignment.type}/view_answer`}
-                                  className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
-                                >
-                                  View
-                                </Link>
-                              </td>
-                            </tr>
-                          );
-                        })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          className="px-4 py-4 text-center text-gray-500"
-                        >
-                          No submitted assignments yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                                <h3 className="font-medium mt-2">
+                                  {assignment.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {assignment.description}
+                                </p>
+                                <div className="flex items-center text-sm text-gray-500 mt-2">
+                                  <FiClock className="mr-1" />
+                                  <span>
+                                    Time: {assignment.submission_time || 0} mins
+                                  </span>
+                                  <span className="mx-2">•</span>
+                                  <span>
+                                    Posted:{" "}
+                                    {new Date(
+                                      assignment.created_at
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                              {expandedAssignment === assignment._id ? (
+                                <FiChevronUp />
+                              ) : (
+                                <FiChevronDown />
+                              )}
+                            </div>
+                          </div>
+
+                          {expandedAssignment === assignment._id && (
+                            <div className="border-t border-gray-200 p-4 bg-gray-50">
+                              <Link
+                                to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                              >
+                                <FiCode className="mr-2" />
+                                {assignment.type === "quiz"
+                                  ? "Take Quiz"
+                                  : assignment.type === "exam"
+                                  ? "Take Exam"
+                                  : "Take Activity"}
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No assignments available.</p>
+                  )}
+                </>
+              )}
             </div>
           )}
 
-          {activeTab === "practice_with_ai" &&
-            !isSectionRestricted("practice") && (
-              <div className="space-y-6">
+          {activeTab === "grades" && (
+            <div className="space-y-4">
+              {isSectionRestricted("grades") ? (
+                <div className="p-6 text-center text-gray-500">
+                  <p className="text-lg font-medium mb-4">
+                    This section has been restricted by the instructor.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("classroom_overview")}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    View Classroom Overview
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-white p-6 rounded shadow-md">
+                    <h2 className="text-xl font-bold mb-4 text-gray-800">
+                      Your Grades
+                    </h2>
+                    {grades.student_grade ? (
+                      <div className="space-y-2 text-lg font-semibold text-gray-700">
+                        <div>
+                          📘 Quiz: {grades.quiz?.earnedPoints || 0}/
+                          {grades.quiz?.totalPoints || 0} ={" "}
+                          {grades.quiz?.quiz || 0}/
+                          {classroom.classroom?.grading_system?.quiz || 0}
+                        </div>
+                        <div>
+                          🎯 Activity: {grades.activity?.earnedPoints || 0}/
+                          {grades.activity?.totalPoints || 0} ={" "}
+                          {grades.activity?.activity || 0}/
+                          {classroom.classroom?.grading_system?.activity || 0}
+                        </div>
+                        <div>
+                          📝 Midterm: {grades.midterm?.earnedPoints || 0}/
+                          {grades.midterm?.totalPoints || 0} ={" "}
+                          {grades.midterm?.midterm || 0}/
+                          {classroom.classroom?.grading_system?.midterm || 0}
+                        </div>
+                        <div>
+                          📚 Final: {grades.final?.earnedPoints || 0}/
+                          {grades.final?.totalPoints || 0} ={" "}
+                          {grades.final?.final || 0}/
+                          {classroom.classroom?.grading_system?.final || 0}
+                        </div>
+                        <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
+                          🔢 Total: {grades.student_grade?.grade || 0}/100
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No grades available yet.</p>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Score
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {answers.length > 0 ? (
+                          answers
+                            .filter((a) => a.submitted_at)
+                            .map((answer) => {
+                              const assignment =
+                                answer.quiz || answer.exam || answer.activity;
+                              return (
+                                <tr key={answer._id}>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                        assignment.type === "quiz"
+                                          ? "bg-yellow-100 text-yellow-800"
+                                          : assignment.type === "exam"
+                                          ? "bg-green-100 text-green-800"
+                                          : "bg-blue-100 text-blue-800"
+                                      }`}
+                                    >
+                                      {assignment.type.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap font-medium">
+                                    {assignment.title}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    {(answer.answers || []).reduce(
+                                      (acc, q) => acc + (q.points || 0),
+                                      0
+                                    )}
+                                    /
+                                    {(assignment.question || []).reduce(
+                                      (acc, q) => acc + (q.points || 0),
+                                      0
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap">
+                                    <Link
+                                      to={`/student/class/${classId}/${assignment._id}/${assignment.type}/view_answer`}
+                                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                                    >
+                                      View
+                                    </Link>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="px-4 py-4 text-center text-gray-500"
+                            >
+                              No submitted assignments yet
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {activeTab === "practice_with_ai" && (
+            <div className="space-y-6">
+              {isSectionRestricted("practice") ? (
+                <div className="p-6 text-center text-gray-500">
+                  <p className="text-lg font-medium mb-4">
+                    This section has been restricted by the instructor.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("classroom_overview")}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    View Classroom Overview
+                  </button>
+                </div>
+              ) : (
                 <div className="w-full">
                   <Link to={`/student/class/${classId}/practice_with_ai`}>
                     <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium w-full py-2 px-4 rounded">
@@ -630,8 +710,9 @@ const ClassDetailPage = () => {
                     </button>
                   </Link>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
           {activeTab === "classroom_overview" && (
             <div className="space-y-6">

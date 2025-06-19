@@ -43,12 +43,11 @@ import ViewAssignmentAnswerPage from "./pages/student/ViewAssignmentAnswerPage";
 import ActivityAnswerPage from "./pages/student/ActivityAnswerPage";
 import GradesPage from "./pages/student/GradesPage";
 
-
-
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import ArchivePage from "./pages/instructor/ArchivePage";
 import Students from "./pages/admin/Students";
+import Classroom from "./pages/admin/Classrooms";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -113,6 +112,7 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="instructors" element={<Instructors />} />
             <Route path="students" element={<Students />} />
+            <Route path="classrooms" element={<Classroom />} />
             <Route path="settings" element={<AccountSettings />} />
             <Route path="admins" element={<AdminsManagement />} />
           </Route>
@@ -161,7 +161,10 @@ function App() {
               path="class/:classId/:assignmentId/:type/view_answer"
               element={<ViewAssignmentAnswerPage />}
             />
-            <Route path="class/:classId/practice_with_ai" element={<PracticePage />} />
+            <Route
+              path="class/:classId/practice_with_ai"
+              element={<PracticePage />}
+            />
             <Route
               path="class/:classId/:lessonId/practice_with_lesson"
               element={<LessonPracticePage />}
@@ -175,7 +178,6 @@ function App() {
               path="class/:classId/:lessonId/activity/answer"
               element={<ActivityAnswerPage />}
             />
-
 
             <Route path="grades" element={<GradesPage />} />
             <Route path="settings" element={<AccountSettings />} />

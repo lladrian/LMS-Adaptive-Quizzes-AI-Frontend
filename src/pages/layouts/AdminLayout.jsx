@@ -23,7 +23,9 @@ const AdminLayout = () => {
     { path: "/admin/instructors", icon: FiUsers, label: "Instructors" },
     { path: "/admin/students", icon: FiUsers, label: "Students" },
     { path: "/admin/admins", icon: FiUsers, label: "Admins" },
-/*     { path: "/admin/settings", icon: FiSettings, label: "Settings" }, */
+    { path: "/admin/classrooms", icon: FiBook, label: "Classrooms" }, // 👈 Added this line
+
+    /*     { path: "/admin/settings", icon: FiSettings, label: "Settings" }, */
   ];
 
   const handleLogout = () => {

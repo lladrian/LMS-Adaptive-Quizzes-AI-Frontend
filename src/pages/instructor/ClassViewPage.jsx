@@ -33,6 +33,7 @@ import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import ActivityDeletionModal from "../../components/ActivityDeletionModal";
 import AddStudentsModal from "../../components/AddStudentsModal";
 import EditActivityModal from "../../components/EditActivityModal";
+import SectionRestrictionModal from "../../components/SectionRestrictionModal";
 
 const ClassDetailPage = () => {
   const { classId } = useParams();
@@ -61,6 +62,14 @@ const ClassDetailPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
   const [activityFilter, setActivityFilter] = useState("all");
+
+  // Available sections for instructors
+  const availableSections = ["lessons", "assignments", "grades", "practice"];
+
+  // Check if a section is restricted
+  const isSectionRestricted = (section) => {
+    return ClassroomData.classroom?.restricted_sections?.includes(section);
+  };
 
   const calculateActivityPoints = (activity) => {
     if (activity.points !== undefined && activity.points !== null) {
@@ -145,12 +154,11 @@ const ClassDetailPage = () => {
       toast.error("An error occurred while removing student");
     }
   };
-
   const handleRestrictSections = async (sections) => {
     try {
       const response = await restrictSections(classId, sections);
       if (response.success) {
-        toast.success("Section restrictions updated successfully");
+        // Remove the toast.success() call from here
         setClassroomData((prev) => ({
           ...prev,
           classroom: {
@@ -415,32 +423,44 @@ const ClassDetailPage = () => {
             <button
               onClick={() => setActiveTab("students")}
               className={`px-6 py-3 font-medium ${
-                activeTab === "students"
+                activeTab === "students" && !isSectionRestricted("students")
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
+              disabled={isSectionRestricted("students")}
             >
               Students
+              {isSectionRestricted("students") && (
+                <FiLock className="ml-2 inline text-gray-400" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab("materials")}
               className={`px-6 py-3 font-medium ${
-                activeTab === "materials"
+                activeTab === "materials" && !isSectionRestricted("materials")
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
+              disabled={isSectionRestricted("materials")}
             >
               Materials
+              {isSectionRestricted("materials") && (
+                <FiLock className="ml-2 inline text-gray-400" />
+              )}
             </button>
             <button
-              onClick={() => setActiveTab("assignments")}
+              onClick={() => setActiveTab("activities")}
               className={`px-6 py-3 font-medium ${
-                activeTab === "assignments"
+                activeTab === "activities" && !isSectionRestricted("activities")
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
+              disabled={isSectionRestricted("activities")}
             >
               Activities
+              {isSectionRestricted("activities") && (
+                <FiLock className="ml-2 inline text-gray-400" />
+              )}
             </button>
           </div>
         </div>
@@ -536,7 +556,7 @@ const ClassDetailPage = () => {
           </div>
         )}
 
-        {activeTab === "students" && (
+        {activeTab === "students" && !isSectionRestricted("students") && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Students</h3>
@@ -895,7 +915,7 @@ const ClassDetailPage = () => {
           </div>
         )}
 
-        {activeTab === "materials" && (
+        {activeTab === "materials" && !isSectionRestricted("materials") && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Materials</h3>
@@ -1002,7 +1022,7 @@ const ClassDetailPage = () => {
           </div>
         )}
 
-        {activeTab === "assignments" && (
+        {activeTab === "activities" && !isSectionRestricted("activities") && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Class Activities</h3>
@@ -1095,6 +1115,21 @@ const ClassDetailPage = () => {
             </div>
           </div>
         )}
+
+        {/* Show message when section is restricted */}
+        {(activeTab === "students" && isSectionRestricted("students")) ||
+        (activeTab === "materials" && isSectionRestricted("materials")) ||
+        (activeTab === "assignments" && isSectionRestricted("assignments")) ? (
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-200">
+            <FiLock className="mx-auto text-4xl text-gray-400 mb-4" />
+            <h3 className="text-xl font-medium text-gray-700 mb-2">
+              This section is restricted
+            </h3>
+            <p className="text-gray-500">
+              Students cannot access this section of the classroom.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {showEditClassModal && classData && (
@@ -1148,62 +1183,12 @@ const ClassDetailPage = () => {
       )}
 
       {showRestrictModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">
-              Restrict Classroom Sections
-            </h3>
-            <p className="mb-4">Select which sections students can access:</p>
-
-            <div className="space-y-2">
-              {["lessons", "assignments", "grades", "practice"].map(
-                (section) => (
-                  <div key={section} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={section}
-                      checked={!restrictedSections.includes(section)}
-                      onChange={() => {
-                        if (restrictedSections.includes(section)) {
-                          setRestrictedSections(
-                            restrictedSections.filter((s) => s !== section)
-                          );
-                        } else {
-                          setRestrictedSections([
-                            ...restrictedSections,
-                            section,
-                          ]);
-                        }
-                      }}
-                      className="cursor-pointer h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label
-                      htmlFor={section}
-                      className="ml-2 block text-sm text-gray-900 capitalize"
-                    >
-                      {section}
-                    </label>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowRestrictModal(false)}
-                className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleRestrictSections(restrictedSections)}
-                className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Save Restrictions
-              </button>
-            </div>
-          </div>
-        </div>
+        <SectionRestrictionModal
+          classroom={ClassroomData.classroom}
+          onClose={() => setShowRestrictModal(false)}
+          onUpdate={handleRestrictSections}
+          availableSections={availableSections}
+        />
       )}
     </>
   );
