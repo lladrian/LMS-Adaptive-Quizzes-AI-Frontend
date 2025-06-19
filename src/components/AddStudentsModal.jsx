@@ -139,7 +139,9 @@ const AddStudentsModal = ({ isOpen, onClose, classId, onSuccess }) => {
                         ? "border-indigo-500 bg-indigo-50"
                         : "border-gray-200 hover:bg-gray-50"
                     }`}
-                    onClick={() => toggleStudentSelection(student.student_id_number)}
+                    onClick={() =>
+                      toggleStudentSelection(student.student_id_number)
+                    }
                   >
                     <div>
                       <h4 className="font-medium">{student.fullname}</h4>

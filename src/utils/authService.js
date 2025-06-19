@@ -1050,6 +1050,22 @@ export const addMaterial = async (file, classroom_id, description, title) => {
     };
   }
 };
+export const getAllMaterials = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/materials/get_all_materials`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching materials",
+    };
+  }
+};
 
 export const specificActivity = async (activity_id) => {
   try {
@@ -1375,6 +1391,27 @@ export const allStudentMissingAnswerSpecificActivity = async (activity_id) => {
     };
   }
 };
+export const allStudentMissingAnswerSpecificAssignment = async (
+  assignment_id
+) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_assignments/get_all_student_missing_answer_specific_assignment/${assignment_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        "Failed to get the students missing exam answers",
+    };
+  }
+};
 
 export const allStudentMissingAnswerSpecificExam = async (examId) => {
   try {
@@ -1400,6 +1437,23 @@ export const allAnswerSpecificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
       `${BASE_URL}/answer_activities/get_all_answer_specific_activity/${activity_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to get the quiz answers",
+    };
+  }
+};
+export const allAnswerSpecificAssignment = async (assignment_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/answer_assignments/get_all_answer_specific_assignment/${assignment_id}`
     );
 
     return {

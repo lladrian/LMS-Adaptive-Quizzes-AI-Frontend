@@ -18,10 +18,12 @@ import {
   allAnswerSpecificQuiz,
   allAnswerSpecificExam,
   allAnswerSpecificActivity,
+  allAnswerSpecificAssignment,
   updateActivity,
   allStudentMissingAnswerSpecificQuiz,
   allStudentMissingAnswerSpecificExam,
   allStudentMissingAnswerSpecificActivity,
+  allStudentMissingAnswerSpecificAssignment,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
@@ -217,6 +219,9 @@ const AssignmentDetailPage = () => {
       const answersActivityResult = await allAnswerSpecificActivity(
         assignmentId
       );
+      const answersAssignmentResult = await allAnswerSpecificAssignment(
+        assignmentId
+      );
 
       const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(
         assignmentId
@@ -226,6 +231,8 @@ const AssignmentDetailPage = () => {
       );
       const missingActivityResult =
         await allStudentMissingAnswerSpecificActivity(assignmentId);
+      const missingAssignmentResult =
+        await allStudentMissingAnswerSpecificAssignment(assignmentId);
 
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
@@ -246,7 +253,17 @@ const AssignmentDetailPage = () => {
           type: "activity",
         }));
 
-        const combinedActivities = [...quizzes, ...exams, ...activities];
+        const assignments = (classroom.assignments || []).map((e) => ({
+          ...e,
+          type: "assignment",
+        }));
+
+        const combinedActivities = [
+          ...quizzes,
+          ...exams,
+          ...activities,
+          ...assignments,
+        ];
 
         const activity = combinedActivities.find(
           (activity) => activity._id === assignmentId
@@ -254,50 +271,49 @@ const AssignmentDetailPage = () => {
         setActivityData(activity || null);
       }
 
-      if (
-        answersQuizResult.success ||
-        answersExamResult.success ||
-        answersActivityResult.success
-      ) {
-        const responseData =
-          answersQuizResult.data ||
-          answersExamResult.data ||
-          answersActivityResult.data;
-        let studentAnswers = [];
+      // Handle all types of answers
+      const responseData =
+        answersQuizResult.data ||
+        answersExamResult.data ||
+        answersActivityResult.data ||
+        answersAssignmentResult.data;
 
-        if (Array.isArray(responseData)) {
-          studentAnswers = responseData;
-        } else if (Array.isArray(responseData.data)) {
-          studentAnswers = responseData.data;
-        } else if (Array.isArray(responseData.answers)) {
-          studentAnswers = responseData.answers;
-        }
+      let studentAnswers = [];
 
-        setSubmissions(
-          studentAnswers.map((answer) => ({
-            id: answer._id,
-            first_name: answer.student?.first_name || "",
-            middle_name: answer.student?.middle_name || "",
-            last_name: answer.student?.last_name || "",
-            email: answer.student?.email || "No email",
-            submitted: answer.submitted_at
-              ? new Date(answer.submitted_at).toLocaleString()
-              : "Not submitted",
-            status: answer.submitted_at ? "submitted" : "missing",
-            grade: answer.total_score || "Not graded",
-            answers: answer.answers || [],
-            total_score: answer.total_score || 0,
-          }))
-        );
+      if (Array.isArray(responseData)) {
+        studentAnswers = responseData;
+      } else if (responseData && Array.isArray(responseData.data)) {
+        studentAnswers = responseData.data;
+      } else if (responseData && Array.isArray(responseData.answers)) {
+        studentAnswers = responseData.answers;
       }
 
-      if (missingQuizResult.success) {
-        setMissingStudents(missingQuizResult.data.data || []);
-      } else if (missingExamResult.success) {
-        setMissingStudents(missingExamResult.data.data || []);
-      } else if (missingActivityResult.success) {
-        setMissingStudents(missingActivityResult.data.data || []);
-      }
+      setSubmissions(
+        studentAnswers.map((answer) => ({
+          id: answer._id,
+          first_name: answer.student?.first_name || "",
+          middle_name: answer.student?.middle_name || "",
+          last_name: answer.student?.last_name || "",
+          email: answer.student?.email || "No email",
+          submitted: answer.submitted_at
+            ? new Date(answer.submitted_at).toLocaleString()
+            : "Not submitted",
+          status: answer.submitted_at ? "submitted" : "missing",
+          grade: answer.total_score || "Not graded",
+          answers: answer.answers || [],
+          total_score: answer.total_score || 0,
+        }))
+      );
+
+      // Handle missing students for all types
+      const missingStudentsData =
+        missingQuizResult.data?.data ||
+        missingExamResult.data?.data ||
+        missingActivityResult.data?.data ||
+        missingAssignmentResult.data?.data ||
+        [];
+
+      setMissingStudents(missingStudentsData);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch classroom or answers");

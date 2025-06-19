@@ -263,8 +263,8 @@ const CreateAssignmentModal = ({
       onClose();
       setCurrentStep(1);
 
-      if (onSuccess && result.data) {
-        onSuccess();
+      if (result.data) {
+        onSuccess(result.data.data); // Make sure this matches your API response structure
       }
     } catch (err) {
       console.error("Creation error:", err);

@@ -214,6 +214,9 @@ const ClassDetailPage = () => {
       } finally {
         setShowRemoveStudentModal(false);
         setStudentToRemove(null);
+        handleUploadSuccess();
+        closeModalActivities();
+        closeModal();
       }
     }
   };
@@ -301,6 +304,7 @@ const ClassDetailPage = () => {
 
   const handleUploadSuccess = () => {
     fetchClasses();
+    allStudentData();
   };
 
   const handleClassUpdate = useCallback((updatedClass) => {
@@ -909,7 +913,7 @@ const ClassDetailPage = () => {
                 isOpen={showAddStudentsModal}
                 onClose={() => setShowAddStudentsModal(false)}
                 classId={classId}
-                onSuccess={fetchClasses}
+                onSuccess={handleUploadSuccess}
               />
             )}
           </div>
