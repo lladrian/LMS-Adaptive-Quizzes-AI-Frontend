@@ -9,26 +9,6 @@ const EditClassModal = ({
   data,
   onUpdate,
 }) => {
-  // List of programming languages
-  // const programmingLanguages = [
-  //   { value: "python", label: "Python" },
-  //   { value: "javascript", label: "JavaScript" },
-  //   { value: "java", label: "Java" },
-  //   { value: "c", label: "C" },
-  //   { value: "cpp", label: "C++" },
-  //   { value: "csharp", label: "C#" },
-  //   { value: "php", label: "PHP" },
-  //   { value: "ruby", label: "Ruby" },
-  //   { value: "swift", label: "Swift" },
-  //   { value: "kotlin", label: "Kotlin" },
-  //   { value: "go", label: "Go" },
-  //   { value: "rust", label: "Rust" },
-  //   { value: "typescript", label: "TypeScript" },
-  //   { value: "r", label: "R" },
-  //   { value: "scala", label: "Scala" },
-  //   { value: "other", label: "Other" },
-  // ];
-
   const programmingLanguages = [
     { value: "python", label: "Python" },
     { value: "java", label: "Java" },
@@ -44,6 +24,7 @@ const EditClassModal = ({
       quiz: "",
       midterm: "",
       final: "",
+      assignment: "", // Add this line
     },
   });
 
@@ -61,6 +42,7 @@ const EditClassModal = ({
           quiz: "",
           midterm: "",
           final: "",
+          assignment: "", // Add this line
         },
       });
     }
@@ -83,9 +65,14 @@ const EditClassModal = ({
   };
 
   const validateGradingSystem = () => {
-    const { activity, quiz, midterm, final } = formData.grading_system;
+    const { activity, quiz, midterm, final, assignment } =
+      formData.grading_system;
     const total =
-      Number(activity) + Number(quiz) + Number(midterm) + Number(final);
+      Number(activity) +
+      Number(quiz) +
+      Number(midterm) +
+      Number(final) +
+      Number(assignment);
     return total === 100;
   };
 
@@ -273,6 +260,21 @@ const EditClassModal = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Assignment (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="assignment"
+                    value={formData.grading_system.assignment}
+                    onChange={handleGradingChange}
+                    className="px-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    min="0"
+                    max="100"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Midterm (%)
                   </label>
                   <input
@@ -306,6 +308,7 @@ const EditClassModal = ({
                 Total:{" "}
                 {Number(formData.grading_system.activity || 0) +
                   Number(formData.grading_system.quiz || 0) +
+                  Number(formData.grading_system.assignment || 0) + // Add this line
                   Number(formData.grading_system.midterm || 0) +
                   Number(formData.grading_system.final || 0)}
                 %

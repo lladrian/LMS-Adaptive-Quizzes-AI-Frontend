@@ -23,6 +23,7 @@ import {
   allAnswerActivitySpecificStudentSpecificClassroom,
   leaveClassroom,
   computeStudentGrade,
+  allAnswerAssignmentSpecificStudentSpecificClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import Modal from "../../components/Modal";
@@ -66,17 +67,6 @@ const ClassDetailPage = () => {
   const totalLessonPages = Math.ceil(
     (classroom.materials?.length || 0) / itemsPerPage
   );
-
-  // Calculate pagination for assignments
-  /*  const assignmentStartIndex = (currentPage.assignments - 1) * itemsPerPage;
-  const assignmentEndIndex = assignmentStartIndex + itemsPerPage;
-  const currentAssignments = filterAssignments().slice(
-    assignmentStartIndex,
-    assignmentEndIndex
-  ); */
-  /*   const totalAssignmentPages = Math.ceil(
-    filterAssignments().length / itemsPerPage
-  ); */
 
   // Pagination handlers
   const handlePageChange = (tab, page) => {
@@ -129,14 +119,21 @@ const ClassDetailPage = () => {
   const fetchSpecificClassroom = async () => {
     setIsLoading(true);
     try {
-      const [classResult, examResult, quizResult, activityResult, gradeResult] =
-        await Promise.all([
-          specificClassroom(classId),
-          allAnswerExamSpecificStudentSpecificClassroom(classId, studentId),
-          allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId),
-          allAnswerActivitySpecificStudentSpecificClassroom(classId, studentId),
-          computeStudentGrade(classId, studentId),
-        ]);
+      const [
+        classResult,
+        examResult,
+        quizResult,
+        activityResult,
+        assignmentResult,
+        gradeResult,
+      ] = await Promise.all([
+        specificClassroom(classId),
+        allAnswerExamSpecificStudentSpecificClassroom(classId, studentId),
+        allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId),
+        allAnswerActivitySpecificStudentSpecificClassroom(classId, studentId),
+        allAnswerAssignmentSpecificStudentSpecificClassroom(classId, studentId),
+        computeStudentGrade(classId, studentId),
+      ]);
 
       if (classResult.success) {
         setClassroom((prev) => ({
@@ -154,12 +151,19 @@ const ClassDetailPage = () => {
         );
       }
 
-      if (examResult.success && quizResult.success && activityResult.success) {
+      // Combine all answers including assignments
+      if (
+        examResult.success &&
+        quizResult.success &&
+        activityResult.success &&
+        assignmentResult.success
+      ) {
         setAnswer(
           [
             ...(examResult.data.data || []),
             ...(quizResult.data.data || []),
             ...(activityResult.data.data || []),
+            ...(assignmentResult.data.data || []),
           ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
         );
       }
@@ -175,7 +179,6 @@ const ClassDetailPage = () => {
     }
   };
 
-  // Move this up before it's used in the pagination calculation
   const filterAssignments = () => {
     return (
       classroom.assignments?.filter((assignment) => {
@@ -183,7 +186,8 @@ const ClassDetailPage = () => {
           (ans) =>
             (ans?.quiz?._id === assignment?._id ||
               ans?.exam?._id === assignment?._id ||
-              ans?.activity?._id === assignment?._id) &&
+              ans?.activity?._id === assignment?._id ||
+              ans?.assignment?._id === assignment?._id) &&
             ans?.submitted_at
         );
 
@@ -191,7 +195,8 @@ const ClassDetailPage = () => {
           (ans) =>
             (ans?.quiz?._id === assignment?._id ||
               ans?.exam?._id === assignment?._id ||
-              ans?.activity?._id === assignment?._id) &&
+              ans?.activity?._id === assignment?._id ||
+              ans?.assignment?._id === assignment?._id) &&
             ans?.opened_at &&
             !ans?.submitted_at
         );
@@ -206,7 +211,6 @@ const ClassDetailPage = () => {
     );
   };
 
-  // Then calculate pagination
   const assignmentStartIndex = (currentPage.assignments - 1) * itemsPerPage;
   const assignmentEndIndex = assignmentStartIndex + itemsPerPage;
   const currentAssignments = filterAssignments().slice(
@@ -487,7 +491,6 @@ const ClassDetailPage = () => {
                     <p className="text-gray-500">No materials available.</p>
                   )}
 
-                  {/* Lessons Pagination */}
                   {totalLessonPages > 1 && (
                     <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                       <button
@@ -581,6 +584,8 @@ const ClassDetailPage = () => {
                                       ? "bg-yellow-100 text-yellow-800"
                                       : assignment.type === "exam"
                                       ? "bg-green-100 text-green-800"
+                                      : assignment.type === "assignment"
+                                      ? "bg-purple-100 text-purple-800"
                                       : "bg-blue-100 text-blue-800"
                                   }`}
                                 >
@@ -626,6 +631,8 @@ const ClassDetailPage = () => {
                                   ? "Take Quiz"
                                   : assignment.type === "exam"
                                   ? "Take Exam"
+                                  : assignment.type === "assignment"
+                                  ? "Submit Assignment"
                                   : "Take Activity"}
                               </Link>
                             </div>
@@ -637,7 +644,6 @@ const ClassDetailPage = () => {
                     <p className="text-gray-500">No assignments available.</p>
                   )}
 
-                  {/* Assignments Pagination */}
                   {totalAssignmentPages > 1 && (
                     <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                       <button
@@ -713,19 +719,25 @@ const ClassDetailPage = () => {
                           {classroom.classroom?.grading_system?.quiz || 0}
                         </div>
                         <div>
+                          📝 Assignment: {grades.assignment?.earnedPoints || 0}/
+                          {grades.assignment?.totalPoints || 0} ={" "}
+                          {grades.assignment?.assignment || 0}/
+                          {classroom.classroom?.grading_system?.assignment || 0}
+                        </div>
+                        <div>
                           🎯 Activity: {grades.activity?.earnedPoints || 0}/
                           {grades.activity?.totalPoints || 0} ={" "}
                           {grades.activity?.activity || 0}/
                           {classroom.classroom?.grading_system?.activity || 0}
                         </div>
                         <div>
-                          📝 Midterm: {grades.midterm?.earnedPoints || 0}/
+                          📚 Midterm: {grades.midterm?.earnedPoints || 0}/
                           {grades.midterm?.totalPoints || 0} ={" "}
                           {grades.midterm?.midterm || 0}/
                           {classroom.classroom?.grading_system?.midterm || 0}
                         </div>
                         <div>
-                          📚 Final: {grades.final?.earnedPoints || 0}/
+                          📖 Final: {grades.final?.earnedPoints || 0}/
                           {grades.final?.totalPoints || 0} ={" "}
                           {grades.final?.final || 0}/
                           {classroom.classroom?.grading_system?.final || 0}
@@ -763,7 +775,10 @@ const ClassDetailPage = () => {
                             .filter((a) => a.submitted_at)
                             .map((answer) => {
                               const assignment =
-                                answer.quiz || answer.exam || answer.activity;
+                                answer.quiz ||
+                                answer.exam ||
+                                answer.activity ||
+                                answer.assignment;
                               return (
                                 <tr key={answer._id}>
                                   <td className="px-4 py-4 whitespace-nowrap">
@@ -773,6 +788,8 @@ const ClassDetailPage = () => {
                                           ? "bg-yellow-100 text-yellow-800"
                                           : assignment.type === "exam"
                                           ? "bg-green-100 text-green-800"
+                                          : assignment.type === "assignment"
+                                          ? "bg-purple-100 text-purple-800"
                                           : "bg-blue-100 text-blue-800"
                                       }`}
                                     >
@@ -906,22 +923,21 @@ const ClassDetailPage = () => {
                       📘 Quiz: {classroom.classroom.grading_system.quiz}%
                     </div>
                     <div>
-                      📝 Midterm: {classroom.classroom.grading_system.midterm}%
-                    </div>
-                    <div>
-                      📚 Final: {classroom.classroom.grading_system.final}%
+                      📝 Assignment:{" "}
+                      {classroom.classroom.grading_system.assignment}%
                     </div>
                     <div>
                       🎯 Activity: {classroom.classroom.grading_system.activity}
                       %
                     </div>
+                    <div>
+                      📚 Midterm: {classroom.classroom.grading_system.midterm}%
+                    </div>
+                    <div>
+                      📖 Final: {classroom.classroom.grading_system.final}%
+                    </div>
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                      🔢 Total:{" "}
-                      {Object.values(classroom.classroom.grading_system).reduce(
-                        (a, b) => a + b,
-                        0
-                      )}
-                      %
+                      🔢 Total: 100%
                     </div>
                   </div>
                 ) : (

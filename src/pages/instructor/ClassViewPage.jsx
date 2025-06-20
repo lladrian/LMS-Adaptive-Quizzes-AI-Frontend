@@ -397,6 +397,8 @@ const ClassDetailPage = () => {
 
   const handleViewClick = (student) => {
     setSelectedStudent(student);
+    console.log(student);
+    console.log("!");
     setIsModalOpen(true);
   };
 
@@ -588,17 +590,7 @@ const ClassDetailPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiBook className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {ClassroomData.activities?.length || 0} Activity
-                      {(ClassroomData.activities?.length || 0) !== 1
-                        ? "ies"
-                        : "y"}
-                    </span>
-                  </div>
-                </div>
+
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiFile className="text-indigo-600 mr-2" />
@@ -846,6 +838,7 @@ const ClassDetailPage = () => {
                           to={`/instructor/class/${classId}/activity/${
                             (activity?._id || activity?.activity?._id) ?? ""
                           }`}
+                          className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                         >
                           VISIT{" "}
                           {(
@@ -907,6 +900,20 @@ const ClassDetailPage = () => {
                             {selectedStudent.grades.quiz.quiz}
                           </span>
                           /{selectedStudent.classroom.grading_system.quiz}
+                        </p>
+                      </div>
+                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
+                        <p className="font-semibold capitalize">Assignment:</p>
+                        <p>
+                          {selectedStudent.grades.assignment?.earnedPoints || 0}
+                          /{selectedStudent.grades.assignment?.totalPoints || 0}{" "}
+                          ={" "}
+                          <span className="font-medium text-indigo-600">
+                            {selectedStudent.grades.assignment?.assignment || 0}
+                          </span>
+                          /
+                          {selectedStudent.classroom.grading_system
+                            .assignment || 0}
                         </p>
                       </div>
                       <div className="border p-4 rounded-lg shadow-sm bg-gray-50">

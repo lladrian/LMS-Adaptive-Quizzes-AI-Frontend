@@ -787,6 +787,26 @@ export const allAnswerActivitySpecificStudentSpecificClassroom = async (
     };
   }
 };
+export const allAnswerAssignmentSpecificStudentSpecificClassroom = async (
+  classroom_id,
+  student_id
+) => {
+  try {
+    const response = await axios.get(`
+      
+      ${BASE_URL}/answer_assignments/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get all answers",
+    };
+  }
+};
 
 export const allAnswerExamSpecificStudentSpecificClassroom = async (
   classroom_id,
