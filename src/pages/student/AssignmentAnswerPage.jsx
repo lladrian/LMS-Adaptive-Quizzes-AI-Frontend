@@ -25,18 +25,15 @@ import {
   specificQuizSpecificAnswer,
   specificAssignmentSpecificAnswer,
   specificActivitySpecificAnswer,
-  askAI,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
-// Custom CodeEditor component with copy/paste disabled
 const CodeEditor = ({ value, onChange, language, height }) => {
   const [isEditorReady, setIsEditorReady] = useState(false);
 
   const handleEditorDidMount = (editor, monaco) => {
     setIsEditorReady(true);
 
-    // Disable copy/paste keyboard shortcuts
     editor.onKeyDown((e) => {
       if (
         (e.ctrlKey || e.metaKey) &&
@@ -49,7 +46,6 @@ const CodeEditor = ({ value, onChange, language, height }) => {
       }
     });
 
-    // Disable right-click context menu
     editor.onContextMenu((e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -81,27 +77,23 @@ const AssignmentAnswerPage = () => {
   const { assignmentId, type, classId } = useParams();
   const [started, setStarted] = useState(false);
   const [code, setCode] = useState("");
-  const [compiler, setCompiler] = useState({
-    name: "Python",
-    language: "python",
-    version: "3.10.0",
-    starting_code: "print('Hello, World!')",
-  });
   const [languages, setLanguages] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [answers, setAnswers] = useState([]);
-  const [answersData, setAnswersData] = useState([]);
+  const [answersData, setAnswersData] = useState(null);
   const [correct, setCorrect] = useState([]);
   const [points, setPoints] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState([]);
   const [classroom, setClassroom] = useState(null);
+  const [totalTime, setTotalTime] = useState(0);
+  const [timeExpired, setTimeExpired] = useState(false);
+  const [extendedTime, setExtendedTime] = useState(0);
 
   const studentId = localStorage.getItem("userId");
 
-  // Disable copy/paste for the entire page
   useEffect(() => {
     const handleCopyPaste = (e) => {
       e.preventDefault();
@@ -145,31 +137,57 @@ const AssignmentAnswerPage = () => {
     }
   };
 
+  const formatTime = (seconds) => {
+    const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+    const s = String(seconds % 60).padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  };
+
   useEffect(() => {
-    const countdownFrom =
-      (answersData?.quiz?.submission_time ||
-        answersData?.exam?.submission_time ||
-        answersData?.assignment?.submission_time ||
-        answersData?.activity?.submission_time) * 60;
+    if (!answersData) return;
+
+    const baseTime =
+      answersData?.quiz?.submission_time ||
+      answersData?.exam?.submission_time ||
+      answersData?.assignment?.submission_time ||
+      answersData?.activity?.submission_time ||
+      0;
+
+    const extTime =
+      answersData?.quiz?.extended_minutes ||
+      answersData?.exam?.extended_minutes ||
+      answersData?.assignment?.extended_minutes ||
+      answersData?.activity?.extended_minutes ||
+      0;
+
+    setExtendedTime(extTime);
+    const totalTimeInSeconds = (baseTime + extTime) * 60;
+    setTotalTime(totalTimeInSeconds);
+
     const openedAt = new Date(answersData?.opened_at?.replace(" ", "T"));
 
     const updateCountdown = () => {
       const now = new Date();
       const elapsed = Math.floor((now - openedAt) / 1000);
-      const remaining = countdownFrom - elapsed;
-      setTimeLeft(remaining > 0 ? remaining : 0);
+      const remaining = totalTimeInSeconds - elapsed;
+
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        setTimeExpired(true);
+        if (!answersData.submitted_at) {
+          handleSubmitAll();
+        }
+      } else {
+        setTimeLeft(remaining);
+        setTimeExpired(false);
+      }
     };
 
     updateCountdown();
     const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
   }, [answersData]);
-
-  const formatTime = (seconds) => {
-    const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-    const s = String(seconds % 60).padStart(2, "0");
-    return `${m}:${s}`;
-  };
 
   const fetchLanguages = async (language) => {
     try {
@@ -201,33 +219,28 @@ const AssignmentAnswerPage = () => {
 
   const getAnswers = async (combinedQuestions, answer_id) => {
     try {
+      let result, answers;
       if (type === "quiz") {
-        const result = await specificQuizAnswer(answer_id);
-        const answers = [...(result.data?.data?.answers || [])];
-        functionGetAnswers(answers, combinedQuestions);
-        setStarted(result.success);
+        result = await specificQuizAnswer(answer_id);
+        answers = [...(result.data?.data?.answers || [])];
       } else if (type === "exam") {
-        const result = await specificExamAnswer(answer_id);
-        const answers = [...(result.data?.data?.answers || [])];
-        functionGetAnswers(answers, combinedQuestions);
-        setStarted(result.success);
+        result = await specificExamAnswer(answer_id);
+        answers = [...(result.data?.data?.answers || [])];
       } else if (type === "assignment") {
-        const result = await specificAssignmentAnswer(answer_id);
-        const answers = [...(result.data?.data?.answers || [])];
-        functionGetAnswers(answers, combinedQuestions);
-        setStarted(result.success);
+        result = await specificAssignmentAnswer(answer_id);
+        answers = [...(result.data?.data?.answers || [])];
       } else if (type === "activity") {
-        const result = await specificActivityAnswer(answer_id);
-        const answers = [...(result.data?.data?.answers || [])];
-        functionGetAnswers(answers, combinedQuestions);
-        setStarted(result.success);
+        result = await specificActivityAnswer(answer_id);
+        answers = [...(result.data?.data?.answers || [])];
       }
+      functionGetAnswers(answers, combinedQuestions);
+      setStarted(result.success);
     } catch (error) {
       console.error("Failed to fetch answers:", error);
     }
   };
 
-  const functionGetAnswers = async (answers, combinedQuestions) => {
+  const functionGetAnswers = (answers, combinedQuestions) => {
     const initialAnswers = combinedQuestions.map((question) => {
       const matched = answers.find((ans) => ans.questionId == question._id);
       return matched ? matched.line_of_code : "";
@@ -279,16 +292,13 @@ const AssignmentAnswerPage = () => {
           assignmentId,
           studentId
         );
-     
         combinedQuestions = [...(result.data?.data?.question || [])];
       } else if (type === "activity") {
         result = await specificActivity(assignmentId);
-
         answerResult = await specificActivitySpecificAnswer(
           assignmentId,
           studentId
         );
-
         combinedQuestions = [...(result.data?.data?.question || [])];
       }
 
@@ -430,7 +440,6 @@ const AssignmentAnswerPage = () => {
 
   return (
     <div className="p-6 space-y-4 no-select">
-      {/* Global styles for disabling text selection */}
       <style jsx global>{`
         .no-select {
           user-select: none;
@@ -484,7 +493,6 @@ const AssignmentAnswerPage = () => {
           )}
 
           <div className="flex gap-4">
-            {/* Left Column - Controls */}
             <div className="w-full md:w-1/2 space-y-4">
               {started && (
                 <>
@@ -495,7 +503,7 @@ const AssignmentAnswerPage = () => {
                     <p className="mb-2">{currentQuestion.text}</p>
 
                     {(currentQuestion.answer_type === "programming" ||
-                      answersData.submitted_at) && (
+                      answersData?.submitted_at) && (
                       <div className="mt-2">
                         {currentQuestion.answer_type === "programming" && (
                           <p className="text-sm text-gray-600 font-semibold">
@@ -514,9 +522,29 @@ const AssignmentAnswerPage = () => {
                       </div>
                     )}
 
-                    {!answersData.submitted_at && (
+                    {!answersData?.submitted_at && (
                       <div>
-                        <p>Time Left: {formatTime(timeLeft)}</p>
+                        <p
+                          className={`text-lg font-semibold ${
+                            timeLeft < 300
+                              ? "text-red-600"
+                              : timeLeft < 600
+                              ? "text-yellow-600"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          ⏱️ Time Remaining: {formatTime(timeLeft)}
+                          {extendedTime > 0 && (
+                            <span className="text-xs text-green-600 ml-2">
+                              (+{extendedTime} min extension)
+                            </span>
+                          )}
+                        </p>
+                        {timeExpired && (
+                          <p className="text-red-600 font-semibold mt-1">
+                            Time has expired! Your answers have been submitted.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -541,7 +569,7 @@ const AssignmentAnswerPage = () => {
                 </>
               )}
 
-              {started && (
+              {started && !timeExpired && (
                 <div className="flex justify-between gap-4">
                   <button
                     onClick={handlePrevious}
@@ -565,9 +593,9 @@ const AssignmentAnswerPage = () => {
                   ) : (
                     <button
                       onClick={handleSubmitAll}
-                      disabled={answersData.submitted_at}
+                      disabled={answersData?.submitted_at}
                       className={`w-1/2 px-4 py-3 rounded text-white font-medium ${
-                        answersData.submitted_at
+                        answersData?.submitted_at
                           ? "bg-blue-400 cursor-not-allowed"
                           : "bg-blue-600 hover:bg-blue-700"
                       }`}

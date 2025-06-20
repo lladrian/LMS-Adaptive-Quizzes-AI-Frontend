@@ -54,7 +54,7 @@ const CreateAssignmentModal = ({
     {
       value: "activity",
       label: "Laboratory Activity",
-      description: "Ungraded practice exercise",
+      description: "Graded laboratory task or coding exercise",
     },
     {
       value: "assignment",

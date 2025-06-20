@@ -1794,4 +1794,21 @@ export const promoteUser = async (id, role_name) => {
   }
 };
 
-/* UPDATE PROFILE */
+/* EXTEND TIME */
+export const extendActivityTime = async (activityId, type, minutes) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/extends/${type}/${activityId}/time`,
+      {
+        minutes,
+      }
+    );
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error extending activity time:", error);
+    return { success: false, error: "Failed to extend time" };
+  }
+};

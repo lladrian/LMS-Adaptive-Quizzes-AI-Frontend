@@ -601,7 +601,32 @@ const ClassDetailPage = () => {
                                 <div className="flex items-center text-sm text-gray-500 mt-2">
                                   <FiClock className="mr-1" />
                                   <span>
-                                    Time: {assignment.submission_time || 0} mins
+                                    Time:{" "}
+                                    {/* {assignment.submission_time || 0} */}
+                                    {assignment.submission_time +
+                                      (assignment.extended_minutes || 0) >=
+                                    60
+                                      ? `${Math.floor(
+                                          (assignment.submission_time +
+                                            (assignment.extended_minutes ||
+                                              0)) /
+                                            60
+                                        )}h ${
+                                          (assignment.submission_time +
+                                            (assignment.extended_minutes ||
+                                              0)) %
+                                          60
+                                        }m`
+                                      : `${
+                                          assignment.submission_time +
+                                          (assignment.extended_minutes || 0)
+                                        }m`}
+                                    {assignment.extended_minutes > 0 && (
+                                      <span className="text-green-600 ml-1">
+                                        (+{assignment.extended_minutes}m
+                                        extended)
+                                      </span>
+                                    )}
                                   </span>
                                   <span className="mx-2">•</span>
                                   <span>
@@ -725,7 +750,8 @@ const ClassDetailPage = () => {
                           {classroom.classroom?.grading_system?.assignment || 0}
                         </div>
                         <div>
-                          🎯 Activity: {grades.activity?.earnedPoints || 0}/
+                          🎯 Laboratory Activity:{" "}
+                          {grades.activity?.earnedPoints || 0}/
                           {grades.activity?.totalPoints || 0} ={" "}
                           {grades.activity?.activity || 0}/
                           {classroom.classroom?.grading_system?.activity || 0}

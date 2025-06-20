@@ -12,6 +12,8 @@ import {
   FiHelpCircle,
   FiX,
   FiMail,
+  FiClock,
+  FiLoader,
 } from "react-icons/fi";
 import {
   specificClassroom,
@@ -19,13 +21,14 @@ import {
   allAnswerSpecificExam,
   allAnswerSpecificActivity,
   allAnswerSpecificAssignment,
-  updateActivity,
   allStudentMissingAnswerSpecificQuiz,
   allStudentMissingAnswerSpecificExam,
   allStudentMissingAnswerSpecificActivity,
   allStudentMissingAnswerSpecificAssignment,
+  extendActivityTime,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
+import EditActivityModal from "../../components/EditActivityModal";
 
 const SubmissionDetail = ({ submission, activityData, onClose }) => {
   if (!submission || !activityData) return null;
@@ -203,12 +206,12 @@ const AssignmentDetailPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [activityToEdit, setActivityToEdit] = useState(null);
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [extendMinutes, setExtendMinutes] = useState("");
+  const [isExtending, setIsExtending] = useState(false);
   const [viewFilter, setViewFilter] = useState("all");
   const [currentQuestionPage, setCurrentQuestionPage] = useState(1);
   const questionsPerPage = 5;
-  const questionsPerPageEdit = 1;
-  const [currentPage, setCurrentPage] = useState(0);
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -326,39 +329,33 @@ const AssignmentDetailPage = () => {
     fetchClasses();
   }, [fetchClasses]);
 
-  const handleEditActivity = async () => {
+  const handleExtendTime = async () => {
+    if (!extendMinutes || isNaN(extendMinutes)) {
+      toast.error("Please enter valid minutes");
+      return;
+    }
+
+    setIsExtending(true);
     try {
-      if (!activityToEdit) {
-        toast.error("No activity data to update");
-        return;
-      }
-
-      const payload = {
-        classroom_id: classId,
-        question: activityToEdit.question,
-        time_limit: activityToEdit.submission_time,
-        title: activityToEdit.title,
-        description: activityToEdit.description,
-        grading_breakdown: activityToEdit.grading_breakdown,
-      };
-
-      const result = await updateActivity(
-        activityToEdit._id,
-        activityToEdit.type,
-        payload
+      const result = await extendActivityTime(
+        assignmentId,
+        activityData.type,
+        parseInt(extendMinutes)
       );
 
       if (result.success) {
-        toast.success("Activity updated successfully");
-        setActivityData(activityToEdit);
-        setShowEditModal(false);
-        fetchClasses();
-      } else {
-        toast.error(result.error || "Failed to update activity");
+        toast.success(`Time extended by ${extendMinutes} minutes`);
+        setActivityData((prev) => ({
+          ...prev,
+          extended_minutes: prev.extended_minutes + parseInt(extendMinutes),
+        }));
+        setShowExtendModal(false);
+        setExtendMinutes("");
       }
     } catch (error) {
-      console.error("Error updating activity:", error);
-      toast.error("An error occurred while updating");
+      toast.error(error.message || "Failed to extend time");
+    } finally {
+      setIsExtending(false);
     }
   };
 
@@ -399,13 +396,18 @@ const AssignmentDetailPage = () => {
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => {
-              setActivityToEdit(activityData);
-              setShowEditModal(true);
-            }}
+            onClick={() => setShowEditModal(true)}
             className="cursor-pointer p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+            title="Edit activity"
           >
             <FiEdit2 />
+          </button>
+          <button
+            onClick={() => setShowExtendModal(true)}
+            className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded-lg"
+            title="Extend time"
+          >
+            <FiClock />
           </button>
         </div>
       </div>
@@ -441,15 +443,25 @@ const AssignmentDetailPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center">
-                  <FiCalendar className="text-indigo-600 mr-2" />
+                  <FiClock className="text-indigo-600 mr-2" />
                   <div>
-                    <p className="text-sm text-gray-500">Duration</p>
+                    <p className="text-sm text-gray-500">Time Limit</p>
                     <p className="font-medium">
-                      {activityData.submission_time >= 60
-                        ? `${Math.floor(activityData.submission_time / 60)}h ${
-                            activityData.submission_time % 60
-                          }m`
-                        : `${activityData.submission_time || 0}m`}
+                      {Math.floor(
+                        (activityData.submission_time +
+                          (activityData.extended_minutes || 0)) /
+                          60
+                      )}
+                      h{" "}
+                      {(activityData.submission_time +
+                        (activityData.extended_minutes || 0)) %
+                        60}
+                      m
+                      {activityData.extended_minutes > 0 && (
+                        <span className="text-green-600 text-sm ml-2">
+                          (+{activityData.extended_minutes}m extended)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -757,195 +769,77 @@ const AssignmentDetailPage = () => {
         />
       )}
 
-      {showEditModal && activityToEdit && (
+      {showEditModal && (
+        <EditActivityModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          activity={activityData}
+          onUpdateSuccess={fetchClasses}
+          classId={classId}
+        />
+      )}
+
+      {showExtendModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                Edit {activityToEdit.type}
-              </h3>
+              <h3 className="text-lg font-semibold">Extend Time Limit</h3>
               <button
-                onClick={() => setShowEditModal(false)}
-                className="cursor-pointer text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setShowExtendModal(false);
+                  setExtendMinutes("");
+                }}
+                className="text-gray-500 hover:text-gray-700"
+                disabled={isExtending}
               >
                 <FiX className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={activityToEdit.title}
-                    onChange={(e) =>
-                      setActivityToEdit((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    defaultValue={activityToEdit.description}
-                    onChange={(e) =>
-                      setActivityToEdit((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                    rows="3"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Time Limit (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={activityToEdit.submission_time || 0}
-                    onChange={(e) =>
-                      setActivityToEdit((prev) => ({
-                        ...prev,
-                        submission_time: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
-                </div>
-                {activityToEdit.type && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Questions
-                    </label>
-
-                    {/* Pagination controls */}
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="text-sm text-gray-600">
-                        Showing {currentPage * questionsPerPageEdit + 1}-
-                        {Math.min(
-                          (currentPage + 1) * questionsPerPageEdit,
-                          activityToEdit.question?.length
-                        )}{" "}
-                        of {activityToEdit.question?.length} questions
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() =>
-                            setCurrentPage((prev) => Math.max(prev - 1, 0))
-                          }
-                          disabled={currentPage === 0}
-                          className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() =>
-                            setCurrentPage((prev) =>
-                              (prev + 1) * questionsPerPageEdit <
-                              activityToEdit.question?.length
-                                ? prev + 1
-                                : prev
-                            )
-                          }
-                          disabled={
-                            (currentPage + 1) * questionsPerPageEdit >=
-                            activityToEdit.question?.length
-                          }
-                          className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Paginated questions */}
-                    {activityToEdit.question
-                      ?.slice(
-                        currentPage * questionsPerPageEdit,
-                        (currentPage + 1) * questionsPerPageEdit
-                      )
-                      .map((q, index) => {
-                        const originalIndex =
-                          currentPage * questionsPerPageEdit + index;
-                        return (
-                          <div
-                            key={originalIndex}
-                            className="mb-4 p-4 border border-gray-200 rounded-lg"
-                          >
-                            <div className="flex justify-between mb-2">
-                              <span className="font-medium">
-                                Question {originalIndex + 1}
-                              </span>
-                            </div>
-                            <textarea
-                              defaultValue={q.text}
-                              onChange={(e) => {
-                                const updatedQuestions = [
-                                  ...activityToEdit.question,
-                                ];
-                                updatedQuestions[originalIndex].text =
-                                  e.target.value;
-                                setActivityToEdit((prev) => ({
-                                  ...prev,
-                                  question: updatedQuestions,
-                                }));
-
-                                e.target.style.height = "auto";
-                                e.target.style.height = `${e.target.scrollHeight}px`;
-                              }}
-                              className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2 resize-none overflow-hidden"
-                              rows={6}
-                              style={{ minHeight: "40px" }}
-                            />
-
-                            <div className="flex items-center">
-                              <span className="text-sm text-gray-600 mr-2">
-                                Points:
-                              </span>
-                              <input
-                                type="number"
-                                defaultValue={q.points}
-                                onChange={(e) => {
-                                  const updatedQuestions = [
-                                    ...activityToEdit.question,
-                                  ];
-                                  updatedQuestions[originalIndex].points =
-                                    parseInt(e.target.value);
-                                  setActivityToEdit((prev) => ({
-                                    ...prev,
-                                    question: updatedQuestions,
-                                  }));
-                                }}
-                                className="w-20 border border-gray-300 rounded-md px-3 py-1"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Minutes
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={extendMinutes}
+                  onChange={(e) =>
+                    setExtendMinutes(e.target.value.replace(/\D/g, ""))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Enter minutes to extend"
+                  disabled={isExtending}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current extension: {activityData.extended_minutes || 0}{" "}
+                  minutes
+                </p>
               </div>
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowEditModal(false)}
-                  className="cursor-pointer px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setShowExtendModal(false);
+                    setExtendMinutes("");
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  disabled={isExtending}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleEditActivity}
-                  className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  onClick={handleExtendTime}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center"
+                  disabled={!extendMinutes || isExtending}
                 >
-                  Save Changes
+                  {isExtending ? (
+                    <>
+                      <FiLoader className="animate-spin mr-2" />
+                      Extending...
+                    </>
+                  ) : (
+                    "Extend Time"
+                  )}
                 </button>
               </div>
             </div>

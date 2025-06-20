@@ -917,7 +917,9 @@ const ClassDetailPage = () => {
                         </p>
                       </div>
                       <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">Activity:</p>
+                        <p className="font-semibold capitalize">
+                          Laboratory Activity:
+                        </p>
                         <p>
                           {selectedStudent.grades.activity.earnedPoints}/
                           {selectedStudent.grades.activity.totalPoints} ={" "}
@@ -1214,11 +1216,32 @@ const ClassDetailPage = () => {
                             <strong className="font-medium mr-2">
                               Duration:
                             </strong>
-                            {activity.submission_time >= 60
+                            {/*     {activity.submission_time >= 60
                               ? `${Math.floor(
                                   activity.submission_time / 60
                                 )}h ${activity.submission_time % 60}m`
-                              : `${activity.submission_time}m`}
+                              : `${activity.submission_time}m`} */}
+                            {activity.submission_time +
+                              (activity.extended_minutes || 0) >=
+                            60
+                              ? `${Math.floor(
+                                  (activity.submission_time +
+                                    (activity.extended_minutes || 0)) /
+                                    60
+                                )}h ${
+                                  (activity.submission_time +
+                                    (activity.extended_minutes || 0)) %
+                                  60
+                                }m`
+                              : `${
+                                  activity.submission_time +
+                                  (activity.extended_minutes || 0)
+                                }m`}
+                            {activity.extended_minutes > 0 && (
+                              <span className="text-green-600 ml-1">
+                                (+{activity.extended_minutes}m extended)
+                              </span>
+                            )}
                           </span>
 
                           <span className="ml-2 text-gray-700">
