@@ -12,6 +12,8 @@ import {
   FiX,
   FiLogOut,
   FiLock,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import { BASE_URL } from "../../utils/config";
 import {
@@ -48,6 +50,47 @@ const ClassDetailPage = () => {
   const [copied, setCopied] = useState(false);
   const [restrictedSections, setRestrictedSections] = useState([]);
   const studentId = localStorage.getItem("userId");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState({
+    lessons: 1,
+    assignments: 1,
+  });
+  const itemsPerPage = 5;
+
+  // Calculate pagination for lessons
+  const lessonStartIndex = (currentPage.lessons - 1) * itemsPerPage;
+  const lessonEndIndex = lessonStartIndex + itemsPerPage;
+  const currentLessons =
+    classroom.materials?.slice(lessonStartIndex, lessonEndIndex) || [];
+  const totalLessonPages = Math.ceil(
+    (classroom.materials?.length || 0) / itemsPerPage
+  );
+
+  // Calculate pagination for assignments
+  /*  const assignmentStartIndex = (currentPage.assignments - 1) * itemsPerPage;
+  const assignmentEndIndex = assignmentStartIndex + itemsPerPage;
+  const currentAssignments = filterAssignments().slice(
+    assignmentStartIndex,
+    assignmentEndIndex
+  ); */
+  /*   const totalAssignmentPages = Math.ceil(
+    filterAssignments().length / itemsPerPage
+  ); */
+
+  // Pagination handlers
+  const handlePageChange = (tab, page) => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [tab]: Math.max(
+        1,
+        Math.min(
+          page,
+          tab === "lessons" ? totalLessonPages : totalAssignmentPages
+        )
+      ),
+    }));
+  };
 
   const isSectionRestricted = (section) => {
     return restrictedSections.includes(section);
@@ -103,6 +146,7 @@ const ClassDetailPage = () => {
             ...(classResult.data.data.exams || []),
             ...(classResult.data.data.quizzes || []),
             ...(classResult.data.data.activities || []),
+            ...(classResult.data.data.assignments || []),
           ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
         }));
         setRestrictedSections(
@@ -131,6 +175,7 @@ const ClassDetailPage = () => {
     }
   };
 
+  // Move this up before it's used in the pagination calculation
   const filterAssignments = () => {
     return (
       classroom.assignments?.filter((assignment) => {
@@ -160,6 +205,17 @@ const ClassDetailPage = () => {
       }) || []
     );
   };
+
+  // Then calculate pagination
+  const assignmentStartIndex = (currentPage.assignments - 1) * itemsPerPage;
+  const assignmentEndIndex = assignmentStartIndex + itemsPerPage;
+  const currentAssignments = filterAssignments().slice(
+    assignmentStartIndex,
+    assignmentEndIndex
+  );
+  const totalAssignmentPages = Math.ceil(
+    filterAssignments().length / itemsPerPage
+  );
 
   const handleCopy = () => {
     if (classroom.classroom?.classroom_code) {
@@ -354,9 +410,9 @@ const ClassDetailPage = () => {
               ) : (
                 <>
                   <h2 className="text-xl font-semibold">Class Materials</h2>
-                  {classroom.materials?.length > 0 ? (
+                  {currentLessons.length > 0 ? (
                     <div className="space-y-3">
-                      {classroom.materials.map((material) => (
+                      {currentLessons.map((material) => (
                         <div
                           key={material._id}
                           className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow overflow-hidden"
@@ -430,6 +486,41 @@ const ClassDetailPage = () => {
                   ) : (
                     <p className="text-gray-500">No materials available.</p>
                   )}
+
+                  {/* Lessons Pagination */}
+                  {totalLessonPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                      <button
+                        onClick={() =>
+                          handlePageChange("lessons", currentPage.lessons - 1)
+                        }
+                        disabled={currentPage.lessons === 1}
+                        className={`px-3 py-1 rounded-md ${
+                          currentPage.lessons === 1
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <FiChevronLeft className="inline mr-1" /> Previous
+                      </button>
+                      <span className="text-sm text-gray-700">
+                        Page {currentPage.lessons} of {totalLessonPages}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handlePageChange("lessons", currentPage.lessons + 1)
+                        }
+                        disabled={currentPage.lessons === totalLessonPages}
+                        className={`px-3 py-1 rounded-md ${
+                          currentPage.lessons === totalLessonPages
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        Next <FiChevronRight className="inline ml-1" />
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -465,9 +556,9 @@ const ClassDetailPage = () => {
                     </select>
                   </div>
 
-                  {filterAssignments().length > 0 ? (
+                  {currentAssignments.length > 0 ? (
                     <div className="space-y-3">
-                      {filterAssignments().map((assignment) => (
+                      {currentAssignments.map((assignment) => (
                         <div
                           key={assignment._id}
                           className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -544,6 +635,49 @@ const ClassDetailPage = () => {
                     </div>
                   ) : (
                     <p className="text-gray-500">No assignments available.</p>
+                  )}
+
+                  {/* Assignments Pagination */}
+                  {totalAssignmentPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                      <button
+                        onClick={() =>
+                          handlePageChange(
+                            "assignments",
+                            currentPage.assignments - 1
+                          )
+                        }
+                        disabled={currentPage.assignments === 1}
+                        className={`px-3 py-1 rounded-md ${
+                          currentPage.assignments === 1
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <FiChevronLeft className="inline mr-1" /> Previous
+                      </button>
+                      <span className="text-sm text-gray-700">
+                        Page {currentPage.assignments} of {totalAssignmentPages}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handlePageChange(
+                            "assignments",
+                            currentPage.assignments + 1
+                          )
+                        }
+                        disabled={
+                          currentPage.assignments === totalAssignmentPages
+                        }
+                        className={`px-3 py-1 rounded-md ${
+                          currentPage.assignments === totalAssignmentPages
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        Next <FiChevronRight className="inline ml-1" />
+                      </button>
+                    </div>
                   )}
                 </>
               )}

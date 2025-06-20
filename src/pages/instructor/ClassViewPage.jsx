@@ -12,6 +12,8 @@ import {
   FiClipboard,
   FiFile,
   FiLock,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
@@ -63,6 +65,32 @@ const ClassDetailPage = () => {
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
   const [activityFilter, setActivityFilter] = useState("all");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState({
+    students: 1,
+    materials: 1,
+    activities: 1,
+  });
+  const itemsPerPage = 5;
+
+  // Calculate pagination for students
+  const studentStartIndex = (currentPage.students - 1) * itemsPerPage;
+  const studentEndIndex = studentStartIndex + itemsPerPage;
+  const currentStudents =
+    studentData?.slice(studentStartIndex, studentEndIndex) || [];
+  const totalStudentPages = Math.ceil(
+    (studentData?.length || 0) / itemsPerPage
+  );
+
+  // Calculate pagination for materials
+  const materialStartIndex = (currentPage.materials - 1) * itemsPerPage;
+  const materialEndIndex = materialStartIndex + itemsPerPage;
+  const currentMaterials =
+    ClassroomData.materials?.slice(materialStartIndex, materialEndIndex) || [];
+  const totalMaterialPages = Math.ceil(
+    (ClassroomData.materials?.length || 0) / itemsPerPage
+  );
+
   // Available sections for instructors
   const availableSections = ["lessons", "assignments", "grades", "practice"];
 
@@ -105,6 +133,33 @@ const ClassDetailPage = () => {
   ].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
+
+  // Calculate pagination for activities
+  const activityStartIndex = (currentPage.activities - 1) * itemsPerPage;
+  const activityEndIndex = activityStartIndex + itemsPerPage;
+  const currentActivities = allActivities.slice(
+    activityStartIndex,
+    activityEndIndex
+  );
+  const totalActivityPages = Math.ceil(allActivities.length / itemsPerPage);
+
+  // Pagination handlers
+  const handlePageChange = (tab, page) => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [tab]: Math.max(
+        1,
+        Math.min(
+          page,
+          tab === "students"
+            ? totalStudentPages
+            : tab === "materials"
+            ? totalMaterialPages
+            : totalActivityPages
+        )
+      ),
+    }));
+  };
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -154,11 +209,11 @@ const ClassDetailPage = () => {
       toast.error("An error occurred while removing student");
     }
   };
+
   const handleRestrictSections = async (sections) => {
     try {
       const response = await restrictSections(classId, sections);
       if (response.success) {
-        // Remove the toast.success() call from here
         setClassroomData((prev) => ({
           ...prev,
           classroom: {
@@ -590,8 +645,8 @@ const ClassDetailPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {studentData?.length > 0 ? (
-                    studentData.map((student) => (
+                  {currentStudents.length > 0 ? (
+                    currentStudents.map((student) => (
                       <tr
                         key={student.student._id}
                         className="hover:bg-gray-50"
@@ -641,6 +696,41 @@ const ClassDetailPage = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Student Pagination */}
+            {totalStudentPages > 1 && (
+              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <button
+                  onClick={() =>
+                    handlePageChange("students", currentPage.students - 1)
+                  }
+                  disabled={currentPage.students === 1}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.students === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <FiChevronLeft className="inline mr-1" /> Previous
+                </button>
+                <span className="text-sm text-gray-700">
+                  Page {currentPage.students} of {totalStudentPages}
+                </span>
+                <button
+                  onClick={() =>
+                    handlePageChange("students", currentPage.students + 1)
+                  }
+                  disabled={currentPage.students === totalStudentPages}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.students === totalStudentPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  Next <FiChevronRight className="inline ml-1" />
+                </button>
+              </div>
+            )}
 
             {isModalOpenActivities && selectedStudentActivities && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -725,7 +815,7 @@ const ClassDetailPage = () => {
                             ).toUpperCase()}{" "}
                           </span>
                         </div>
-                        <div className="mb-2">
+                        <div>
                           Grading Breakdown:{" "}
                           <span className="font-normal">
                             {(
@@ -752,12 +842,10 @@ const ClassDetailPage = () => {
                             ).reduce((acc, q) => acc + (q.points || 0), 0)}
                           </div>
                         )}
-
                         <Link
                           to={`/instructor/class/${classId}/activity/${
                             (activity?._id || activity?.activity?._id) ?? ""
                           }`}
-                          className="px-3 py-1  bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                         >
                           VISIT{" "}
                           {(
@@ -934,8 +1022,8 @@ const ClassDetailPage = () => {
               </button>
             </div>
             <div className="divide-y divide-gray-200">
-              {ClassroomData.materials && ClassroomData.materials.length > 0 ? (
-                ClassroomData.materials.map((material) => (
+              {currentMaterials.length > 0 ? (
+                currentMaterials.map((material) => (
                   <div
                     key={material._id}
                     className="p-4 hover:bg-gray-50 transition-colors"
@@ -999,6 +1087,41 @@ const ClassDetailPage = () => {
               )}
             </div>
 
+            {/* Materials Pagination */}
+            {totalMaterialPages > 1 && (
+              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <button
+                  onClick={() =>
+                    handlePageChange("materials", currentPage.materials - 1)
+                  }
+                  disabled={currentPage.materials === 1}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.materials === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <FiChevronLeft className="inline mr-1" /> Previous
+                </button>
+                <span className="text-sm text-gray-700">
+                  Page {currentPage.materials} of {totalMaterialPages}
+                </span>
+                <button
+                  onClick={() =>
+                    handlePageChange("materials", currentPage.materials + 1)
+                  }
+                  disabled={currentPage.materials === totalMaterialPages}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.materials === totalMaterialPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  Next <FiChevronRight className="inline ml-1" />
+                </button>
+              </div>
+            )}
+
             {showUploadModal && (
               <UploadMaterialModal
                 classId={classId}
@@ -1042,12 +1165,12 @@ const ClassDetailPage = () => {
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {allActivities.length === 0 ? (
+              {currentActivities.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   There are no activities
                 </div>
               ) : (
-                allActivities.map((activity) => (
+                currentActivities.map((activity) => (
                   <div
                     key={activity._id}
                     className="p-4 hover:bg-gray-50 transition-colors"
@@ -1119,6 +1242,41 @@ const ClassDetailPage = () => {
                 ))
               )}
             </div>
+
+            {/* Activities Pagination */}
+            {totalActivityPages > 1 && (
+              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <button
+                  onClick={() =>
+                    handlePageChange("activities", currentPage.activities - 1)
+                  }
+                  disabled={currentPage.activities === 1}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.activities === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <FiChevronLeft className="inline mr-1" /> Previous
+                </button>
+                <span className="text-sm text-gray-700">
+                  Page {currentPage.activities} of {totalActivityPages}
+                </span>
+                <button
+                  onClick={() =>
+                    handlePageChange("activities", currentPage.activities + 1)
+                  }
+                  disabled={currentPage.activities === totalActivityPages}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage.activities === totalActivityPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  Next <FiChevronRight className="inline ml-1" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
