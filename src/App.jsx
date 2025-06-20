@@ -157,6 +157,7 @@ function App() {
               path="class/:classId/:assignmentId/:type/answer"
               element={<AssignmentAnswerPage />}
             />
+            
             <Route
               path="class/:classId/:assignmentId/:type/view_answer"
               element={<ViewAssignmentAnswerPage />}
@@ -169,15 +170,15 @@ function App() {
               path="class/:classId/:lessonId/practice_with_lesson"
               element={<LessonPracticePage />}
             />
-            <Route
+            {/*   <Route
               path="class/:classId/:lessonId/activity/view_answer"
               element={<ActivityAnswerPage />}
-            />
+            /> */}
 
-            <Route
+            {/*  <Route
               path="class/:classId/:lessonId/activity/answer"
               element={<ActivityAnswerPage />}
-            />
+            /> */}
 
             <Route path="grades" element={<GradesPage />} />
             <Route path="settings" element={<AccountSettings />} />

@@ -435,6 +435,27 @@ export const quizAnswer = async (quiz_id, student_id, array_answers) => {
     };
   }
 };
+export const assignmentAnswer = async (
+  assignment_id,
+  student_id,
+  array_answers
+) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/answer_assignments/add_answer/${assignment_id}/${student_id}`,
+      {
+        array_answers,
+      }
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to create answer",
+    };
+  }
+};
 
 export const askAI = async (ask) => {
   try {
@@ -501,6 +522,22 @@ export const specificQuizAnswer = async (answer_id) => {
     };
   }
 };
+export const specificAssignmentAnswer = async (answer_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/answer_assignments/get_specific_answer/${answer_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get specific answer",
+    };
+  }
+};
 
 export const takeQuiz = async (quiz_id, student_id) => {
   try {
@@ -515,6 +552,38 @@ export const takeQuiz = async (quiz_id, student_id) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to take quiz",
+    };
+  }
+};
+export const takeActivity = async (activity_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/answer_activities/take_activity/${activity_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to take activity",
+    };
+  }
+};
+export const takeAssignment = async (assignment_id, student_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/answer_assignments/take_assignment/${assignment_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to take assignment",
     };
   }
 };
@@ -569,6 +638,23 @@ export const specificQuiz = async (quiz_id) => {
     };
   }
 };
+export const specificAssignment = async (assignment_id) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/assignments/get_specific_assignment/${assignment_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to get specific assignment",
+    };
+  }
+};
 
 export const specificActivitySpecificAnswer = async (
   activity_id,
@@ -620,6 +706,26 @@ export const specificQuizSpecificAnswer = async (quiz_id, student_id) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to get specific quiz",
+    };
+  }
+};
+export const specificAssignmentSpecificAnswer = async (
+  assignment_id,
+  student_id
+) => {
+  try {
+    const response = await axios.get(`
+      ${BASE_URL}/assignments/get_specific_assignment_specific_answer/${assignment_id}/${student_id}`);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Failed to get specific assignment",
     };
   }
 };
@@ -1580,7 +1686,8 @@ export const specificActivityAnswer = async (answer_id) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || "Failed to get the exam answers",
+      error:
+        error.response?.data?.error || "Failed to get the activity answers",
     };
   }
 };

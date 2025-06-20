@@ -4,8 +4,21 @@ import Editor from "@monaco-editor/react";
 const CodeEditor = ({ value, onChange, language, height }) => {
   const [isEditorReady, setIsEditorReady] = useState(false);
 
-  const handleEditorDidMount = () => {
+  const handleEditorDidMount = (editor, monaco) => {
     setIsEditorReady(true);
+
+    // Disable copy/paste
+    editor.onKeyDown((e) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.keyCode === monaco.KeyCode.KeyC ||
+          e.keyCode === monaco.KeyCode.KeyV ||
+          e.keyCode === monaco.KeyCode.KeyX)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
   };
 
   return (
@@ -21,6 +34,7 @@ const CodeEditor = ({ value, onChange, language, height }) => {
           fontSize: 14,
           scrollBeyondLastLine: false,
           automaticLayout: true,
+          readOnly: false, // Keep this false so users can still type
         }}
         onMount={handleEditorDidMount}
       />
