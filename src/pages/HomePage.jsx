@@ -274,7 +274,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -316,391 +316,397 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="md:flex">
-            {/* Left Side - Branding */}
-            <div className="md:w-1/2 bg-indigo-600 text-white p-12 flex flex-col justify-center">
-              <div className="flex items-center justify-center mb-6">
-                <FaLaptopCode className="h-12 w-12" />
-                <h1 className="ml-3 text-3xl font-bold"></h1>
+      {/* Main Content - Centered */}
+      <main className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full max-w-4xl">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="md:flex">
+              {/* Left Side - Branding */}
+              <div className="md:w-1/2 bg-indigo-600 text-white p-12 flex flex-col justify-center">
+                <div className="flex items-center justify-center mb-6">
+                  <FaLaptopCode className="h-12 w-12" />
+                  <h1 className="ml-3 text-3xl font-bold"></h1>
+                </div>
+                <h2 className="text-2xl font-semibold mb-4 text-center">
+                  {activeTab === "login"
+                    ? "Welcome Back!"
+                    : "Join Our Platform"}
+                </h2>
+                <p className="text-indigo-100 text-center">
+                  {activeTab === "login"
+                    ? "Sign in to access your personalized dashboard"
+                    : "Start your learning or teaching journey today"}
+                </p>
               </div>
-              <h2 className="text-2xl font-semibold mb-4 text-center">
-                {activeTab === "login" ? "Welcome Back!" : "Join Our Platform"}
-              </h2>
-              <p className="text-indigo-100 text-center">
-                {activeTab === "login"
-                  ? "Sign in to access your personalized dashboard"
-                  : "Start your learning or teaching journey today"}
-              </p>
-            </div>
 
-            {/* Right Side - Auth Forms */}
-            <div className="md:w-1/2 p-8">
-              {activeTab === "login" ? (
-                <form onSubmit={handleLogin} className="space-y-6">
-                  <h3 className="text-2xl font-bold text-gray-800">Sign In</h3>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email address
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                      placeholder="••••••••"
-                      required
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <input
-                        id="remember-me"
-                        name="remember-me"
-                        type="checkbox"
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label
-                        htmlFor="remember-me"
-                        className="ml-2 block text-sm text-gray-900"
-                      >
-                        Remember me
+              {/* Right Side - Auth Forms */}
+              <div className="md:w-1/2 p-8">
+                {activeTab === "login" ? (
+                  <form onSubmit={handleLogin} className="space-y-6">
+                    <h3 className="text-2xl font-bold text-gray-800">
+                      Sign In
+                    </h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email address
                       </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="you@example.com"
+                        required
+                      />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-500"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium flex justify-center items-center"
-                  >
-                    {loading ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <input
+                          id="remember-me"
+                          name="remember-me"
+                          type="checkbox"
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor="remember-me"
+                          className="ml-2 block text-sm text-gray-900"
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                          ></path>
-                        </svg>
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </button>
-                  <div className="text-center text-sm text-gray-600">
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("register");
-                        setRegistrationStep(1);
-                      }}
-                      className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
-                    >
-                      Create Account
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div>
-                  {registrationStep === 1 && (
-                    <div className="space-y-6">
-                      <h3 className="text-2xl font-bold text-gray-800">
-                        Join as
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button
-                          onClick={() => selectRole("student")}
-                          className={`cursor-pointer flex flex-col items-center p-6 border rounded-lg transition ${
-                            formData.role === "student"
-                              ? "border-indigo-500 bg-indigo-50"
-                              : "border-gray-200 hover:border-indigo-300"
-                          }`}
-                        >
-                          <FaUserGraduate className="h-10 w-10 text-indigo-600 mb-3" />
-                          <h4 className="text-lg font-medium text-gray-900">
-                            Student
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1 text-center">
-                            Join to learn and complete coding activities
-                          </p>
-                        </button>
-                        <button
-                          onClick={() => selectRole("instructor")}
-                          className={`cursor-pointer flex flex-col items-center p-6 border rounded-lg transition ${
-                            formData.role === "instructor"
-                              ? "border-indigo-500 bg-indigo-50"
-                              : "border-gray-200 hover:border-indigo-300"
-                          }`}
-                        >
-                          <FaChalkboardTeacher className="h-10 w-10 text-indigo-600 mb-3" />
-                          <h4 className="text-lg font-medium text-gray-900">
-                            Instructor
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1 text-center">
-                            Create courses and manage students
-                          </p>
-                        </button>
+                          Remember me
+                        </label>
                       </div>
                       <button
-                        onClick={() => setRegistrationStep(2)}
-                        className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium"
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-500"
                       >
-                        Continue
+                        Forgot password?
                       </button>
-                      <div className="text-center text-sm text-gray-600">
-                        Already have an account?{" "}
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("login")}
-                          className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
-                        >
-                          Sign in here
-                        </button>
-                      </div>
                     </div>
-                  )}
-
-                  {registrationStep === 2 && (
-                    <form onSubmit={handleRegister} className="space-y-6">
-                      <h3 className="text-2xl font-bold text-gray-800">
-                        {formData.role === "student"
-                          ? "Student Registration"
-                          : "Instructor Registration"}
-                      </h3>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            First Name
-                          </label>
-                          <input
-                            type="text"
-                            name="first_name"
-                            value={formData.first_name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Middle Name
-                          </label>
-                          <input
-                            type="text"
-                            name="middle_name"
-                            value={formData.middle_name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Last Name
-                          </label>
-                          <input
-                            type="text"
-                            name="last_name"
-                            value={formData.last_name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                          placeholder="you@example.com"
-                          required
-                        />
-                      </div>
-
-                      {formData.role === "student" && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Student ID Number
-                          </label>
-                          <input
-                            type="number"
-                            name="student_id_number"
-                            value={formData.student_id_number}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            required
-                          />
-                        </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium flex justify-center items-center"
+                    >
+                      {loading ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                          </svg>
+                          Signing in...
+                        </>
+                      ) : (
+                        "Sign In"
                       )}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={(e) => {
-                            handleChange(e);
-                            setPasswordStrength(
-                              checkPasswordStrength(e.target.value)
-                            );
-                          }}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                          required
-                        />
-                        {formData.password && (
-                          <div className="mt-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full ${
-                                    passwordStrength.score >= 5
-                                      ? "bg-green-500"
-                                      : passwordStrength.score >= 3
-                                      ? "bg-yellow-500"
-                                      : "bg-red-500"
-                                  }`}
-                                  style={{
-                                    width: `${
-                                      (passwordStrength.score / 5) * 100
-                                    }%`,
-                                  }}
-                                ></div>
-                              </div>
-                              <span
-                                className={`text-xs font-medium ${
-                                  passwordStrength.score >= 5
-                                    ? "text-green-600"
-                                    : passwordStrength.score >= 3
-                                    ? "text-yellow-600"
-                                    : "text-red-600"
-                                }`}
-                              >
-                                {passwordStrength.message}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-xs text-gray-500">
-                              Use at least 8 characters with uppercase, numbers,
-                              and symbols
+                    </button>
+                    <div className="text-center text-sm text-gray-600">
+                      Don't have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab("register");
+                          setRegistrationStep(1);
+                        }}
+                        className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div>
+                    {registrationStep === 1 && (
+                      <div className="space-y-6">
+                        <h3 className="text-2xl font-bold text-gray-800">
+                          Join as
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <button
+                            onClick={() => selectRole("student")}
+                            className={`cursor-pointer flex flex-col items-center p-6 border rounded-lg transition ${
+                              formData.role === "student"
+                                ? "border-indigo-500 bg-indigo-50"
+                                : "border-gray-200 hover:border-indigo-300"
+                            }`}
+                          >
+                            <FaUserGraduate className="h-10 w-10 text-indigo-600 mb-3" />
+                            <h4 className="text-lg font-medium text-gray-900">
+                              Student
+                            </h4>
+                            <p className="text-sm text-gray-500 mt-1 text-center">
+                              Join to learn and complete coding activities
                             </p>
+                          </button>
+                          <button
+                            onClick={() => selectRole("instructor")}
+                            className={`cursor-pointer flex flex-col items-center p-6 border rounded-lg transition ${
+                              formData.role === "instructor"
+                                ? "border-indigo-500 bg-indigo-50"
+                                : "border-gray-200 hover:border-indigo-300"
+                            }`}
+                          >
+                            <FaChalkboardTeacher className="h-10 w-10 text-indigo-600 mb-3" />
+                            <h4 className="text-lg font-medium text-gray-900">
+                              Instructor
+                            </h4>
+                            <p className="text-sm text-gray-500 mt-1 text-center">
+                              Create courses and manage students
+                            </p>
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => setRegistrationStep(2)}
+                          className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium"
+                        >
+                          Continue
+                        </button>
+                        <div className="text-center text-sm text-gray-600">
+                          Already have an account?{" "}
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("login")}
+                            className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
+                          >
+                            Sign in here
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {registrationStep === 2 && (
+                      <form onSubmit={handleRegister} className="space-y-6">
+                        <h3 className="text-2xl font-bold text-gray-800">
+                          {formData.role === "student"
+                            ? "Student Registration"
+                            : "Instructor Registration"}
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              First Name
+                            </label>
+                            <input
+                              type="text"
+                              name="first_name"
+                              value={formData.first_name}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Middle Name
+                            </label>
+                            <input
+                              type="text"
+                              name="middle_name"
+                              value={formData.middle_name}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Last Name
+                            </label>
+                            <input
+                              type="text"
+                              name="last_name"
+                              value={formData.last_name}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            placeholder="you@example.com"
+                            required
+                          />
+                        </div>
+
+                        {formData.role === "student" && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Student ID Number
+                            </label>
+                            <input
+                              type="number"
+                              name="student_id_number"
+                              value={formData.student_id_number}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                              required
+                            />
                           </div>
                         )}
-                      </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Confirm Password
-                        </label>
-                        <input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                          required
-                        />
-                        {confirmPassword &&
-                          formData.password !== confirmPassword && (
-                            <p className="mt-1 text-xs text-red-600">
-                              Passwords do not match
-                            </p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Password
+                          </label>
+                          <input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={(e) => {
+                              handleChange(e);
+                              setPasswordStrength(
+                                checkPasswordStrength(e.target.value)
+                              );
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            required
+                          />
+                          {formData.password && (
+                            <div className="mt-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${
+                                      passwordStrength.score >= 5
+                                        ? "bg-green-500"
+                                        : passwordStrength.score >= 3
+                                        ? "bg-yellow-500"
+                                        : "bg-red-500"
+                                    }`}
+                                    style={{
+                                      width: `${
+                                        (passwordStrength.score / 5) * 100
+                                      }%`,
+                                    }}
+                                  ></div>
+                                </div>
+                                <span
+                                  className={`text-xs font-medium ${
+                                    passwordStrength.score >= 5
+                                      ? "text-green-600"
+                                      : passwordStrength.score >= 3
+                                      ? "text-yellow-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {passwordStrength.message}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                Use at least 8 characters with uppercase,
+                                numbers, and symbols
+                              </p>
+                            </div>
                           )}
-                      </div>
+                        </div>
 
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium flex justify-center items-center"
-                      >
-                        {loading ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              ></path>
-                            </svg>
-                            Registering...
-                          </>
-                        ) : (
-                          "Register"
-                        )}
-                      </button>
-                      <div className="text-center text-sm text-gray-600">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Confirm Password
+                          </label>
+                          <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            required
+                          />
+                          {confirmPassword &&
+                            formData.password !== confirmPassword && (
+                              <p className="mt-1 text-xs text-red-600">
+                                Passwords do not match
+                              </p>
+                            )}
+                        </div>
+
                         <button
-                          type="button"
-                          onClick={() => setRegistrationStep(1)}
-                          className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
+                          type="submit"
+                          disabled={loading}
+                          className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium flex justify-center items-center"
                         >
-                          Back to role selection
+                          {loading ? (
+                            <>
+                              <svg
+                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                ></path>
+                              </svg>
+                              Registering...
+                            </>
+                          ) : (
+                            "Register"
+                          )}
                         </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-              )}
+                        <div className="text-center text-sm text-gray-600">
+                          <button
+                            type="button"
+                            onClick={() => setRegistrationStep(1)}
+                            className="cursor-pointer text-indigo-600 hover:text-indigo-500 font-medium"
+                          >
+                            Back to role selection
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

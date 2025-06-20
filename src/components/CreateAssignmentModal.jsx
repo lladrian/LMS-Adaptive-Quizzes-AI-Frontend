@@ -28,7 +28,7 @@ const CreateAssignmentModal = ({
   const [assignmentData, setAssignmentData] = useState({
     title: "",
     description: "",
-    type: "assignment",
+    type: "activity",
     timeLimit: 60,
     totalPoints: 0,
     questions: [],
@@ -253,7 +253,7 @@ const CreateAssignmentModal = ({
       setAssignmentData({
         title: "",
         description: "",
-        type: "assignment",
+        type: "activity",
         timeLimit: 60,
         totalPoints: 0,
         questions: [],
@@ -584,10 +584,7 @@ const CreateAssignmentModal = ({
                             setAssignmentData((prev) => ({
                               ...prev,
                               type: activity.value,
-                              timeLimit:
-                                activity.value === "activity"
-                                  ? 0
-                                  : prev.timeLimit,
+                              timeLimit: prev.timeLimit,
                             }))
                           }
                           className={`p-4 border rounded-lg cursor-pointer transition-all ${
@@ -985,9 +982,9 @@ const CreateAssignmentModal = ({
             isOpen={showAIPromptModal}
             onClose={() => setShowAIPromptModal(false)}
             onSelectQuestion={handleQuestionSelect}
-            activityType={assignmentData.type}
             progLanguage={progLanguage}
             questionType={newQuestion.type}
+            classId={classId}
           />
         )}
       </div>

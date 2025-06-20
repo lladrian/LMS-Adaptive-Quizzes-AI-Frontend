@@ -1,41 +1,120 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { FiX, FiRefreshCw } from "react-icons/fi";
-import { askPrompt } from "../utils/authService";
+import { FiX, FiRefreshCw, FiCheck } from "react-icons/fi";
+import {
+  askPrompt,
+  allMaterialsSpecificClass,
+  specificMaterial,
+  extractMaterialData,
+} from "../utils/authService";
 
 const AIPromptModal = ({
   isOpen,
   onClose,
   onSelectQuestion,
-  activityType,
+
   progLanguage,
   questionType,
+  classId,
 }) => {
   const [questions, setQuestions] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [materialContent, setMaterialContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingMaterials, setIsFetchingMaterials] = useState(false);
+  const [step, setStep] = useState(1); // 1: select material, 2: generate questions
 
   useEffect(() => {
     if (isOpen) {
-      generateQuestions();
+      fetchMaterials();
+      setStep(1);
+      setSelectedMaterial(null);
+      setMaterialContent("");
+      setQuestions([]);
     }
-  }, [isOpen, activityType, questionType]);
+  }, [isOpen, classId]);
+
+  const fetchMaterials = async () => {
+    setIsFetchingMaterials(true);
+    try {
+      const result = await allMaterialsSpecificClass(classId);
+      console.log(classId);
+      console.log(result);
+      console.log("!");
+      if (result.success) {
+        // The API returns data in result.data.data array
+        setMaterials(result.data.data || []);
+      } else {
+        toast.error(result.error || "Failed to fetch materials");
+      }
+    } catch (error) {
+      console.error("Error fetching materials:", error);
+      toast.error("Failed to fetch materials");
+    } finally {
+      setIsFetchingMaterials(false);
+    }
+  };
+
+  const handleMaterialSelect = async (material) => {
+    setIsLoading(true);
+    try {
+      // First get the full material details
+      const materialResult = await specificMaterial(material._id);
+      if (!materialResult.success) {
+        throw new Error(materialResult.error);
+      }
+
+      // Then extract the content
+      const contentResult = await extractMaterialData(material._id);
+      if (!contentResult.success) {
+        throw new Error(contentResult.error);
+      }
+
+      setSelectedMaterial(materialResult.data.data);
+      setMaterialContent(contentResult?.data.data || "");
+      setStep(2);
+    } catch (error) {
+      console.error("Error loading material:", error);
+      toast.error(error.message || "Failed to load material content");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const generateQuestions = async () => {
+    if (!materialContent) {
+      toast.warning("No material content available to generate questions");
+      return;
+    }
+
     setIsLoading(true);
     setQuestions([]);
 
     try {
       let prompt = "";
-      const topic = progLanguage || "programming";
+      const topic = selectedMaterial?.title || progLanguage || "the material";
 
       if (questionType === "multiple_choice") {
-        prompt = `Generate 3 multiple choice questions about ${topic} with these requirements:
-        - Each question should have 1 correct answer and 3 incorrect answers
-        - Assign points based on question difficulty (1 for easy, 2 for medium, 3 for hard)
-        - Format exactly like this:
+        prompt = `Based on the following material about ${topic}, generate 3 multiple choice questions:
+        
+        Material Title: ${selectedMaterial?.title || "Untitled"}
+        Material Description: ${
+          selectedMaterial?.description || "No description"
+        }
+        
+        Content Excerpt:
+        ${materialContent.substring(0, 1000)}${
+          materialContent.length > 1000 ? "..." : ""
+        }
+
+        Requirements:
+        - Each question must directly relate to the material content
+        - Include 1 correct answer and 3 plausible distractors
+        - Format exactly like this example:
 
         1. Question: [question text]
-        Points: [number]
+        Points: 1
         A) [option 1]
         B) [option 2]
         C) [option 3]
@@ -43,7 +122,7 @@ const AIPromptModal = ({
         Answer: [correct letter]
 
         2. Question: [question text]
-        Points: [number]
+        Points: 1
         A) [option 1]
         B) [option 2]
         C) [option 3]
@@ -51,20 +130,31 @@ const AIPromptModal = ({
         Answer: [correct letter]
 
         3. Question: [question text]
-        Points: [number]
+        Points: 1
         A) [option 1]
         B) [option 2]
         C) [option 3]
         D) [option 4]
         Answer: [correct letter]`;
       } else {
-        prompt = `Generate 3 programming problems about ${topic} with these requirements:
-        - Each problem should be a clear, practical coding task
+        prompt = `Based on the following programming material, generate 3 coding problems:
+        
+        Material Title: ${selectedMaterial?.title || "Untitled"}
+        Programming Language: ${progLanguage || "general"}
+        
+        Content Excerpt:
+        ${materialContent.substring(0, 1000)}${
+          materialContent.length > 1000 ? "..." : ""
+        }
+
+        Requirements:
+
+        - Each problem should be a clear, practical coding task from the material
         - Include one sample input/output pair
         - Assign points based on problem difficulty (1 for easy, 2 for medium, 3 for hard)
         - Focus on real-world application
         - Format exactly like this:
-        
+
         1. Problem: [description] 
         Points: [number]
         Input: [example]
@@ -78,7 +168,11 @@ const AIPromptModal = ({
         3. Problem: [description]
         Points: [number]
         Input: [example]
-        Output: [value]`;
+        Output: [value]
+        
+
+
+        `;
       }
 
       const result = await askPrompt(prompt);
@@ -89,14 +183,18 @@ const AIPromptModal = ({
         );
         setQuestions(generatedQuestions);
       } else {
-        toast.error("Failed to generate questions");
-        setQuestions([
-          { error: "Failed to generate questions. Please try again." },
-        ]);
+        throw new Error(result.error || "Failed to generate questions");
       }
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to generate questions");
+      console.error("Error generating questions:", error);
+      toast.error(error.message || "Failed to generate questions");
+      setQuestions([
+        {
+          error:
+            error.message || "Failed to generate questions. Please try again.",
+          type: questionType,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +229,153 @@ const AIPromptModal = ({
       }));
     }
   };
+
+  const renderMaterialSelection = () => (
+    <div className="space-y-4">
+      <h4 className="font-medium">Select Material to Base Questions On</h4>
+
+      {isFetchingMaterials ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        </div>
+      ) : materials.length === 0 ? (
+        <div className="text-gray-500 text-center py-4">
+          No materials available for this class
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {materials.map((material) => (
+            <div
+              key={material._id}
+              onClick={() => handleMaterialSelect(material)}
+              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                selectedMaterial?._id === material._id
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-blue-300"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex ">
+                  <h5 className="text-sm font-medium  mr-2">Title:</h5>
+                  {/*   <h5 className="font-medium mr-2">Title: </h5> */}
+                  <p className="text-sm text-gray-700 truncate">
+                    {material.title}
+                  </p>
+                </div>
+
+                {selectedMaterial?._id === material._id && (
+                  <FiCheck className="text-blue-600" />
+                )}
+              </div>
+              <div className="flex justify-base items-center">
+                <h5 className="text-sm font-medium  mr-2">Description:</h5>
+                {/*   <p className="text-sm text-gray-600  mr-2">Description: </p> */}
+                <span className="text-sm text-gray-700 truncate">
+                  {material.description}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-1">
+                Uploaded: {new Date(material.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={onClose}
+          className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => setStep(2)}
+          disabled={!selectedMaterial}
+          className={`cursor-pointer px-4 py-2 rounded-lg transition-colors ${
+            selectedMaterial
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderQuestionGeneration = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h4 className="font-medium mb-1">Generating Questions From:</h4>
+          <div className="flex">
+            <h5 className="text-sm font-medium  mr-2">Title:</h5>
+            <p className="text-sm text-gray-700 truncate">
+              {" "}
+              {selectedMaterial?.title}
+            </p>
+          </div>
+
+          <div className="flex">
+            <h5 className="text-sm font-medium  mr-2">Description:</h5>
+            <p className="text-xs text-gray-500 truncate">
+              {selectedMaterial?.description}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setStep(1)}
+          className="cursor-pointer text-sm text-blue-600 hover:text-blue-800"
+        >
+          Change Material
+        </button>
+      </div>
+
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <h5 className="text-sm font-medium mb-1">Material Preview:</h5>
+        <p className="text-sm text-gray-600 line-clamp-3">
+          {materialContent.substring(0, 300)}
+          {materialContent.length > 300 ? "..." : ""}
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <h4 className="font-medium">AI Suggestions</h4>
+        <button
+          onClick={generateQuestions}
+          disabled={isLoading}
+          className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
+        >
+          <FiRefreshCw
+            className={`mr-1 ${isLoading ? "animate-spin" : ""}`}
+            size={16}
+          />
+          {questions.length > 0 ? "Regenerate" : "Generate"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {questions.map((question, index) => renderQuestion(question, index))}
+        </div>
+      )}
+
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={onClose}
+          className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
 
   const renderQuestion = (question, index) => {
     if (question.error) {
@@ -190,7 +435,7 @@ const AIPromptModal = ({
 
         <button
           onClick={() => onSelectQuestion(question)}
-          className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+          className="cursor-pointer w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
         >
           Use This Question
         </button>
@@ -204,52 +449,18 @@ const AIPromptModal = ({
     <div className="bg-white rounded-xl shadow-lg w-96 max-h-[90vh] overflow-y-auto">
       <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
         <h3 className="text-lg font-semibold">
-          {questionType === "multiple_choice"
-            ? "Multiple Choice"
-            : "Programming"}{" "}
-          Questions
+          {step === 1 ? "Select Material" : "Generate Questions"}
         </h3>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+        <button
+          onClick={onClose}
+          className="cursor-pointer text-gray-500 hover:text-gray-700"
+        >
           <FiX size={20} />
         </button>
       </div>
 
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-medium">AI Suggestions</h4>
-          <button
-            onClick={generateQuestions}
-            disabled={isLoading}
-            className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
-          >
-            <FiRefreshCw
-              className={`mr-1 ${isLoading ? "animate-spin" : ""}`}
-              size={16}
-            />
-            Regenerate
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {questions.map((question, index) =>
-              renderQuestion(question, index)
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Close
-          </button>
-        </div>
+        {step === 1 ? renderMaterialSelection() : renderQuestionGeneration()}
       </div>
     </div>
   );

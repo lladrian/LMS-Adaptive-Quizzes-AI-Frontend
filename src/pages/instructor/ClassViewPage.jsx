@@ -725,7 +725,7 @@ const ClassDetailPage = () => {
                             ).toUpperCase()}{" "}
                           </span>
                         </div>
-                        <div>
+                        <div className="mb-2">
                           Grading Breakdown:{" "}
                           <span className="font-normal">
                             {(
@@ -752,10 +752,12 @@ const ClassDetailPage = () => {
                             ).reduce((acc, q) => acc + (q.points || 0), 0)}
                           </div>
                         )}
+
                         <Link
                           to={`/instructor/class/${classId}/activity/${
                             (activity?._id || activity?.activity?._id) ?? ""
                           }`}
+                          className="px-3 py-1  bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                         >
                           VISIT{" "}
                           {(

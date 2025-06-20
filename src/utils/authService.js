@@ -1067,24 +1067,6 @@ export const getAllMaterials = async () => {
   }
 };
 
-export const specificActivity = async (activity_id) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/activities/get_specific_activity/${activity_id}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Error fetching materials",
-    };
-  }
-};
-
 export const specificMaterial = async (materialId) => {
   try {
     const response = await axios.get(
@@ -1271,6 +1253,24 @@ export const addActivity = async (
     return {
       success: false,
       error: error.response?.data?.error || "Failed to add activity",
+    };
+  }
+};
+
+export const specificActivity = async (activity_id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/activities/get_specific_activity/${activity_id}`
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching materials",
     };
   }
 };
