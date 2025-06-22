@@ -24,6 +24,7 @@ const PracticePage = () => {
   });
   const [languages, setLanguages] = useState([]);
   const [classroom, setClassroom] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSpecificClassroom();
@@ -131,6 +132,12 @@ const PracticePage = () => {
 
   return (
     <div className="p-6 space-y-4">
+      <button
+        onClick={() => navigate(-1)}
+        className="cursor-pointer  text-md text-blue-600 hover:underline flex items-center gap-1"
+      >
+        ← Back
+      </button>
       {currentQuestion && (
         <div className="space-y-4">
           <div className="bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap">

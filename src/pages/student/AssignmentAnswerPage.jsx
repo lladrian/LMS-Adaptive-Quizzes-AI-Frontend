@@ -27,6 +27,7 @@ import {
   specificActivitySpecificAnswer,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const CodeEditor = ({ value, onChange, language, height }) => {
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -93,6 +94,7 @@ const AssignmentAnswerPage = () => {
   const [extendedTime, setExtendedTime] = useState(0);
 
   const studentId = localStorage.getItem("userId");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleCopyPaste = (e) => {
@@ -440,6 +442,12 @@ const AssignmentAnswerPage = () => {
 
   return (
     <div className="p-6 space-y-4 no-select">
+      <button
+        onClick={() => navigate(-1)}
+        className="cursor-pointer  text-md text-blue-600 hover:underline flex items-center gap-1"
+      >
+        ← Back
+      </button>
       <style jsx global>{`
         .no-select {
           user-select: none;
