@@ -43,9 +43,26 @@ const ClassDetailPage = () => {
     exams: [],
     activities: [],
     assignments: [],
+    midtermActivities: {
+      quizzes: [],
+      exams: [],
+      activities: [],
+      assignments: [],
+    },
+    finalActivities: {
+      quizzes: [],
+      exams: [],
+      activities: [],
+      assignments: [],
+    },
+    gradingSystem: { midterm: {}, final: {} }, // Changed from grading_system to gradingSystem
   });
-  const [grades, setGrade] = useState({});
-  const [answers, setAnswer] = useState([]);
+  const [grades, setGrades] = useState({
+    midterm: {},
+    final: {},
+    student_grade: {},
+  });
+  const [answers, setAnswers] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -139,11 +156,16 @@ const ClassDetailPage = () => {
         setClassroom((prev) => ({
           ...prev,
           ...classResult.data.data,
+          // Combine all assignments from both terms
           assignments: [
-            ...(classResult.data.data.exams || []),
-            ...(classResult.data.data.quizzes || []),
-            ...(classResult.data.data.activities || []),
-            ...(classResult.data.data.assignments || []),
+            ...(classResult.data.data.midtermActivities?.quizzes || []),
+            ...(classResult.data.data.midtermActivities?.exams || []),
+            ...(classResult.data.data.midtermActivities?.activities || []),
+            ...(classResult.data.data.midtermActivities?.assignments || []),
+            ...(classResult.data.data.finalActivities?.quizzes || []),
+            ...(classResult.data.data.finalActivities?.exams || []),
+            ...(classResult.data.data.finalActivities?.activities || []),
+            ...(classResult.data.data.finalActivities?.assignments || []),
           ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
         }));
         setRestrictedSections(
@@ -158,7 +180,7 @@ const ClassDetailPage = () => {
         activityResult.success &&
         assignmentResult.success
       ) {
-        setAnswer(
+        setAnswers(
           [
             ...(examResult.data.data || []),
             ...(quizResult.data.data || []),
@@ -169,7 +191,7 @@ const ClassDetailPage = () => {
       }
 
       if (gradeResult.success) {
-        setGrade(gradeResult.data.data);
+        setGrades(gradeResult.data.data);
       }
     } catch (error) {
       console.error("Error fetching classroom:", error);
@@ -251,6 +273,32 @@ const ClassDetailPage = () => {
       </div>
     );
   }
+
+  // Helper function to determine the term of an assignment
+  const getAssignmentTerm = (assignmentId, classroom) => {
+    const isMidterm =
+      classroom.midtermActivities?.quizzes?.some(
+        (q) => q._id === assignmentId
+      ) ||
+      classroom.midtermActivities?.exams?.some((e) => e._id === assignmentId) ||
+      classroom.midtermActivities?.activities?.some(
+        (a) => a._id === assignmentId
+      ) ||
+      classroom.midtermActivities?.assignments?.some(
+        (a) => a._id === assignmentId
+      );
+
+    return isMidterm ? "midterm" : "final";
+  };
+
+  // Helper function to convert numeric grade to letter grade
+  const getGradeLetter = (grade) => {
+    if (grade >= 90) return "A (Excellent)";
+    if (grade >= 80) return "B (Good)";
+    if (grade >= 70) return "C (Average)";
+    if (grade >= 60) return "D (Below Average)";
+    return "F (Fail)";
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -561,114 +609,162 @@ const ClassDetailPage = () => {
 
                   {currentAssignments.length > 0 ? (
                     <div className="space-y-3">
-                      {currentAssignments.map((assignment) => (
-                        <div
-                          key={assignment._id}
-                          className="bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
-                        >
+                      {currentAssignments.map((assignment) => {
+                        const answer = answers.find(
+                          (ans) =>
+                            ans?.quiz?._id === assignment?._id ||
+                            ans?.exam?._id === assignment?._id ||
+                            ans?.activity?._id === assignment?._id ||
+                            ans?.assignment?._id === assignment?._id
+                        );
+
+                        const isCompleted = answer?.submitted_at;
+                        const isOngoing =
+                          answer?.opened_at && !answer?.submitted_at;
+
+                        return (
                           <div
-                            className="p-4 cursor-pointer hover:bg-gray-50"
-                            onClick={() =>
-                              setExpandedAssignment(
-                                expandedAssignment === assignment._id
-                                  ? null
-                                  : assignment._id
-                              )
-                            }
+                            key={assignment._id}
+                            className={`bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow ${
+                              isCompleted ? "border-l-4 border-l-green-500" : ""
+                            }`}
                           >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <span
-                                  className={`px-2 py-1 rounded-full text-xs capitalize ${
-                                    assignment.type === "quiz"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : assignment.type === "exam"
-                                      ? "bg-green-100 text-green-800"
-                                      : assignment.type === "assignment"
-                                      ? "bg-purple-100 text-purple-800"
-                                      : "bg-blue-100 text-blue-800"
-                                  }`}
-                                >
-                                  {assignment.type} -{" "}
-                                  {assignment.grading_breakdown}
-                                </span>
-                                <h3 className="font-medium mt-2">
-                                  {assignment.title}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {assignment.description}
-                                </p>
-                                <div className="flex items-center text-sm text-gray-500 mt-2">
-                                  <FiClock className="mr-1" />
-                                  <span>
-                                    Time:{" "}
-                                    {/* {assignment.submission_time || 0} */}
-                                    {assignment.submission_time +
-                                      (assignment.extended_minutes || 0) >=
-                                    60
-                                      ? `${Math.floor(
-                                          (assignment.submission_time +
-                                            (assignment.extended_minutes ||
-                                              0)) /
-                                            60
-                                        )}h ${
-                                          (assignment.submission_time +
-                                            (assignment.extended_minutes ||
-                                              0)) %
-                                          60
-                                        }m`
-                                      : `${
-                                          assignment.submission_time +
-                                          (assignment.extended_minutes || 0)
-                                        }m`}
-                                    {assignment.extended_minutes > 0 && (
-                                      <span className="text-green-600 ml-1">
-                                        (+{assignment.extended_minutes}m
-                                        extended)
+                            <div
+                              className="p-4 cursor-pointer hover:bg-gray-50"
+                              onClick={() =>
+                                setExpandedAssignment(
+                                  expandedAssignment === assignment._id
+                                    ? null
+                                    : assignment._id
+                                )
+                              }
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs capitalize ${
+                                        assignment.type === "quiz"
+                                          ? "bg-yellow-100 text-yellow-800"
+                                          : assignment.type === "exam"
+                                          ? "bg-green-100 text-green-800"
+                                          : assignment.type === "assignment"
+                                          ? "bg-purple-100 text-purple-800"
+                                          : "bg-blue-100 text-blue-800"
+                                      }`}
+                                    >
+                                      {assignment.type} -{" "}
+                                      {assignment.grading_breakdown}
+                                    </span>
+                                    {isCompleted && (
+                                      <span className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        <FiCheck className="mr-1" /> Completed
                                       </span>
                                     )}
-                                  </span>
-                                  <span className="mx-2">•</span>
-                                  <span>
-                                    Posted:{" "}
-                                    {new Date(
-                                      assignment.created_at
-                                    ).toLocaleDateString()}
-                                  </span>
+                                    {isOngoing && (
+                                      <span className="flex items-center text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                                        <FiClock className="mr-1" /> In Progress
+                                      </span>
+                                    )}
+                                    {!isCompleted && !isOngoing && (
+                                      <span className="flex items-center text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                                        <FiX className="mr-1" /> Not Started
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h3 className="font-medium mt-2">
+                                    {assignment.title}
+                                  </h3>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {assignment.description}
+                                  </p>
+                                  <div className="flex items-center text-sm text-gray-500 mt-2">
+                                    <FiClock className="mr-1" />
+                                    <span>
+                                      Time:{" "}
+                                      {assignment.submission_time +
+                                        (assignment.extended_minutes || 0) >=
+                                      60
+                                        ? `${Math.floor(
+                                            (assignment.submission_time +
+                                              (assignment.extended_minutes ||
+                                                0)) /
+                                              60
+                                          )}h ${
+                                            (assignment.submission_time +
+                                              (assignment.extended_minutes ||
+                                                0)) %
+                                            60
+                                          }m`
+                                        : `${
+                                            assignment.submission_time +
+                                            (assignment.extended_minutes || 0)
+                                          }m`}
+                                      {assignment.extended_minutes > 0 && (
+                                        <span className="text-green-600 ml-1">
+                                          (+{assignment.extended_minutes}m
+                                          extended)
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="mx-2">•</span>
+                                    <span>
+                                      Posted:{" "}
+                                      {new Date(
+                                        assignment.created_at
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  {expandedAssignment === assignment._id ? (
+                                    <FiChevronUp />
+                                  ) : (
+                                    <FiChevronDown />
+                                  )}
                                 </div>
                               </div>
-                              {expandedAssignment === assignment._id ? (
-                                <FiChevronUp />
-                              ) : (
-                                <FiChevronDown />
-                              )}
                             </div>
-                          </div>
 
-                          {expandedAssignment === assignment._id && (
-                            <div className="border-t border-gray-200 p-4 bg-gray-50">
-                              <Link
-                                to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
-                              >
-                                <FiCode className="mr-2" />
-                                {assignment.type === "quiz"
-                                  ? "Take Quiz"
-                                  : assignment.type === "exam"
-                                  ? "Take Exam"
-                                  : assignment.type === "assignment"
-                                  ? "Submit Assignment"
-                                  : "Take Activity"}
-                              </Link>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            {expandedAssignment === assignment._id && (
+                              <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                <Link
+                                  to={`/student/class/${classId}/${assignment._id}/${assignment.type}/answer`}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                >
+                                  <FiCode className="mr-2" />
+                                  {isCompleted
+                                    ? "View Submission"
+                                    : isOngoing
+                                    ? "Continue Assignment"
+                                    : assignment.type === "quiz"
+                                    ? "Take Quiz"
+                                    : assignment.type === "exam"
+                                    ? "Take Exam"
+                                    : assignment.type === "assignment"
+                                    ? "Submit Assignment"
+                                    : "Take Activity"}
+                                </Link>
+                                {isCompleted && answer?.grade && (
+                                  <div className="mt-3 text-sm">
+                                    <span className="font-medium">Score: </span>
+                                    <span>
+                                      {answer.grade}% -{" "}
+                                      {getGradeLetter(answer.grade)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-500">No assignments available.</p>
                   )}
 
+                  {/* Pagination remains the same */}
                   {totalAssignmentPages > 1 && (
                     <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                       <button
@@ -736,40 +832,144 @@ const ClassDetailPage = () => {
                       Your Grades
                     </h2>
                     {grades.student_grade ? (
-                      <div className="space-y-2 text-lg font-semibold text-gray-700">
-                        <div>
-                          📘 Quiz: {grades.quiz?.earnedPoints || 0}/
-                          {grades.quiz?.totalPoints || 0} ={" "}
-                          {grades.quiz?.quiz || 0}/
-                          {classroom.classroom?.grading_system?.quiz || 0}
+                      <div className="space-y-4">
+                        {/* Midterm Grades */}
+                        <div className="border-b pb-4">
+                          <h3 className="text-lg font-semibold mb-2 text-indigo-700">
+                            Midterm Grades
+                          </h3>
+                          <div className="space-y-2 text-gray-700">
+                            <div className="flex justify-between">
+                              <span>📘 Quiz:</span>
+                              <span>
+                                {grades.midterm?.quiz?.earnedPoints || 0}/
+                                {grades.midterm?.quiz?.totalPoints || 0} ={" "}
+                                {grades.midterm?.quiz?.grade || 0}/
+                                {classroom.gradingSystem?.midterm?.quiz || 0}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>📝 Assignment:</span>
+                              <span>
+                                {grades.midterm?.assignment?.earnedPoints || 0}/
+                                {grades.midterm?.assignment?.totalPoints || 0} ={" "}
+                                {grades.midterm?.assignment?.grade || 0}/
+                                {classroom.gradingSystem?.midterm?.assignment ||
+                                  0}
+                                %
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>🎯 Activity:</span>
+                              <span>
+                                {grades.midterm?.activity?.earnedPoints || 0}/
+                                {grades.midterm?.activity?.totalPoints || 0} ={" "}
+                                {grades.midterm?.activity?.grade || 0}/
+                                {classroom.gradingSystem?.midterm?.activity ||
+                                  0}
+                                %
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-medium">
+                              <span>📚 Midterm Exam:</span>
+                              <span>
+                                {grades.midterm?.exam?.earnedPoints || 0}/
+                                {grades.midterm?.exam?.totalPoints || 0} ={" "}
+                                {grades.midterm?.exam?.grade || 0}/
+                                {classroom.gradingSystem?.midterm?.exam || 0}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-bold mt-2">
+                              <span>🎯 Midterm Total:</span>
+                              <span>
+                                {grades.midterm?.term_grade || 0}/
+                                {Object.values(
+                                  classroom.gradingSystem?.midterm || {}
+                                ).reduce((a, b) => a + b, 0)}
+                                %
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          📝 Assignment: {grades.assignment?.earnedPoints || 0}/
-                          {grades.assignment?.totalPoints || 0} ={" "}
-                          {grades.assignment?.assignment || 0}/
-                          {classroom.classroom?.grading_system?.assignment || 0}
+
+                        {/* Final Grades */}
+                        <div className="border-b pb-4">
+                          <h3 className="text-lg font-semibold mb-2 text-indigo-700">
+                            Final Grades
+                          </h3>
+                          <div className="space-y-2 text-gray-700">
+                            <div className="flex justify-between">
+                              <span>📘 Quiz:</span>
+                              <span>
+                                {grades.final?.quiz?.earnedPoints || 0}/
+                                {grades.final?.quiz?.totalPoints || 0} ={" "}
+                                {grades.final?.quiz?.grade || 0}/
+                                {classroom.gradingSystem?.final?.quiz || 0}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>📝 Assignment:</span>
+                              <span>
+                                {grades.final?.assignment?.earnedPoints || 0}/
+                                {grades.final?.assignment?.totalPoints || 0} ={" "}
+                                {grades.final?.assignment?.grade || 0}/
+                                {classroom.gradingSystem?.final?.assignment ||
+                                  0}
+                                %
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>🎯 Activity:</span>
+                              <span>
+                                {grades.final?.activity?.earnedPoints || 0}/
+                                {grades.final?.activity?.totalPoints || 0} ={" "}
+                                {grades.final?.activity?.grade || 0}/
+                                {classroom.gradingSystem?.final?.activity || 0}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-medium">
+                              <span>📖 Final Exam:</span>
+                              <span>
+                                {grades.final?.exam?.earnedPoints || 0}/
+                                {grades.final?.exam?.totalPoints || 0} ={" "}
+                                {grades.final?.exam?.grade || 0}/
+                                {classroom.gradingSystem?.final?.exam || 0}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-bold mt-2">
+                              <span>🎯 Final Total:</span>
+                              <span>
+                                {grades.final?.term_grade || 0}/
+                                {Object.values(
+                                  classroom.gradingSystem?.final || {}
+                                ).reduce((a, b) => a + b, 0)}
+                                %
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          🎯 Laboratory Activity:{" "}
-                          {grades.activity?.earnedPoints || 0}/
-                          {grades.activity?.totalPoints || 0} ={" "}
-                          {grades.activity?.activity || 0}/
-                          {classroom.classroom?.grading_system?.activity || 0}
-                        </div>
-                        <div>
-                          📚 Midterm: {grades.midterm?.earnedPoints || 0}/
-                          {grades.midterm?.totalPoints || 0} ={" "}
-                          {grades.midterm?.midterm || 0}/
-                          {classroom.classroom?.grading_system?.midterm || 0}
-                        </div>
-                        <div>
-                          📖 Final: {grades.final?.earnedPoints || 0}/
-                          {grades.final?.totalPoints || 0} ={" "}
-                          {grades.final?.final || 0}/
-                          {classroom.classroom?.grading_system?.final || 0}
-                        </div>
-                        <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
-                          🔢 Total: {grades.student_grade?.grade || 0}/100
+
+                        {/* Total Grade */}
+                        <div className="pt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-semibold">
+                              Overall Grade:
+                            </span>
+                            <span className="text-blue-600 font-bold text-xl">
+                              {grades.student_grade?.grade || 0}/100
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                            <div
+                              className="bg-blue-600 h-4 rounded-full"
+                              style={{
+                                width: `${grades.student_grade?.grade || 0}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <div className="text-right text-sm text-gray-500 mt-1">
+                            {getGradeLetter(grades.student_grade?.grade || 0)}
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -777,10 +977,16 @@ const ClassDetailPage = () => {
                     )}
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto mt-6">
+                    <h3 className="text-lg font-semibold mb-3">
+                      Assignment Details
+                    </h3>
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Term
+                          </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Type
                           </th>
@@ -805,8 +1011,31 @@ const ClassDetailPage = () => {
                                 answer.exam ||
                                 answer.activity ||
                                 answer.assignment;
+                              const term = getAssignmentTerm(
+                                assignment._id,
+                                classroom
+                              );
+                              const totalPoints = (
+                                assignment.question || []
+                              ).reduce((acc, q) => acc + (q.points || 0), 0);
+                              const earnedPoints = (
+                                answer.answers || []
+                              ).reduce((acc, q) => acc + (q.points || 0), 0);
+                              const percentage =
+                                totalPoints > 0
+                                  ? Math.round(
+                                      (earnedPoints / totalPoints) * 100
+                                    )
+                                  : 0;
+
                               return (
-                                <tr key={answer._id}>
+                                <tr
+                                  key={answer._id}
+                                  className="hover:bg-gray-50"
+                                >
+                                  <td className="px-4 py-4 whitespace-nowrap capitalize">
+                                    {term}
+                                  </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <span
                                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -826,15 +1055,26 @@ const ClassDetailPage = () => {
                                     {assignment.title}
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    {(answer.answers || []).reduce(
-                                      (acc, q) => acc + (q.points || 0),
-                                      0
-                                    )}
-                                    /
-                                    {(assignment.question || []).reduce(
-                                      (acc, q) => acc + (q.points || 0),
-                                      0
-                                    )}
+                                    <div className="flex items-center">
+                                      <span className="mr-2">
+                                        {earnedPoints}/{totalPoints}
+                                      </span>
+                                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className={`h-2 rounded-full ${
+                                            percentage >= 70
+                                              ? "bg-green-500"
+                                              : percentage >= 50
+                                              ? "bg-yellow-500"
+                                              : "bg-red-500"
+                                          }`}
+                                          style={{ width: `${percentage}%` }}
+                                        ></div>
+                                      </div>
+                                      <span className="ml-2 text-xs text-gray-500">
+                                        {percentage}%
+                                      </span>
+                                    </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <Link
@@ -850,7 +1090,7 @@ const ClassDetailPage = () => {
                         ) : (
                           <tr>
                             <td
-                              colSpan="4"
+                              colSpan="5"
                               className="px-4 py-4 text-center text-gray-500"
                             >
                               No submitted assignments yet
@@ -913,14 +1153,24 @@ const ClassDetailPage = () => {
                 <div className="bg-yellow-100 text-yellow-800 p-4 rounded-xl shadow-sm">
                   <h3 className="text-sm font-medium">Total Quizzes</h3>
                   <p className="text-2xl font-bold">
-                    {classroom.quizzes?.length || 0}
+                    {(classroom.midtermActivities?.quizzes?.length || 0) +
+                      (classroom.finalActivities?.quizzes?.length || 0)}
                   </p>
                 </div>
 
                 <div className="bg-green-100 text-green-800 p-4 rounded-xl shadow-sm">
                   <h3 className="text-sm font-medium">Total Exams</h3>
                   <p className="text-2xl font-bold">
-                    {classroom.exams?.length || 0}
+                    {(classroom.midtermActivities?.exams?.length || 0) +
+                      (classroom.finalActivities?.exams?.length || 0)}
+                  </p>
+                </div>
+
+                <div className="bg-gray-100 text-gray-800 p-4 rounded-xl shadow-sm">
+                  <h3 className="text-sm font-medium">Total Activities</h3>
+                  <p className="text-2xl font-bold">
+                    {(classroom.midtermActivities?.activities?.length || 0) +
+                      (classroom.finalActivities?.activities?.length || 0)}
                   </p>
                 </div>
 
@@ -930,37 +1180,51 @@ const ClassDetailPage = () => {
                     {classroom.materials?.length || 0}
                   </p>
                 </div>
-
-                <div className="bg-gray-100 text-gray-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Activities</h3>
-                  <p className="text-2xl font-bold">
-                    {classroom.activities?.length || 0}
-                  </p>
-                </div>
               </div>
 
               <div className="bg-white p-6 rounded shadow-md">
                 <h2 className="text-xl font-bold mb-4 text-gray-800">
                   Grading System
                 </h2>
-                {classroom.classroom?.grading_system ? (
-                  <div className="space-y-2 text-lg font-semibold text-gray-700">
+                {classroom.gradingSystem ? (
+                  <div className="space-y-4">
                     <div>
-                      📘 Quiz: {classroom.classroom.grading_system.quiz}%
+                      <h3 className="text-lg font-semibold mb-2">Midterm</h3>
+                      <div className="space-y-2 text-gray-700">
+                        <div>
+                          📘 Quiz: {classroom.gradingSystem.midterm?.quiz || 0}%
+                        </div>
+                        <div>
+                          📝 Assignment:{" "}
+                          {classroom.gradingSystem.midterm?.assignment || 0}%
+                        </div>
+                        <div>
+                          🎯 Activity:{" "}
+                          {classroom.gradingSystem.midterm?.activity || 0}%
+                        </div>
+                        <div>
+                          📚 Exam: {classroom.gradingSystem.midterm?.exam || 0}%
+                        </div>
+                      </div>
                     </div>
                     <div>
-                      📝 Assignment:{" "}
-                      {classroom.classroom.grading_system.assignment}%
-                    </div>
-                    <div>
-                      🎯 Activity: {classroom.classroom.grading_system.activity}
-                      %
-                    </div>
-                    <div>
-                      📚 Midterm: {classroom.classroom.grading_system.midterm}%
-                    </div>
-                    <div>
-                      📖 Final: {classroom.classroom.grading_system.final}%
+                      <h3 className="text-lg font-semibold mb-2">Final</h3>
+                      <div className="space-y-2 text-gray-700">
+                        <div>
+                          📘 Quiz: {classroom.gradingSystem.final?.quiz || 0}%
+                        </div>
+                        <div>
+                          📝 Assignment:{" "}
+                          {classroom.gradingSystem.final?.assignment || 0}%
+                        </div>
+                        <div>
+                          🎯 Activity:{" "}
+                          {classroom.gradingSystem.final?.activity || 0}%
+                        </div>
+                        <div>
+                          📚 Exam: {classroom.gradingSystem.final?.exam || 0}%
+                        </div>
+                      </div>
                     </div>
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
                       🔢 Total: 100%

@@ -217,6 +217,7 @@ const AssignmentDetailPage = () => {
     setIsLoading(true);
     try {
       const classroomResult = await specificClassroom(classId);
+      console.log(classroomResult);
       const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
       const answersExamResult = await allAnswerSpecificExam(assignmentId);
       const answersActivityResult = await allAnswerSpecificActivity(
@@ -241,23 +242,35 @@ const AssignmentDetailPage = () => {
         const classroom = classroomResult.data.data;
         if (!classroom) return;
 
-        const quizzes = (classroom.quizzes || []).map((q) => ({
+        const quizzes = [
+          ...(classroom.finalActivities?.quizzes || []),
+          ...(classroom.midtermActivities?.quizzes || []),
+        ].map((q) => ({
           ...q,
           type: "quiz",
         }));
 
-        const exams = (classroom.exams || []).map((e) => ({
+        const exams = [
+          ...(classroom.finalActivities?.exams || []),
+          ...(classroom.midtermActivities?.exams || []),
+        ].map((e) => ({
           ...e,
           type: "exam",
         }));
 
-        const activities = (classroom.activities || []).map((e) => ({
-          ...e,
+        const activities = [
+          ...(classroom.finalActivities?.activities || []),
+          ...(classroom.midtermActivities?.activities || []),
+        ].map((a) => ({
+          ...a,
           type: "activity",
         }));
 
-        const assignments = (classroom.assignments || []).map((e) => ({
-          ...e,
+        const assignments = [
+          ...(classroom.finalActivities?.assignments || []),
+          ...(classroom.midtermActivities?.assignments || []),
+        ].map((a) => ({
+          ...a,
           type: "assignment",
         }));
 

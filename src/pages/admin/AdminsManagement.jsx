@@ -261,9 +261,9 @@ const AdminsManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/*   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
-                  </th>
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -319,7 +319,7 @@ const AdminsManagement = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <button
+                          {/*    <button
                             onClick={() => handleEditAdmin(admin)}
                             className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
                             title="Edit"
@@ -332,7 +332,7 @@ const AdminsManagement = () => {
                             title="Delete"
                           >
                             <FiTrash2 size={18} />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>

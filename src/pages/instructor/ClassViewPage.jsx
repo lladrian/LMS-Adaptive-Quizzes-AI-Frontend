@@ -120,26 +120,41 @@ const ClassDetailPage = () => {
   };
 
   // Combine and sort all activities including assignments
-  const quizzes = Array.isArray(ClassroomData.quizzes)
-    ? ClassroomData.quizzes
-    : [];
-  const exams = Array.isArray(ClassroomData.exams) ? ClassroomData.exams : [];
-  const activities = Array.isArray(ClassroomData.activities)
-    ? ClassroomData.activities
-    : [];
-  const assignments = Array.isArray(ClassroomData.assignments)
-    ? ClassroomData.assignments
-    : [];
+  const getActivitiesByTerm = (term) => {
+    const termActivities = ClassroomData[`${term}Activities`] || {};
+    return [
+      ...(termActivities.quizzes || []).map((a) => ({
+        ...a,
+        activityType: "quiz",
+        term,
+      })),
+      ...(termActivities.exams || []).map((a) => ({
+        ...a,
+        activityType: "exam",
+        term,
+      })),
+      ...(termActivities.activities || []).map((a) => ({
+        ...a,
+        activityType: "activity",
+        term,
+      })),
+      ...(termActivities.assignments || []).map((a) => ({
+        ...a,
+        activityType: "assignment",
+        term,
+      })),
+    ];
+  };
+
+  const midtermActivities = getActivitiesByTerm("midterm");
+  const finalActivities = getActivitiesByTerm("final");
 
   // Get all activities with their types
-  const allActivities = [
-    ...quizzes.map((a) => ({ ...a, activityType: "quiz" })),
-    ...exams.map((a) => ({ ...a, activityType: "exam" })),
-    ...activities.map((a) => ({ ...a, activityType: "activity" })),
-    ...assignments.map((a) => ({ ...a, activityType: "assignment" })),
-  ].sort((a, b) => {
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
+  const allActivities = [...midtermActivities, ...finalActivities].sort(
+    (a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+  );
 
   // Filter activities based on selected filters
   const filteredActivities = allActivities.filter((activity) => {
@@ -159,7 +174,7 @@ const ClassDetailPage = () => {
   // Calculate pagination for activities
   const activityStartIndex = (currentPage.activities - 1) * itemsPerPage;
   const activityEndIndex = activityStartIndex + itemsPerPage;
-  const currentActivities = filteredActivities.slice(
+  const currentActivitiesPaginated = filteredActivities.slice(
     activityStartIndex,
     activityEndIndex
   );
@@ -262,7 +277,6 @@ const ClassDetailPage = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState(null);
-
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showRemoveStudentModal, setShowRemoveStudentModal] = useState(false);
@@ -311,30 +325,7 @@ const ClassDetailPage = () => {
 
       if (result.success) {
         toast.success("Activity deleted successfully");
-
-        if (activityType === "quiz") {
-          setClassroomData((prev) => ({
-            ...prev,
-            quizzes: prev.quizzes?.filter((q) => q._id !== activityId) || [],
-          }));
-        } else if (activityType === "exam") {
-          setClassroomData((prev) => ({
-            ...prev,
-            exams: prev.exams?.filter((e) => e._id !== activityId) || [],
-          }));
-        } else if (activityType === "activity") {
-          setClassroomData((prev) => ({
-            ...prev,
-            activities:
-              prev.activities?.filter((a) => a._id !== activityId) || [],
-          }));
-        } else if (activityType === "assignment") {
-          setClassroomData((prev) => ({
-            ...prev,
-            assignments:
-              prev.assignments?.filter((a) => a._id !== activityId) || [],
-          }));
-        }
+        fetchClasses(); // Refresh the data after deletion
       } else {
         toast.error(result.error || "Failed to delete activity");
       }
@@ -350,40 +341,8 @@ const ClassDetailPage = () => {
       return;
     }
 
-    const completeActivity = {
-      _id: newActivity._id,
-      title: newActivity.title || "Untitled Activity",
-      description: newActivity.description || "",
-      submission_time: newActivity.submission_time || 60,
-      points: newActivity.points || calculateActivityPoints(newActivity),
-      created_at: newActivity.created_at || new Date().toISOString(),
-      type: newActivity.type || "quiz",
-      ...newActivity,
-    };
-
-    if (completeActivity.type === "quiz") {
-      setClassroomData((prev) => ({
-        ...prev,
-        quizzes: [...(prev.quizzes || []), completeActivity],
-      }));
-    } else if (completeActivity.type === "exam") {
-      setClassroomData((prev) => ({
-        ...prev,
-        exams: [...(prev.exams || []), completeActivity],
-      }));
-    } else if (completeActivity.type === "activity") {
-      setClassroomData((prev) => ({
-        ...prev,
-        activities: [...(prev.activities || []), completeActivity],
-      }));
-    } else if (completeActivity.type === "assignment") {
-      setClassroomData((prev) => ({
-        ...prev,
-        assignments: [...(prev.assignments || []), completeActivity],
-      }));
-    }
-
-    toast.success(`New ${completeActivity.type} created successfully!`);
+    toast.success(`New ${newActivity.type} created successfully!`);
+    fetchClasses(); // Refresh the data after creation
   };
 
   const handleUploadSuccess = () => {
@@ -426,8 +385,6 @@ const ClassDetailPage = () => {
 
   const handleViewClick = (student) => {
     setSelectedStudent(student);
-    console.log(student);
-    console.log("!");
     setIsModalOpen(true);
   };
 
@@ -447,6 +404,7 @@ const ClassDetailPage = () => {
   };
 
   const getFilteredActivities = () => {
+    if (!selectedStudentActivities) return [];
     if (activityFilter === "answered")
       return selectedStudentActivities.answered_activities;
     if (activityFilter === "unanswered")
@@ -563,7 +521,7 @@ const ClassDetailPage = () => {
               <p className="text-gray-700 mb-4">
                 {ClassroomData.classroom?.description}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiUsers className="text-indigo-600 mr-2" />
@@ -588,16 +546,21 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiBarChart2 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {(() => {
-                        const total =
-                          (ClassroomData.quizzes?.length || 0) +
-                          (ClassroomData.exams?.length || 0) +
-                          (ClassroomData.activities?.length || 0) +
-                          (ClassroomData.assignments?.length || 0);
-                        return `${total} ${
-                          total <= 1 ? "Activity" : "Activities"
-                        }`;
-                      })()}
+                      {midtermActivities.length}{" "}
+                      {midtermActivities.length === 1
+                        ? "Total Midterm Activity"
+                        : "Total Midterm Activities"}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiBarChart2 className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {finalActivities.length}{" "}
+                      {finalActivities.length === 1
+                        ? "Total Final Activity"
+                        : "Total Final Activities"}
                     </span>
                   </div>
                 </div>
@@ -605,8 +568,17 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiEdit3 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {ClassroomData.quizzes?.length || 0} Quiz
-                      {(ClassroomData.quizzes?.length || 0) !== 1 ? "zes" : ""}
+                      {
+                        midtermActivities.filter(
+                          (a) => a.activityType === "quiz"
+                        ).length
+                      }{" "}
+                      Midterm Quiz
+                      {midtermActivities.filter(
+                        (a) => a.activityType === "quiz"
+                      ).length !== 1
+                        ? "zes"
+                        : ""}
                     </span>
                   </div>
                 </div>
@@ -614,20 +586,121 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiClipboard className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {ClassroomData.exams?.length || 0} Exam
-                      {(ClassroomData.exams?.length || 0) !== 1 ? "s" : ""}
+                      {
+                        midtermActivities.filter(
+                          (a) => a.activityType === "exam"
+                        ).length
+                      }{" "}
+                      Midterm Exam
+                      {midtermActivities.filter(
+                        (a) => a.activityType === "exam"
+                      ).length !== 1
+                        ? "s"
+                        : ""}
                     </span>
                   </div>
                 </div>
-
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center">
                     <FiFile className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {ClassroomData.assignments?.length || 0} Assignment
-                      {(ClassroomData.assignments?.length || 0) !== 1
+                      {
+                        midtermActivities.filter(
+                          (a) => a.activityType === "assignment"
+                        ).length
+                      }{" "}
+                      Midterm Assignment
+                      {midtermActivities.filter(
+                        (a) => a.activityType === "assignment"
+                      ).length !== 1
                         ? "s"
                         : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiFile className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {
+                        midtermActivities.filter(
+                          (a) => a.activityType === "activity"
+                        ).length
+                      }{" "}
+                      Midterm Lab. Activit
+                      {midtermActivities.filter(
+                        (a) => a.activityType === "activity"
+                      ).length !== 1
+                        ? "y"
+                        : "ies"}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiEdit3 className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {
+                        finalActivities.filter((a) => a.activityType === "quiz")
+                          .length
+                      }{" "}
+                      Final Quiz
+                      {finalActivities.filter((a) => a.activityType === "quiz")
+                        .length !== 1
+                        ? "zes"
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiClipboard className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {
+                        finalActivities.filter((a) => a.activityType === "exam")
+                          .length
+                      }{" "}
+                      Final Exam
+                      {finalActivities.filter((a) => a.activityType === "exam")
+                        .length !== 1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiFile className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {
+                        finalActivities.filter(
+                          (a) => a.activityType === "assignment"
+                        ).length
+                      }{" "}
+                      Final Assignment
+                      {finalActivities.filter(
+                        (a) => a.activityType === "assignment"
+                      ).length !== 1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center">
+                    <FiFile className="text-indigo-600 mr-2" />
+                    <span className="font-medium">
+                      {
+                        finalActivities.filter(
+                          (a) => a.activityType === "activity"
+                        ).length
+                      }{" "}
+                      Final Lab. Activit
+                      {finalActivities.filter(
+                        (a) => a.activityType === "activity"
+                      ).length !== 1
+                        ? "y"
+                        : "ies"}
                     </span>
                   </div>
                 </div>
@@ -694,7 +767,6 @@ const ClassDetailPage = () => {
                           >
                             GRADES
                           </button>
-
                           <button
                             onClick={() => handleViewClickActivities(student)}
                             className="cursor-pointer px-4 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 transition"
@@ -901,103 +973,241 @@ const ClassDetailPage = () => {
             )}
 
             {isModalOpen && selectedStudent && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-8">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
-                    Student Grade Details
-                  </h2>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="bg-white w-full max-w-4xl rounded-xl shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+                  {/* Header */}
+                  <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      Student Grade Details
+                    </h2>
+                  </div>
 
-                  <div className="space-y-3 text-sm text-gray-700">
-                    <p>
-                      <span className="font-semibold">Complete Name: </span>
-                      {selectedStudent.student.first_name}{" "}
-                      {selectedStudent.student.middle_name}{" "}
-                      {selectedStudent.student.last_name}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Email:</span>{" "}
-                      {selectedStudent.student.email}
-                    </p>
+                  {/* Scrollable Content */}
+                  <div className="overflow-y-auto p-6">
+                    <div className="space-y-4">
+                      {/* Student Info */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                          <p className="text-gray-700">
+                            <span className="font-semibold">
+                              Complete Name:{" "}
+                            </span>
+                            {selectedStudent.student.first_name}{" "}
+                            {selectedStudent.student.middle_name}{" "}
+                            {selectedStudent.student.last_name}
+                          </p>
+                          <p className="text-gray-700">
+                            <span className="font-semibold">Email:</span>{" "}
+                            {selectedStudent.student.email}
+                          </p>
+                        </div>
+                        <div className="bg-indigo-50 p-4 rounded-lg">
+                          <p className="text-lg font-semibold text-indigo-800">
+                            Overall Grade:{" "}
+                            <span className="text-2xl">
+                              {selectedStudent.grades.student_grade.grade}/100
+                            </span>
+                          </p>
+                        </div>
+                      </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">Quiz:</p>
-                        <p>
-                          {selectedStudent.grades.quiz.earnedPoints}/
-                          {selectedStudent.grades.quiz.totalPoints} ={" "}
-                          <span className="font-medium text-indigo-600">
-                            {selectedStudent.grades.quiz.quiz}
-                          </span>
-                          /{selectedStudent.classroom.grading_system.quiz}
-                        </p>
+                      {/* Midterm Grades */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                          Midterm Grades
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">Quiz:</p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.midterm.quiz
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.midterm.quiz
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.midterm.quiz?.grade ||
+                                  0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.midterm
+                                ?.quiz || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">
+                              Assignment:
+                            </p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.midterm.assignment
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.midterm.assignment
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.midterm.assignment
+                                  ?.grade || 0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.midterm
+                                ?.assignment || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">
+                              Activity:
+                            </p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.midterm.activity
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.midterm.activity
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.midterm.activity
+                                  ?.grade || 0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.midterm
+                                ?.activity || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">Exam:</p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.midterm.exam
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.midterm.exam
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.midterm.exam?.grade ||
+                                  0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.midterm
+                                ?.exam || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
+                          <p className="font-medium text-indigo-800">
+                            Midterm Total:{" "}
+                            {selectedStudent.grades.midterm.term_grade || 0}/
+                            {Object.values(
+                              selectedStudent.classroom.grading_system
+                                .midterm || {}
+                            ).reduce((a, b) => a + b, 0)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">Assignment:</p>
-                        <p>
-                          {selectedStudent.grades.assignment?.earnedPoints || 0}
-                          /{selectedStudent.grades.assignment?.totalPoints || 0}{" "}
-                          ={" "}
-                          <span className="font-medium text-indigo-600">
-                            {selectedStudent.grades.assignment?.assignment || 0}
-                          </span>
-                          /
-                          {selectedStudent.classroom.grading_system
-                            .assignment || 0}
-                        </p>
-                      </div>
-                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">
-                          Laboratory Activity:
-                        </p>
-                        <p>
-                          {selectedStudent.grades.activity.earnedPoints}/
-                          {selectedStudent.grades.activity.totalPoints} ={" "}
-                          <span className="font-medium text-indigo-600">
-                            {selectedStudent.grades.activity.activity}
-                          </span>
-                          /{selectedStudent.classroom.grading_system.activity}
-                        </p>
-                      </div>
-                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">Midterm:</p>
-                        <p>
-                          {selectedStudent.grades.midterm.earnedPoints}/
-                          {selectedStudent.grades.midterm.totalPoints} ={" "}
-                          <span className="font-medium text-indigo-600">
-                            {selectedStudent.grades.midterm.midterm}
-                          </span>
-                          /{selectedStudent.classroom.grading_system.midterm}
-                        </p>
-                      </div>
-                      <div className="border p-4 rounded-lg shadow-sm bg-gray-50">
-                        <p className="font-semibold capitalize">Final:</p>
-                        <p>
-                          {selectedStudent.grades.final.earnedPoints}/
-                          {selectedStudent.grades.final.totalPoints} ={" "}
-                          <span className="font-medium text-indigo-600">
-                            {selectedStudent.grades.final.final}
-                          </span>
-                          / {selectedStudent.classroom.grading_system.final}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="mt-6 border-t pt-4">
-                      <p className="text-lg font-semibold">
-                        Student Grade:
-                        <span className="text-indigo-700 ml-2">
-                          {selectedStudent.grades.student_grade.grade}/100
-                        </span>
-                      </p>
+                      {/* Final Grades */}
+                      <div className="bg-gray-50 p-4 rounded-lg mt-6">
+                        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                          Final Grades
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">Quiz:</p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.final.quiz
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.final.quiz?.totalPoints ||
+                                0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.final.quiz?.grade || 0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.final
+                                ?.quiz || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">
+                              Assignment:
+                            </p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.final.assignment
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.final.assignment
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.final.assignment
+                                  ?.grade || 0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.final
+                                ?.assignment || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">
+                              Activity:
+                            </p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.final.activity
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.final.activity
+                                ?.totalPoints || 0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.final.activity?.grade ||
+                                  0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.final
+                                ?.activity || 0}
+                            </p>
+                          </div>
+                          <div className="border p-4 rounded-lg bg-white">
+                            <p className="font-semibold capitalize">Exam:</p>
+                            <p className="text-gray-700">
+                              {selectedStudent.grades.final.exam
+                                ?.earnedPoints || 0}
+                              /
+                              {selectedStudent.grades.final.exam?.totalPoints ||
+                                0}{" "}
+                              ={" "}
+                              <span className="font-medium text-indigo-600">
+                                {selectedStudent.grades.final.exam?.grade || 0}
+                              </span>
+                              /
+                              {selectedStudent.classroom.grading_system.final
+                                ?.exam || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
+                          <p className="font-medium text-indigo-800">
+                            Final Total:{" "}
+                            {selectedStudent.grades.final.term_grade || 0}/
+                            {Object.values(
+                              selectedStudent.classroom.grading_system.final ||
+                                {}
+                            ).reduce((a, b) => a + b, 0)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-8 flex justify-end gap-4">
+                  {/* Footer with Actions */}
+                  <div className="p-4 border-t border-gray-200 sticky bottom-0 bg-white flex justify-end gap-4">
                     <button
                       onClick={() => handleRemoveClick(selectedStudent.student)}
                       className="cursor-pointer px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                     >
-                      Remove
+                      Remove Student
                     </button>
                     <button
                       onClick={closeModal}
@@ -1015,8 +1225,9 @@ const ClassDetailPage = () => {
                 <div className="bg-white rounded-lg p-6 max-w-md w-full">
                   <h3 className="text-lg font-medium mb-4">Confirm Removal</h3>
                   <p className="mb-6">
-                    Are you sure you want to remove {studentToRemove.fullname} (
-                    {studentToRemove.email}) from this class?
+                    Are you sure you want to remove {studentToRemove.first_name}{" "}
+                    {studentToRemove.last_name} ({studentToRemove.email}) from
+                    this class?
                   </p>
                   <div className="flex justify-end space-x-3">
                     <button
@@ -1305,14 +1516,14 @@ const ClassDetailPage = () => {
             )}
 
             <div className="divide-y divide-gray-200">
-              {currentActivities.length === 0 ? (
+              {currentActivitiesPaginated.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   {filteredActivities.length === 0
                     ? "No activities match your filters"
                     : "There are no activities"}
                 </div>
               ) : (
-                currentActivities.map((activity) => (
+                currentActivitiesPaginated.map((activity) => (
                   <div
                     key={activity._id}
                     className="p-4 hover:bg-gray-50 transition-colors"
@@ -1323,7 +1534,6 @@ const ClassDetailPage = () => {
                           <strong className="font-medium">Title:</strong>{" "}
                           {activity.title}
                         </h4>
-
                         <span className="text-gray-700">
                           <strong className="font-medium">Description:</strong>{" "}
                           {activity.description}
@@ -1343,7 +1553,6 @@ const ClassDetailPage = () => {
                             {activity.activityType} -{" "}
                             {activity.grading_breakdown || "N/A"}
                           </span>
-
                           <span className="text-gray-700 flex items-center">
                             <span className="w-1 h-1 bg-gray-400 rounded-full mx-2"></span>
                             <strong className="font-medium mr-2">
@@ -1371,7 +1580,6 @@ const ClassDetailPage = () => {
                               </span>
                             )}
                           </span>
-
                           <span className="ml-2 text-gray-700">
                             <strong className="font-medium">Points:</strong>{" "}
                             <span>{calculateActivityPoints(activity)}</span>
