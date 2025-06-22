@@ -1344,12 +1344,14 @@ export const addActivity = async (
         response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
           ...basePayload,
           time_limit: Number(timeLimit),
+          grading_breakdown,
         });
         break;
       case "assignment":
         response = await axios.post(`${BASE_URL}/assignments/add_assignment`, {
           ...basePayload,
           time_limit: Number(timeLimit),
+          grading_breakdown,
         });
         break;
       case "activity":
@@ -1357,6 +1359,7 @@ export const addActivity = async (
           ...basePayload,
           // Activities can have optional time limits
           time_limit: timeLimit ? Number(timeLimit) : null,
+          grading_breakdown,
         });
         break;
       case "exam":

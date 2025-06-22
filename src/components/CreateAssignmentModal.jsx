@@ -241,9 +241,7 @@ const CreateAssignmentModal = ({
         assignmentData.title,
         assignmentData.description,
         assignmentData.type,
-        assignmentData.type === "exam"
-          ? assignmentData.grading_breakdown
-          : undefined
+        assignmentData.grading_breakdown
       );
 
       if (!result.success) {
@@ -264,7 +262,7 @@ const CreateAssignmentModal = ({
       setCurrentStep(1);
 
       if (result.data) {
-        onSuccess(result.data.data); // Make sure this matches your API response structure
+        onSuccess(result.data.data);
       }
     } catch (err) {
       console.error("Creation error:", err);
@@ -280,15 +278,11 @@ const CreateAssignmentModal = ({
         setError("Title is required");
         return;
       }
-      /*   if (assignmentData.type !== "activity" && !assignmentData.timeLimit) {
-        setError("Time limit is required");
-        return;
-      } */
       if (!assignmentData.timeLimit) {
         setError("Time limit is required");
         return;
       }
-      if (assignmentData.type === "exam" && !assignmentData.grading_breakdown) {
+      if (!assignmentData.grading_breakdown) {
         setError("Please select grading breakdown for exams");
         return;
       }
@@ -335,11 +329,10 @@ const CreateAssignmentModal = ({
             </label>
             <div className="space-y-2">
               {newQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={option.letter} className="flex items-center gap-2">
                   <input
                     type="radio"
-                    name="correctAnswer"
-                    checked={newQuestion.answer === option.letter}
+                    name={`correctAnswer-${editingQuestionId || "new"}`}
                     onChange={() => handleAnswerChange(option.letter)}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                   />
@@ -427,8 +420,8 @@ const CreateAssignmentModal = ({
                   text: question.text,
                   points: question.points,
                   expectedOutput: question.expectedOutput,
-                  options: question.options || [],
-                  answer: question.answer || "",
+                  options: question.options.map((opt) => ({ ...opt })),
+                  answer: question.answer,
                   type: question.type,
                 });
                 setEditingQuestionId(question.id);
@@ -652,24 +645,21 @@ const CreateAssignmentModal = ({
                       </div>
                     </div>
 
-                    {assignmentData.type === "exam" && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Grading Breakdown *
-                        </label>
-                        <select
-                          name="grading_breakdown"
-                          value={assignmentData.grading_breakdown}
-                          onChange={handleAssignmentChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
-                        >
-                          <option value="midterm">Midterm</option>
-                          <option value="final">Final</option>
-                          <option value="quarterly">Quarterly</option>
-                        </select>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Grading Breakdown *
+                      </label>
+                      <select
+                        name="grading_breakdown"
+                        value={assignmentData.grading_breakdown}
+                        onChange={handleAssignmentChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                      >
+                        <option value="midterm">Midterm</option>
+                        <option value="final">Final</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -694,12 +684,23 @@ const CreateAssignmentModal = ({
                               </label>
                               <select
                                 value={newQuestion.type}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const newType = e.target.value;
                                   setNewQuestion((prev) => ({
                                     ...prev,
-                                    type: e.target.value,
-                                  }))
-                                }
+                                    type: newType,
+                                    // Reset answer when changing question type
+                                    answer:
+                                      newType === "multiple_choice"
+                                        ? prev.answer
+                                        : "",
+                                    // Reset options if switching to programming
+                                    options:
+                                      newType === "multiple_choice"
+                                        ? prev.options
+                                        : [],
+                                  }));
+                                }}
                                 className="px-3 py-1 border border-gray-300 rounded-lg"
                               >
                                 <option value="multiple_choice">
@@ -729,6 +730,17 @@ const CreateAssignmentModal = ({
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    // Validate before saving
+                                    if (
+                                      newQuestion.type === "multiple_choice" &&
+                                      !newQuestion.answer
+                                    ) {
+                                      setError(
+                                        "Please select the correct answer"
+                                      );
+                                      return;
+                                    }
+
                                     const updatedQuestions =
                                       assignmentData.questions.map((q) =>
                                         q.id === question.id
@@ -739,23 +751,14 @@ const CreateAssignmentModal = ({
                                                 newQuestion.points
                                               ),
                                               type: newQuestion.type,
-                                              ...(newQuestion.type ===
-                                              "programming"
-                                                ? {
-                                                    expectedOutput:
-                                                      newQuestion.expectedOutput,
-                                                    options: [],
-                                                    answer: "",
-                                                  }
-                                                : {
-                                                    options:
-                                                      newQuestion.options,
-                                                    answer: newQuestion.answer,
-                                                    expectedOutput: "",
-                                                  }),
+                                              options: [...newQuestion.options], // Create new array
+                                              answer: newQuestion.answer,
+                                              expectedOutput:
+                                                newQuestion.expectedOutput,
                                             }
                                           : q
                                       );
+
                                     setAssignmentData((prev) => ({
                                       ...prev,
                                       questions: updatedQuestions,
@@ -765,15 +768,19 @@ const CreateAssignmentModal = ({
                                       ),
                                     }));
                                     setEditingQuestionId(null);
+                                    setError(null);
                                   }}
-                                  className="px-3 py-1 bg-green-600 text-white rounded"
+                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                                 >
                                   Save
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setEditingQuestionId(null)}
-                                  className="px-3 py-1 bg-gray-200 rounded"
+                                  onClick={() => {
+                                    setEditingQuestionId(null);
+                                    setError(null);
+                                  }}
+                                  className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
                                 >
                                   Cancel
                                 </button>

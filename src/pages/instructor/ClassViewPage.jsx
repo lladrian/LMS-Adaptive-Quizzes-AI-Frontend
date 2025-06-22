@@ -14,6 +14,7 @@ import {
   FiLock,
   FiChevronLeft,
   FiChevronRight,
+  FiFilter,
 } from "react-icons/fi";
 import UploadMaterialModal from "../../components/UploadMaterialModal";
 import EditClassModal from "../../components/EditClassModal";
@@ -64,6 +65,11 @@ const ClassDetailPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenActivities, setIsModalOpenActivities] = useState(false);
   const [activityFilter, setActivityFilter] = useState("all");
+
+  // Activity filtering state
+  const [activityTypeFilter, setActivityTypeFilter] = useState("all");
+  const [gradingBreakdownFilter, setGradingBreakdownFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState({
@@ -125,23 +131,46 @@ const ClassDetailPage = () => {
     ? ClassroomData.assignments
     : [];
 
+  // Get all activities with their types
   const allActivities = [
-    ...quizzes,
-    ...exams,
-    ...activities,
-    ...assignments,
+    ...quizzes.map((a) => ({ ...a, activityType: "quiz" })),
+    ...exams.map((a) => ({ ...a, activityType: "exam" })),
+    ...activities.map((a) => ({ ...a, activityType: "activity" })),
+    ...assignments.map((a) => ({ ...a, activityType: "assignment" })),
   ].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  // Filter activities based on selected filters
+  const filteredActivities = allActivities.filter((activity) => {
+    // Filter by activity type
+    const typeMatch =
+      activityTypeFilter === "all" ||
+      activity.activityType === activityTypeFilter;
+
+    // Filter by grading breakdown
+    const gradingMatch =
+      gradingBreakdownFilter === "all" ||
+      activity.grading_breakdown === gradingBreakdownFilter;
+
+    return typeMatch && gradingMatch;
   });
 
   // Calculate pagination for activities
   const activityStartIndex = (currentPage.activities - 1) * itemsPerPage;
   const activityEndIndex = activityStartIndex + itemsPerPage;
-  const currentActivities = allActivities.slice(
+  const currentActivities = filteredActivities.slice(
     activityStartIndex,
     activityEndIndex
   );
-  const totalActivityPages = Math.ceil(allActivities.length / itemsPerPage);
+  const totalActivityPages = Math.ceil(
+    filteredActivities.length / itemsPerPage
+  );
+
+  // Get unique grading breakdowns for filter options
+  const uniqueGradingBreakdowns = [
+    ...new Set(allActivities.map((a) => a.grading_breakdown).filter(Boolean)),
+  ];
 
   // Pagination handlers
   const handlePageChange = (tab, page) => {
@@ -1166,6 +1195,12 @@ const ClassDetailPage = () => {
               <h3 className="text-lg font-semibold">Class Activities</h3>
               <div className="flex space-x-3">
                 <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="cursor-pointer px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center text-sm"
+                >
+                  <FiFilter className="mr-2" /> Filters
+                </button>
+                <button
                   onClick={() => setIsAssignmentModalOpen(true)}
                   className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center text-sm"
                 >
@@ -1173,10 +1208,108 @@ const ClassDetailPage = () => {
                 </button>
               </div>
             </div>
+
+            {/* Activity Filters */}
+            {showFilters && (
+              <div className="p-4 border-b border-gray-200 bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Activity Type
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setActivityTypeFilter("all")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          activityTypeFilter === "all"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setActivityTypeFilter("quiz")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          activityTypeFilter === "quiz"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Quizzes
+                      </button>
+                      <button
+                        onClick={() => setActivityTypeFilter("exam")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          activityTypeFilter === "exam"
+                            ? "bg-purple-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Exams
+                      </button>
+                      <button
+                        onClick={() => setActivityTypeFilter("activity")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          activityTypeFilter === "activity"
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Activities
+                      </button>
+                      <button
+                        onClick={() => setActivityTypeFilter("assignment")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          activityTypeFilter === "assignment"
+                            ? "bg-orange-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        Assignments
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Grading Breakdown
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setGradingBreakdownFilter("all")}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          gradingBreakdownFilter === "all"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                      >
+                        All
+                      </button>
+                      {uniqueGradingBreakdowns.map((breakdown) => (
+                        <button
+                          key={breakdown}
+                          onClick={() => setGradingBreakdownFilter(breakdown)}
+                          className={`px-3 py-1 rounded-md text-sm ${
+                            gradingBreakdownFilter === breakdown
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                          }`}
+                        >
+                          {breakdown}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="divide-y divide-gray-200">
               {currentActivities.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  There are no activities
+                  {filteredActivities.length === 0
+                    ? "No activities match your filters"
+                    : "There are no activities"}
                 </div>
               ) : (
                 currentActivities.map((activity) => (
@@ -1198,16 +1331,16 @@ const ClassDetailPage = () => {
                         <div className="flex items-center text-sm text-gray-500 mt-1">
                           <span
                             className={`px-2 py-1 rounded-full text-xs mr-2 capitalize ${
-                              activity.type === "quiz"
+                              activity.activityType === "quiz"
                                 ? "bg-blue-100 text-blue-800"
-                                : activity.type === "exam"
+                                : activity.activityType === "exam"
                                 ? "bg-purple-100 text-purple-800"
-                                : activity.type === "assignment"
+                                : activity.activityType === "assignment"
                                 ? "bg-orange-100 text-orange-800"
                                 : "bg-green-100 text-green-800"
                             }`}
                           >
-                            {activity.type} -{" "}
+                            {activity.activityType} -{" "}
                             {activity.grading_breakdown || "N/A"}
                           </span>
 
@@ -1216,11 +1349,6 @@ const ClassDetailPage = () => {
                             <strong className="font-medium mr-2">
                               Duration:
                             </strong>
-                            {/*     {activity.submission_time >= 60
-                              ? `${Math.floor(
-                                  activity.submission_time / 60
-                                )}h ${activity.submission_time % 60}m`
-                              : `${activity.submission_time}m`} */}
                             {activity.submission_time +
                               (activity.extended_minutes || 0) >=
                             60
