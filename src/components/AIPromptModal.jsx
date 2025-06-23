@@ -79,9 +79,9 @@ const AIPromptModal = ({
 
   const toggleQuestionSelection = (question) => {
     setSelectedQuestions((prev) => {
-      const isSelected = prev.some((q) => q.id === question.id);
+      const isSelected = prev.some((q) => q.text === question.text);
       if (isSelected) {
-        return prev.filter((q) => q.id !== question.id);
+        return prev.filter((q) => q.text !== question.text);
       } else {
         return [...prev, question];
       }
@@ -95,6 +95,8 @@ const AIPromptModal = ({
     }
 
     setIsLoading(true);
+    setQuestions([]);
+    setSelectedQuestions([]);
 
     try {
       let prompt = "";
@@ -169,13 +171,6 @@ const AIPromptModal = ({
           questionType
         );
         setQuestions(generatedQuestions);
-
-        // Preserve selections that match the new questions
-        setSelectedQuestions((prevSelected) => {
-          return prevSelected.filter((selected) =>
-            generatedQuestions.some((newQ) => newQ.text === selected.text)
-          );
-        });
       } else {
         throw new Error(result.error || "Failed to generate questions");
       }
@@ -210,7 +205,6 @@ const AIPromptModal = ({
           { letter: "D", text: match[7].trim() },
         ],
         answer: match[8].trim(),
-        id: `${match[2].trim().substring(0, 20)}-${Date.now()}`,
       }));
     } else {
       const programmingRegex =
@@ -221,7 +215,6 @@ const AIPromptModal = ({
         text: `${match[2].trim()} (Input: ${match[4].trim()})`,
         points: parseInt(match[3]) || 1,
         expectedOutput: match[5].trim(),
-        id: `${match[2].trim().substring(0, 20)}-${Date.now()}`,
       }));
     }
   };
@@ -398,11 +391,11 @@ const AIPromptModal = ({
       );
     }
 
-    const isSelected = selectedQuestions.some((q) => q.id === question.id);
+    const isSelected = selectedQuestions.some((q) => q.text === question.text);
 
     return (
       <div
-        key={question.id}
+        key={index}
         className={`border rounded-lg p-3 mb-3 cursor-pointer transition-all ${
           isSelected
             ? "border-blue-500 bg-blue-50"
