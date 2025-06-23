@@ -123,21 +123,26 @@ const CreateAssignmentModal = ({
     }));
   };
 
-  const handleQuestionSelect = (question) => {
-    const questionToAdd = {
-      id: Date.now(),
+  const handleQuestionsSelect = (selectedQuestions) => {
+    const questionsToAdd = selectedQuestions.map((question) => ({
+      id: Date.now() + Math.random(),
       text: question.text || question.problem || "",
       points: question.points || 1,
       expectedOutput: question.expectedOutput || question.output || "",
       options: question.options || [],
       answer: question.answer || "",
       type: question.type || "multiple_choice",
-    };
+    }));
+
+    const totalPointsToAdd = questionsToAdd.reduce(
+      (sum, q) => sum + (q.points || 1),
+      0
+    );
 
     setAssignmentData((prev) => ({
       ...prev,
-      questions: [...prev.questions, questionToAdd],
-      totalPoints: prev.totalPoints + (question.points || 1),
+      questions: [...prev.questions, ...questionsToAdd],
+      totalPoints: prev.totalPoints + totalPointsToAdd,
     }));
 
     setShowAIPromptModal(false);
@@ -689,12 +694,10 @@ const CreateAssignmentModal = ({
                                   setNewQuestion((prev) => ({
                                     ...prev,
                                     type: newType,
-                                    // Reset answer when changing question type
                                     answer:
                                       newType === "multiple_choice"
                                         ? prev.answer
                                         : "",
-                                    // Reset options if switching to programming
                                     options:
                                       newType === "multiple_choice"
                                         ? prev.options
@@ -730,7 +733,6 @@ const CreateAssignmentModal = ({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    // Validate before saving
                                     if (
                                       newQuestion.type === "multiple_choice" &&
                                       !newQuestion.answer
@@ -751,7 +753,7 @@ const CreateAssignmentModal = ({
                                                 newQuestion.points
                                               ),
                                               type: newQuestion.type,
-                                              options: [...newQuestion.options], // Create new array
+                                              options: [...newQuestion.options],
                                               answer: newQuestion.answer,
                                               expectedOutput:
                                                 newQuestion.expectedOutput,
@@ -988,7 +990,7 @@ const CreateAssignmentModal = ({
           <AIPromptModal
             isOpen={showAIPromptModal}
             onClose={() => setShowAIPromptModal(false)}
-            onSelectQuestion={handleQuestionSelect}
+            onSelectQuestions={handleQuestionsSelect}
             progLanguage={progLanguage}
             questionType={newQuestion.type}
             classId={classId}
