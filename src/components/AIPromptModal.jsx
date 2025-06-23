@@ -24,6 +24,8 @@ const AIPromptModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingMaterials, setIsFetchingMaterials] = useState(false);
   const [step, setStep] = useState(1);
+  const [questionCount, setQuestionCount] = useState(5); // Default to 5 questions
+  const [difficulty, setDifficulty] = useState("medium"); // Difficulty level
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +35,8 @@ const AIPromptModal = ({
       setMaterialContent("");
       setQuestions([]);
       setSelectedQuestions([]);
+      setQuestionCount(5); // Reset to default when modal opens
+      setDifficulty("medium"); // Reset difficulty
     }
   }, [isOpen, classId]);
 
@@ -94,6 +98,11 @@ const AIPromptModal = ({
       return;
     }
 
+    if (questionCount < 1 || questionCount > 20) {
+      toast.warning("Please enter a number between 1 and 20");
+      return;
+    }
+
     setIsLoading(true);
     setQuestions([]);
     setSelectedQuestions([]);
@@ -102,8 +111,14 @@ const AIPromptModal = ({
       let prompt = "";
       const topic = selectedMaterial?.title || progLanguage || "the material";
 
+      // Adjust points based on difficulty
+      let basePoints = 1;
+      if (difficulty === "easy") basePoints = 1;
+      else if (difficulty === "medium") basePoints = 2;
+      else if (difficulty === "hard") basePoints = 3;
+
       if (questionType === "multiple_choice") {
-        prompt = `Based on the following material about ${topic}, generate 5 multiple choice questions:
+        prompt = `Based on the following material about ${topic}, generate ${questionCount} multiple choice questions with ${difficulty} difficulty:
         
         Material Title: ${selectedMaterial?.title || "Untitled"}
         Material Description: ${
@@ -116,12 +131,15 @@ const AIPromptModal = ({
         }
 
         Requirements:
+        - Generate exactly ${questionCount} questions
+        - Difficulty level: ${difficulty}
         - Each question must directly relate to the material content
         - Include 1 correct answer and 3 plausible distractors
+        - Points per question: ${basePoints}
         - Format exactly like this example:
 
         1. Question: [question text]
-        Points: 1
+        Points: ${basePoints}
         A) [option 1]
         B) [option 2]
         C) [option 3]
@@ -129,14 +147,14 @@ const AIPromptModal = ({
         Answer: [correct letter]
 
         2. Question: [question text]
-        Points: 1
+        Points: ${basePoints}
         A) [option 1]
         B) [option 2]
         C) [option 3]
         D) [option 4]
         Answer: [correct letter]`;
       } else {
-        prompt = `Based on the following programming material, generate 5 coding problems:
+        prompt = `Based on the following programming material, generate ${questionCount} coding problems with ${difficulty} difficulty:
         
         Material Title: ${selectedMaterial?.title || "Untitled"}
         Programming Language: ${progLanguage || "general"}
@@ -147,19 +165,21 @@ const AIPromptModal = ({
         }
 
         Requirements:
+        - Generate exactly ${questionCount} problems
+        - Difficulty level: ${difficulty}
         - Each problem should be a clear, practical coding task from the material
         - Include one sample input/output pair
-        - Assign points based on problem difficulty (1 for easy, 2 for medium, 3 for hard)
+        - Points per problem: ${basePoints} (adjust slightly based on complexity)
         - Focus on real-world application
         - Format exactly like this:
 
         1. Problem: [description] 
-        Points: [number]
+        Points: ${basePoints}
         Input: [example]
         Output: [value]
         
         2. Problem: [description]
-        Points: [number]
+        Points: ${basePoints}
         Input: [example]
         Output: [value]`;
       }
@@ -333,6 +353,40 @@ const AIPromptModal = ({
         </p>
       </div>
 
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Number of Questions
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="20"
+            value={questionCount}
+            onChange={(e) =>
+              setQuestionCount(
+                Math.min(20, Math.max(1, parseInt(e.target.value) || 1))
+              )
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Difficulty Level
+          </label>
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mt-4">
         <h4 className="font-medium">AI Suggestions</h4>
         <button
@@ -459,7 +513,7 @@ const AIPromptModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg w-96 max-h-[90vh] overflow-y-auto">
+    <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
       <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
         <h3 className="text-lg font-semibold">
           {step === 1 ? "Select Material" : "Generate Questions"}
