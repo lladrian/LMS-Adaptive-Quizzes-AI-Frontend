@@ -11,19 +11,19 @@ import {
 const AIPromptModal = ({
   isOpen,
   onClose,
-  onSelectQuestion,
-
+  onSelectQuestions,
   progLanguage,
   questionType,
   classId,
 }) => {
   const [questions, setQuestions] = useState([]);
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [materialContent, setMaterialContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingMaterials, setIsFetchingMaterials] = useState(false);
-  const [step, setStep] = useState(1); // 1: select material, 2: generate questions
+  const [step, setStep] = useState(1);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,6 +32,7 @@ const AIPromptModal = ({
       setSelectedMaterial(null);
       setMaterialContent("");
       setQuestions([]);
+      setSelectedQuestions([]);
     }
   }, [isOpen, classId]);
 
@@ -39,11 +40,7 @@ const AIPromptModal = ({
     setIsFetchingMaterials(true);
     try {
       const result = await allMaterialsSpecificClass(classId);
-      console.log(classId);
-      console.log(result);
-      console.log("!");
       if (result.success) {
-        // The API returns data in result.data.data array
         setMaterials(result.data.data || []);
       } else {
         toast.error(result.error || "Failed to fetch materials");
@@ -59,13 +56,11 @@ const AIPromptModal = ({
   const handleMaterialSelect = async (material) => {
     setIsLoading(true);
     try {
-      // First get the full material details
       const materialResult = await specificMaterial(material._id);
       if (!materialResult.success) {
         throw new Error(materialResult.error);
       }
 
-      // Then extract the content
       const contentResult = await extractMaterialData(material._id);
       if (!contentResult.success) {
         throw new Error(contentResult.error);
@@ -82,6 +77,17 @@ const AIPromptModal = ({
     }
   };
 
+  const toggleQuestionSelection = (question) => {
+    setSelectedQuestions((prev) => {
+      const isSelected = prev.some((q) => q.id === question.id);
+      if (isSelected) {
+        return prev.filter((q) => q.id !== question.id);
+      } else {
+        return [...prev, question];
+      }
+    });
+  };
+
   const generateQuestions = async () => {
     if (!materialContent) {
       toast.warning("No material content available to generate questions");
@@ -89,14 +95,13 @@ const AIPromptModal = ({
     }
 
     setIsLoading(true);
-    setQuestions([]);
 
     try {
       let prompt = "";
       const topic = selectedMaterial?.title || progLanguage || "the material";
 
       if (questionType === "multiple_choice") {
-        prompt = `Based on the following material about ${topic}, generate 3 multiple choice questions:
+        prompt = `Based on the following material about ${topic}, generate 5 multiple choice questions:
         
         Material Title: ${selectedMaterial?.title || "Untitled"}
         Material Description: ${
@@ -127,17 +132,9 @@ const AIPromptModal = ({
         B) [option 2]
         C) [option 3]
         D) [option 4]
-        Answer: [correct letter]
-
-        3. Question: [question text]
-        Points: 1
-        A) [option 1]
-        B) [option 2]
-        C) [option 3]
-        D) [option 4]
         Answer: [correct letter]`;
       } else {
-        prompt = `Based on the following programming material, generate 3 coding problems:
+        prompt = `Based on the following programming material, generate 5 coding problems:
         
         Material Title: ${selectedMaterial?.title || "Untitled"}
         Programming Language: ${progLanguage || "general"}
@@ -148,7 +145,6 @@ const AIPromptModal = ({
         }
 
         Requirements:
-
         - Each problem should be a clear, practical coding task from the material
         - Include one sample input/output pair
         - Assign points based on problem difficulty (1 for easy, 2 for medium, 3 for hard)
@@ -163,16 +159,7 @@ const AIPromptModal = ({
         2. Problem: [description]
         Points: [number]
         Input: [example]
-        Output: [value]
-        
-        3. Problem: [description]
-        Points: [number]
-        Input: [example]
-        Output: [value]
-        
-
-
-        `;
+        Output: [value]`;
       }
 
       const result = await askPrompt(prompt);
@@ -182,6 +169,13 @@ const AIPromptModal = ({
           questionType
         );
         setQuestions(generatedQuestions);
+
+        // Preserve selections that match the new questions
+        setSelectedQuestions((prevSelected) => {
+          return prevSelected.filter((selected) =>
+            generatedQuestions.some((newQ) => newQ.text === selected.text)
+          );
+        });
       } else {
         throw new Error(result.error || "Failed to generate questions");
       }
@@ -216,6 +210,7 @@ const AIPromptModal = ({
           { letter: "D", text: match[7].trim() },
         ],
         answer: match[8].trim(),
+        id: `${match[2].trim().substring(0, 20)}-${Date.now()}`,
       }));
     } else {
       const programmingRegex =
@@ -226,8 +221,18 @@ const AIPromptModal = ({
         text: `${match[2].trim()} (Input: ${match[4].trim()})`,
         points: parseInt(match[3]) || 1,
         expectedOutput: match[5].trim(),
+        id: `${match[2].trim().substring(0, 20)}-${Date.now()}`,
       }));
     }
+  };
+
+  const handleAddSelectedQuestions = () => {
+    if (selectedQuestions.length === 0) {
+      toast.warning("Please select at least one question");
+      return;
+    }
+    onSelectQuestions(selectedQuestions);
+    onClose();
   };
 
   const renderMaterialSelection = () => (
@@ -255,26 +260,22 @@ const AIPromptModal = ({
               }`}
             >
               <div className="flex justify-between items-center">
-                <div className="flex ">
-                  <h5 className="text-sm font-medium  mr-2">Title:</h5>
-                  {/*   <h5 className="font-medium mr-2">Title: </h5> */}
+                <div className="flex">
+                  <h5 className="text-sm font-medium mr-2">Title:</h5>
                   <p className="text-sm text-gray-700 truncate">
                     {material.title}
                   </p>
                 </div>
-
                 {selectedMaterial?._id === material._id && (
                   <FiCheck className="text-blue-600" />
                 )}
               </div>
               <div className="flex justify-base items-center">
-                <h5 className="text-sm font-medium  mr-2">Description:</h5>
-                {/*   <p className="text-sm text-gray-600  mr-2">Description: </p> */}
+                <h5 className="text-sm font-medium mr-2">Description:</h5>
                 <span className="text-sm text-gray-700 truncate">
                   {material.description}
                 </span>
               </div>
-
               <p className="text-xs text-gray-500 mt-1">
                 Uploaded: {new Date(material.created_at).toLocaleDateString()}
               </p>
@@ -311,15 +312,13 @@ const AIPromptModal = ({
         <div>
           <h4 className="font-medium mb-1">Generating Questions From:</h4>
           <div className="flex">
-            <h5 className="text-sm font-medium  mr-2">Title:</h5>
+            <h5 className="text-sm font-medium mr-2">Title:</h5>
             <p className="text-sm text-gray-700 truncate">
-              {" "}
               {selectedMaterial?.title}
             </p>
           </div>
-
           <div className="flex">
-            <h5 className="text-sm font-medium  mr-2">Description:</h5>
+            <h5 className="text-sm font-medium mr-2">Description:</h5>
             <p className="text-xs text-gray-500 truncate">
               {selectedMaterial?.description}
             </p>
@@ -366,14 +365,24 @@ const AIPromptModal = ({
         </div>
       )}
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={onClose}
-          className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Close
-        </button>
-      </div>
+      {questions.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-600">
+            {selectedQuestions.length} question(s) selected
+          </div>
+          <button
+            onClick={handleAddSelectedQuestions}
+            disabled={selectedQuestions.length === 0}
+            className={`cursor-pointer px-4 py-2 rounded-lg transition-colors ${
+              selectedQuestions.length > 0
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            Add Selected Questions
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -389,25 +398,43 @@ const AIPromptModal = ({
       );
     }
 
+    const isSelected = selectedQuestions.some((q) => q.id === question.id);
+
     return (
       <div
-        key={index}
-        className="border border-gray-200 rounded-lg p-3 bg-gray-50 mb-3"
+        key={question.id}
+        className={`border rounded-lg p-3 mb-3 cursor-pointer transition-all ${
+          isSelected
+            ? "border-blue-500 bg-blue-50"
+            : "border-gray-200 hover:border-blue-300"
+        }`}
+        onClick={() => toggleQuestionSelection(question)}
       >
         <div className="flex justify-between items-start mb-2">
-          <h4 className="font-medium">
-            {question.type === "multiple_choice" ? "Question" : "Problem"} #
-            {index + 1}
-          </h4>
+          <div className="flex items-center">
+            <div
+              className={`w-5 h-5 rounded-full border mr-2 flex items-center justify-center ${
+                isSelected
+                  ? "bg-blue-500 border-blue-500"
+                  : "bg-white border-gray-300"
+              }`}
+            >
+              {isSelected && <FiCheck className="text-white" size={14} />}
+            </div>
+            <h4 className="font-medium">
+              {question.type === "multiple_choice" ? "Question" : "Problem"} #
+              {index + 1}
+            </h4>
+          </div>
           <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
             {question.points} point{question.points !== 1 ? "s" : ""}
           </span>
         </div>
 
-        <p className="text-gray-700 mb-2">{question.text}</p>
+        <p className="text-gray-700 mb-2 ml-7">{question.text}</p>
 
         {question.type === "multiple_choice" ? (
-          <div className="space-y-2 mt-3">
+          <div className="space-y-2 mt-3 ml-7">
             {question.options.map((option) => (
               <div
                 key={option.letter}
@@ -423,7 +450,7 @@ const AIPromptModal = ({
             ))}
           </div>
         ) : (
-          <div className="mt-3">
+          <div className="mt-3 ml-7">
             <p className="text-sm font-medium text-gray-700">
               Expected Output:
             </p>
@@ -432,13 +459,6 @@ const AIPromptModal = ({
             </pre>
           </div>
         )}
-
-        <button
-          onClick={() => onSelectQuestion(question)}
-          className="cursor-pointer w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-        >
-          Use This Question
-        </button>
       </div>
     );
   };
