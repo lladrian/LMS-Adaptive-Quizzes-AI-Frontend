@@ -24,8 +24,9 @@ const AIPromptModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingMaterials, setIsFetchingMaterials] = useState(false);
   const [step, setStep] = useState(1);
-  const [questionCount, setQuestionCount] = useState(5); // Default to 5 questions
-  const [difficulty, setDifficulty] = useState("medium"); // Difficulty level
+  const [questionCount, setQuestionCount] = useState(5);
+  const [difficulty, setDifficulty] = useState("medium");
+  const [allSelected, setAllSelected] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,8 +36,9 @@ const AIPromptModal = ({
       setMaterialContent("");
       setQuestions([]);
       setSelectedQuestions([]);
-      setQuestionCount(5); // Reset to default when modal opens
-      setDifficulty("medium"); // Reset difficulty
+      setQuestionCount(5);
+      setDifficulty("medium");
+      setAllSelected(false);
     }
   }, [isOpen, classId]);
 
@@ -92,6 +94,15 @@ const AIPromptModal = ({
     });
   };
 
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedQuestions([]);
+    } else {
+      setSelectedQuestions([...questions]);
+    }
+    setAllSelected(!allSelected);
+  };
+
   const generateQuestions = async () => {
     if (!materialContent) {
       toast.warning("No material content available to generate questions");
@@ -106,12 +117,12 @@ const AIPromptModal = ({
     setIsLoading(true);
     setQuestions([]);
     setSelectedQuestions([]);
+    setAllSelected(false);
 
     try {
       let prompt = "";
       const topic = selectedMaterial?.title || progLanguage || "the material";
 
-      // Adjust points based on difficulty
       let basePoints = 1;
       if (difficulty === "easy") basePoints = 1;
       else if (difficulty === "medium") basePoints = 2;
@@ -363,11 +374,7 @@ const AIPromptModal = ({
             min="1"
             max="20"
             value={questionCount}
-            onChange={(e) =>
-              setQuestionCount(
-                Math.min(20, Math.max(1, parseInt(e.target.value) || 1))
-              )
-            }
+            onChange={(e) => setQuestionCount(Math.min(20, Math.max(1, parseInt(e.target.value) || 1)))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -389,17 +396,28 @@ const AIPromptModal = ({
 
       <div className="flex justify-between items-center mt-4">
         <h4 className="font-medium">AI Suggestions</h4>
-        <button
-          onClick={generateQuestions}
-          disabled={isLoading}
-          className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
-        >
-          <FiRefreshCw
-            className={`mr-1 ${isLoading ? "animate-spin" : ""}`}
-            size={16}
-          />
-          {questions.length > 0 ? "Regenerate" : "Generate"}
-        </button>
+        <div className="flex space-x-2">
+          {questions.length > 0 && (
+            <button
+              onClick={toggleSelectAll}
+              className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
+            >
+              <FiCheck className="mr-1" size={16} />
+              {allSelected ? "Deselect All" : "Select All"}
+            </button>
+          )}
+          <button
+            onClick={generateQuestions}
+            disabled={isLoading}
+            className="cursor-pointer flex items-center text-sm text-blue-600 hover:text-blue-800"
+          >
+            <FiRefreshCw
+              className={`mr-1 ${isLoading ? "animate-spin" : ""}`}
+              size={16}
+            />
+            {questions.length > 0 ? "Regenerate" : "Generate"}
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
