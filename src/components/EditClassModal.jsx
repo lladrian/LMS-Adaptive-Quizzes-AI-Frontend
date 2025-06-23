@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import { updateClassroom } from "../utils/authService";
 import { toast } from "react-toastify";
 
@@ -14,82 +14,67 @@ const EditClassModal = ({
     { value: "java", label: "Java" },
   ];
 
-  const gradingComponents = [
-    { id: "quiz", label: "Quiz" },
-    { id: "exam", label: "Exam" },
-    { id: "activity", label: "Activity" },
-    { id: "assignment", label: "Assignment" },
-  ];
-
   const [formData, setFormData] = useState({
     name: "",
     code: "",
     description: "",
     programming_language: "",
     grading_system: {
-      midterm: {
-        components: ["quiz", "exam", "activity", "assignment"],
-        weights: {
-          quiz: 15,
-          exam: 50,
-          activity: 20,
-          assignment: 15,
-        },
-      },
-      final: {
-        components: ["quiz", "exam", "activity", "assignment"],
-        weights: {
-          quiz: 20,
-          exam: 60,
-          activity: 10,
-          assignment: 10,
-        },
-      },
+      midterm: { components: {} },
+      final: { components: {} },
     },
   });
 
+  const [newComponentName, setNewComponentName] = useState({
+    midterm: "",
+    final: "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (showEditClassModal && data) {
-      // Convert old format to new format if needed
-      const gradingSystem = data.grading_system || {
-        midterm: {
-          quiz: 15,
-          exam: 50,
-          activity: 20,
-          assignment: 15,
-        },
-        final: {
-          quiz: 20,
-          exam: 60,
-          activity: 10,
-          assignment: 10,
-        },
-      };
+      // Normalize the grading system structure from props
+      const normalizeGradingSystem = (gradingData) => {
+        if (!gradingData) {
+          return {
+            midterm: { components: {} },
+            final: { components: {} },
+          };
+        }
 
-      // Check if grading system is in old format (without components array)
-      const isOldFormat = !gradingSystem.midterm.components;
+        // Ensure both terms exist
+        const normalized = {
+          midterm: gradingData.midterm || { components: {} },
+          final: gradingData.final || { components: {} },
+        };
 
-      const convertedGradingSystem = isOldFormat
-        ? {
-            midterm: {
-              components: ["quiz", "exam", "activity", "assignment"],
-              weights: gradingSystem.midterm,
-            },
-            final: {
-              components: ["quiz", "exam", "activity", "assignment"],
-              weights: gradingSystem.final,
-            },
+        // Convert to components structure if needed
+        ["midterm", "final"].forEach((term) => {
+          if (!normalized[term].components) {
+            // If components don't exist, check for direct properties
+            const { quiz, exam, activity, assignment, ...rest } =
+              normalized[term];
+            normalized[term] = {
+              components: {
+                ...(quiz !== undefined && { quiz }),
+                ...(exam !== undefined && { exam }),
+                ...(activity !== undefined && { activity }),
+                ...(assignment !== undefined && { assignment }),
+                ...rest,
+              },
+            };
           }
-        : gradingSystem;
+        });
+
+        return normalized;
+      };
 
       setFormData({
         name: data.classroom_name || "",
         code: data.subject_code || "",
         description: data.description || "",
         programming_language: data.programming_language || "",
-        grading_system: convertedGradingSystem,
+        grading_system: normalizeGradingSystem(data.grading_system),
       });
     }
   }, [showEditClassModal, data]);
@@ -99,9 +84,8 @@ const EditClassModal = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleGradingChange = (e) => {
-    const { name, value } = e.target;
-    const [term, field] = name.split(".");
+  const handleGradingChange = (e, term, componentName) => {
+    const { value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -109,21 +93,42 @@ const EditClassModal = ({
         ...prev.grading_system,
         [term]: {
           ...prev.grading_system[term],
-          weights: {
-            ...prev.grading_system[term].weights,
-            [field]: Number(value),
+          components: {
+            ...prev.grading_system[term].components,
+            [componentName]: Number(value),
           },
         },
       },
     }));
   };
 
-  const toggleGradingComponent = (term, component) => {
+  const validateGradingSystem = (term) => {
+    const components = formData.grading_system[term]?.components || {};
+    const total = Object.values(components).reduce(
+      (sum, value) => sum + Number(value),
+      0
+    );
+    return total === 100;
+  };
+
+  const addComponent = (term) => {
+    const componentName = newComponentName[term]
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    if (!componentName) {
+      toast.error("Please enter a component name");
+      return;
+    }
+
     setFormData((prev) => {
-      const currentComponents = prev.grading_system[term].components;
-      const newComponents = currentComponents.includes(component)
-        ? currentComponents.filter((c) => c !== component)
-        : [...currentComponents, component];
+      const existingComponents = prev.grading_system[term]?.components || {};
+
+      if (existingComponents[componentName]) {
+        toast.error("Component already exists");
+        return prev;
+      }
 
       return {
         ...prev,
@@ -131,20 +136,34 @@ const EditClassModal = ({
           ...prev.grading_system,
           [term]: {
             ...prev.grading_system[term],
-            components: newComponents,
+            components: {
+              ...existingComponents,
+              [componentName]: 0,
+            },
           },
         },
       };
     });
+
+    setNewComponentName((prev) => ({ ...prev, [term]: "" }));
   };
 
-  const validateGradingSystem = (term) => {
-    const { components, weights } = formData.grading_system[term];
-    const total = components.reduce(
-      (sum, component) => sum + (weights[component] || 0),
-      0
-    );
-    return total === 100;
+  const removeComponent = (term, componentName) => {
+    setFormData((prev) => {
+      const components = { ...prev.grading_system[term].components };
+      delete components[componentName];
+
+      return {
+        ...prev,
+        grading_system: {
+          ...prev.grading_system,
+          [term]: {
+            ...prev.grading_system[term],
+            components,
+          },
+        },
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -208,10 +227,77 @@ const EditClassModal = ({
   if (!showEditClassModal) return null;
 
   const calculateTermTotal = (term) => {
-    const { components, weights } = formData.grading_system[term];
-    return components.reduce(
-      (sum, component) => sum + (weights[component] || 0),
+    const components = formData.grading_system[term]?.components || {};
+    return Object.values(components).reduce(
+      (sum, value) => sum + Number(value),
       0
+    );
+  };
+
+  const renderGradingInputs = (term) => {
+    const components = formData.grading_system[term]?.components || {};
+    const componentEntries = Object.entries(components);
+
+    return (
+      <div className="space-y-3">
+        {componentEntries.length > 0 ? (
+          componentEntries.map(([name, value]) => (
+            <div key={`${term}-${name}`} className="flex items-center gap-2">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">
+                  {name.replace(/_/g, " ")} (%)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={value}
+                    onChange={(e) => handleGradingChange(e, term, name)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+                    min="0"
+                    max="100"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeComponent(term, name)}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-md"
+                    disabled={isSubmitting}
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-gray-500">No components added yet</p>
+        )}
+
+        <div className="flex gap-2 mt-3">
+          <input
+            type="text"
+            value={newComponentName[term]}
+            onChange={(e) =>
+              setNewComponentName({
+                ...newComponentName,
+                [term]: e.target.value,
+              })
+            }
+            placeholder="New component name"
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            disabled={isSubmitting}
+          />
+          <button
+            type="button"
+            onClick={() => addComponent(term)}
+            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1"
+            disabled={isSubmitting}
+          >
+            <FiPlus size={16} />
+            Add
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -316,120 +402,38 @@ const EditClassModal = ({
                     <h4 className="text-md font-medium text-gray-700">
                       Midterm
                     </h4>
-                    <div className="flex space-x-2">
-                      {gradingComponents.map((component) => (
-                        <label
-                          key={`midterm-${component.id}`}
-                          className="flex items-center space-x-1 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.grading_system.midterm.components.includes(
-                              component.id
-                            )}
-                            onChange={() =>
-                              toggleGradingComponent("midterm", component.id)
-                            }
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            disabled={isSubmitting}
-                          />
-                          <span>{component.label}</span>
-                        </label>
-                      ))}
+                    <div
+                      className={`text-sm ${
+                        calculateTermTotal("midterm") === 100
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      Total: {calculateTermTotal("midterm")}%
+                      {calculateTermTotal("midterm") !== 100 &&
+                        " (Must total 100%)"}
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {gradingComponents.map(
-                      (component) =>
-                        formData.grading_system.midterm.components.includes(
-                          component.id
-                        ) && (
-                          <div key={`midterm-input-${component.id}`}>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">
-                              {component.label} (%)
-                            </label>
-                            <input
-                              type="number"
-                              name={`midterm.${component.id}`}
-                              value={
-                                formData.grading_system.midterm.weights[
-                                  component.id
-                                ] || 0
-                              }
-                              onChange={handleGradingChange}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                              min="0"
-                              max="100"
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                        )
-                    )}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    Total: {calculateTermTotal("midterm")}%
-                  </div>
+                  {renderGradingInputs("midterm")}
                 </div>
 
                 {/* Final Grading */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="text-md font-medium text-gray-700">Final</h4>
-                    <div className="flex space-x-2">
-                      {gradingComponents.map((component) => (
-                        <label
-                          key={`final-${component.id}`}
-                          className="flex items-center space-x-1 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.grading_system.final.components.includes(
-                              component.id
-                            )}
-                            onChange={() =>
-                              toggleGradingComponent("final", component.id)
-                            }
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            disabled={isSubmitting}
-                          />
-                          <span>{component.label}</span>
-                        </label>
-                      ))}
+                    <div
+                      className={`text-sm ${
+                        calculateTermTotal("final") === 100
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      Total: {calculateTermTotal("final")}%
+                      {calculateTermTotal("final") !== 100 &&
+                        " (Must total 100%)"}
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {gradingComponents.map(
-                      (component) =>
-                        formData.grading_system.final.components.includes(
-                          component.id
-                        ) && (
-                          <div key={`final-input-${component.id}`}>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">
-                              {component.label} (%)
-                            </label>
-                            <input
-                              type="number"
-                              name={`final.${component.id}`}
-                              value={
-                                formData.grading_system.final.weights[
-                                  component.id
-                                ] || 0
-                              }
-                              onChange={handleGradingChange}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
-                              min="0"
-                              max="100"
-                              disabled={isSubmitting}
-                            />
-                          </div>
-                        )
-                    )}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    Total: {calculateTermTotal("final")}%
-                  </div>
+                  {renderGradingInputs("final")}
                 </div>
               </div>
             </div>
@@ -446,7 +450,11 @@ const EditClassModal = ({
               <button
                 type="submit"
                 className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  calculateTermTotal("midterm") !== 100 ||
+                  calculateTermTotal("final") !== 100
+                }
               >
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </button>

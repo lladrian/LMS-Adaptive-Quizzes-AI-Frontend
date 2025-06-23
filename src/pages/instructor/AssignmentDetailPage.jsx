@@ -17,14 +17,8 @@ import {
 } from "react-icons/fi";
 import {
   specificClassroom,
-  allAnswerSpecificQuiz,
-  allAnswerSpecificExam,
   allAnswerSpecificActivity,
-  allAnswerSpecificAssignment,
-  allStudentMissingAnswerSpecificQuiz,
-  allStudentMissingAnswerSpecificExam,
   allStudentMissingAnswerSpecificActivity,
-  allStudentMissingAnswerSpecificAssignment,
   extendActivityTime,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
@@ -217,68 +211,20 @@ const AssignmentDetailPage = () => {
     setIsLoading(true);
     try {
       const classroomResult = await specificClassroom(classId);
-      console.log(classroomResult);
-      const answersQuizResult = await allAnswerSpecificQuiz(assignmentId);
-      const answersExamResult = await allAnswerSpecificExam(assignmentId);
-      const answersActivityResult = await allAnswerSpecificActivity(
+      const answersResult = await allAnswerSpecificActivity(assignmentId);
+      const missingResult = await allStudentMissingAnswerSpecificActivity(
         assignmentId
       );
-      const answersAssignmentResult = await allAnswerSpecificAssignment(
-        assignmentId
-      );
-
-      const missingQuizResult = await allStudentMissingAnswerSpecificQuiz(
-        assignmentId
-      );
-      const missingExamResult = await allStudentMissingAnswerSpecificExam(
-        assignmentId
-      );
-      const missingActivityResult =
-        await allStudentMissingAnswerSpecificActivity(assignmentId);
-      const missingAssignmentResult =
-        await allStudentMissingAnswerSpecificAssignment(assignmentId);
 
       if (classroomResult.success) {
         const classroom = classroomResult.data.data;
         if (!classroom) return;
 
-        const quizzes = [
-          ...(classroom.finalActivities?.quizzes || []),
-          ...(classroom.midtermActivities?.quizzes || []),
-        ].map((q) => ({
-          ...q,
-          type: "quiz",
-        }));
-
-        const exams = [
-          ...(classroom.finalActivities?.exams || []),
-          ...(classroom.midtermActivities?.exams || []),
-        ].map((e) => ({
-          ...e,
-          type: "exam",
-        }));
-
-        const activities = [
-          ...(classroom.finalActivities?.activities || []),
-          ...(classroom.midtermActivities?.activities || []),
-        ].map((a) => ({
-          ...a,
-          type: "activity",
-        }));
-
-        const assignments = [
-          ...(classroom.finalActivities?.assignments || []),
-          ...(classroom.midtermActivities?.assignments || []),
-        ].map((a) => ({
-          ...a,
-          type: "assignment",
-        }));
-
+        // Combine all activities from different arrays
         const combinedActivities = [
-          ...quizzes,
-          ...exams,
-          ...activities,
-          ...assignments,
+          ...(classroom.activities || []),
+          ...(classroom.finalActivities || []),
+          ...(classroom.midtermActivities || []),
         ];
 
         const activity = combinedActivities.find(
@@ -287,13 +233,8 @@ const AssignmentDetailPage = () => {
         setActivityData(activity || null);
       }
 
-      // Handle all types of answers
-      const responseData =
-        answersQuizResult.data ||
-        answersExamResult.data ||
-        answersActivityResult.data ||
-        answersAssignmentResult.data;
-
+      // Handle answers
+      const responseData = answersResult.data || answersResult;
       let studentAnswers = [];
 
       if (Array.isArray(responseData)) {
@@ -321,14 +262,9 @@ const AssignmentDetailPage = () => {
         }))
       );
 
-      // Handle missing students for all types
+      // Handle missing students
       const missingStudentsData =
-        missingQuizResult.data?.data ||
-        missingExamResult.data?.data ||
-        missingActivityResult.data?.data ||
-        missingAssignmentResult.data?.data ||
-        [];
-
+        missingResult.data?.data || missingResult.data || [];
       setMissingStudents(missingStudentsData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -352,7 +288,7 @@ const AssignmentDetailPage = () => {
     try {
       const result = await extendActivityTime(
         assignmentId,
-        activityData.type,
+        activityData.activity_type,
         parseInt(extendMinutes)
       );
 
@@ -360,7 +296,8 @@ const AssignmentDetailPage = () => {
         toast.success(`Time extended by ${extendMinutes} minutes`);
         setActivityData((prev) => ({
           ...prev,
-          extended_minutes: prev.extended_minutes + parseInt(extendMinutes),
+          extended_minutes:
+            (prev.extended_minutes || 0) + parseInt(extendMinutes),
         }));
         setShowExtendModal(false);
         setExtendMinutes("");
@@ -485,7 +422,7 @@ const AssignmentDetailPage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Type</p>
                     <p className="font-medium capitalize">
-                      {activityData.type}
+                      {activityData.activity_type}
                     </p>
                   </div>
                 </div>

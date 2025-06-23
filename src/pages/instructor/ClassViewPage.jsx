@@ -53,7 +53,29 @@ const ClassDetailPage = () => {
     useState(false);
   const [activityToDelete, setActivityToDelete] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [ClassroomData, setClassroomData] = useState([]);
+  const [ClassroomData, setClassroomData] = useState({
+    classroom: {
+      classroom_code: "",
+      classroom_name: "",
+      description: "",
+      grading_system: {
+        final: { components: {} },
+        midterm: { components: {} },
+      },
+      instructor: {},
+      is_hidden: 0,
+      programming_language: "",
+      restricted_sections: [],
+      subject_code: "",
+      _id: "",
+    },
+    main_activity: [],
+    materials: [],
+    students: [],
+    midtermActivities: [],
+    finalActivities: [],
+  });
+
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showRestrictModal, setShowRestrictModal] = useState(false);
@@ -121,55 +143,40 @@ const ClassDetailPage = () => {
 
   // Combine and sort all activities including assignments
   const getActivitiesByTerm = (term) => {
-    const termActivities = ClassroomData[`${term}Activities`] || {};
-    return [
-      ...(termActivities.quizzes || []).map((a) => ({
-        ...a,
-        activityType: "quiz",
-        term,
-      })),
-      ...(termActivities.exams || []).map((a) => ({
-        ...a,
-        activityType: "exam",
-        term,
-      })),
-      ...(termActivities.activities || []).map((a) => ({
-        ...a,
-        activityType: "activity",
-        term,
-      })),
-      ...(termActivities.assignments || []).map((a) => ({
-        ...a,
-        activityType: "assignment",
-        term,
-      })),
-    ];
+    const activities = ClassroomData[`${term}Activities`] || [];
+
+    return activities.map((a) => ({
+      ...a,
+      activityType: a.activity_type,
+      term,
+    }));
   };
 
   const midtermActivities = getActivitiesByTerm("midterm");
+
   const finalActivities = getActivitiesByTerm("final");
 
   // Get all activities with their types
   const allActivities = [...midtermActivities, ...finalActivities].sort(
-    (a, b) => {
-      return new Date(b.created_at) - new Date(a.created_at);
-    }
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
 
   // Filter activities based on selected filters
   const filteredActivities = allActivities.filter((activity) => {
-    // Filter by activity type
     const typeMatch =
       activityTypeFilter === "all" ||
       activity.activityType === activityTypeFilter;
 
-    // Filter by grading breakdown
     const gradingMatch =
       gradingBreakdownFilter === "all" ||
       activity.grading_breakdown === gradingBreakdownFilter;
 
     return typeMatch && gradingMatch;
   });
+
+  const uniqueActivityTypes = [
+    ...new Set(allActivities.map((a) => a.activityType).filter(Boolean)),
+  ];
 
   // Calculate pagination for activities
   const activityStartIndex = (currentPage.activities - 1) * itemsPerPage;
@@ -209,11 +216,22 @@ const ClassDetailPage = () => {
     setIsLoading(true);
     try {
       const result = await specificClassroom(classId);
-      if (result.success) {
-        setClassroomData(result.data.data);
-        setRestrictedSections(
-          result.data.data.classroom?.restricted_sections || []
-        );
+      console.log(result); // keep this to verify
+
+      // ✅ Corrected path
+      const data = result?.data?.data;
+
+      if (result.success && data) {
+        setClassroomData({
+          classroom: data.classroom,
+          main_activity: data.main_activity || [],
+          materials: data.materials || [],
+          students: data.students || [],
+          midtermActivities: data.midtermActivities || [],
+          finalActivities: data.finalActivities || [],
+        });
+
+        setRestrictedSections(data.classroom?.restricted_sections || []);
       }
     } catch (error) {
       console.error("Error fetching classroom:", error);
@@ -221,7 +239,7 @@ const ClassDetailPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [classId, setIsLoading, setClassroomData]);
+  }, [classId]);
 
   useEffect(() => {
     fetchClasses();
@@ -238,6 +256,8 @@ const ClassDetailPage = () => {
         student_id
       );
       setSelectedStudentActivities(result.data.data);
+      console.log("allStudentActivities");
+      console.log(result);
     } catch (error) {
       console.error("Error removing student:", error);
       toast.error("An error occurred while removing student");
@@ -247,6 +267,7 @@ const ClassDetailPage = () => {
   const allStudentData = async () => {
     try {
       const result = await getAllStudentGradeSpecificClassroom(classId);
+
       setStudentData(result.data.data);
     } catch (error) {
       console.error("Error removing student:", error);
@@ -384,6 +405,8 @@ const ClassDetailPage = () => {
   };
 
   const handleViewClick = (student) => {
+    console.log("student");
+    console.log(student);
     setSelectedStudent(student);
     setIsModalOpen(true);
   };
@@ -546,8 +569,8 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiBarChart2 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {midtermActivities.length}{" "}
-                      {midtermActivities.length === 1
+                      {ClassroomData?.midtermActivities.length}{" "}
+                      {ClassroomData?.midtermActivities.length === 1
                         ? "Total Midterm Activity"
                         : "Total Midterm Activities"}
                     </span>
@@ -557,153 +580,19 @@ const ClassDetailPage = () => {
                   <div className="flex items-center">
                     <FiBarChart2 className="text-indigo-600 mr-2" />
                     <span className="font-medium">
-                      {finalActivities.length}{" "}
-                      {finalActivities.length === 1
+                      {ClassroomData?.finalActivities.length}{" "}
+                      {ClassroomData?.finalActivities.length === 1
                         ? "Total Final Activity"
                         : "Total Final Activities"}
                     </span>
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiEdit3 className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        midtermActivities.filter(
-                          (a) => a.activityType === "quiz"
-                        ).length
-                      }{" "}
-                      Midterm Quiz
-                      {midtermActivities.filter(
-                        (a) => a.activityType === "quiz"
-                      ).length !== 1
-                        ? "zes"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiClipboard className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        midtermActivities.filter(
-                          (a) => a.activityType === "exam"
-                        ).length
-                      }{" "}
-                      Midterm Exam
-                      {midtermActivities.filter(
-                        (a) => a.activityType === "exam"
-                      ).length !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiFile className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        midtermActivities.filter(
-                          (a) => a.activityType === "assignment"
-                        ).length
-                      }{" "}
-                      Midterm Assignment
-                      {midtermActivities.filter(
-                        (a) => a.activityType === "assignment"
-                      ).length !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiFile className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        midtermActivities.filter(
-                          (a) => a.activityType === "activity"
-                        ).length
-                      }{" "}
-                      Midterm Lab. Activit
-                      {midtermActivities.filter(
-                        (a) => a.activityType === "activity"
-                      ).length !== 1
-                        ? "y"
-                        : "ies"}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiEdit3 className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        finalActivities.filter((a) => a.activityType === "quiz")
-                          .length
-                      }{" "}
-                      Final Quiz
-                      {finalActivities.filter((a) => a.activityType === "quiz")
-                        .length !== 1
-                        ? "zes"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiClipboard className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        finalActivities.filter((a) => a.activityType === "exam")
-                          .length
-                      }{" "}
-                      Final Exam
-                      {finalActivities.filter((a) => a.activityType === "exam")
-                        .length !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiFile className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        finalActivities.filter(
-                          (a) => a.activityType === "assignment"
-                        ).length
-                      }{" "}
-                      Final Assignment
-                      {finalActivities.filter(
-                        (a) => a.activityType === "assignment"
-                      ).length !== 1
-                        ? "s"
-                        : ""}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center">
-                    <FiFile className="text-indigo-600 mr-2" />
-                    <span className="font-medium">
-                      {
-                        finalActivities.filter(
-                          (a) => a.activityType === "activity"
-                        ).length
-                      }{" "}
-                      Final Lab. Activit
-                      {finalActivities.filter(
-                        (a) => a.activityType === "activity"
-                      ).length !== 1
-                        ? "y"
-                        : "ies"}
-                    </span>
-                  </div>
-                </div>
+                {/* Dynamically render midterm components */}
+                {/*                 {renderGradingComponents("midterm")}
+                 */}
+                {/* Dynamically render final components */}
+                {/*                 {renderGradingComponents("final")}
+                 */}{" "}
               </div>
             </div>
           </div>
@@ -741,10 +630,7 @@ const ClassDetailPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentStudents.length > 0 ? (
                     currentStudents.map((student) => (
-                      <tr
-                        key={student.student._id}
-                        className="hover:bg-gray-50"
-                      >
+                      <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.student.first_name}{" "}
                           {student.student.middle_name}{" "}
@@ -902,8 +788,8 @@ const ClassDetailPage = () => {
                           Type:{" "}
                           <span className="font-normal">
                             {(
-                              activity?.type ||
-                              activity?.activity?.type ||
+                              activity?.activity_type ||
+                              activity?.activity?.activity_type ||
                               "N/A"
                             ).toUpperCase()}{" "}
                           </span>
@@ -1005,7 +891,8 @@ const ClassDetailPage = () => {
                           <p className="text-lg font-semibold text-indigo-800">
                             Overall Grade:{" "}
                             <span className="text-2xl">
-                              {selectedStudent.grades.student_grade.grade}/100
+                              {selectedStudent.overallGrade || null}
+                              /100
                             </span>
                           </p>
                         </div>
@@ -1017,90 +904,40 @@ const ClassDetailPage = () => {
                           Midterm Grades
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">Quiz:</p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.midterm.quiz
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.midterm.quiz
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.midterm.quiz?.grade ||
-                                  0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.midterm
-                                ?.quiz || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">
-                              Assignment:
-                            </p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.midterm.assignment
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.midterm.assignment
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.midterm.assignment
-                                  ?.grade || 0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.midterm
-                                ?.assignment || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">
-                              Activity:
-                            </p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.midterm.activity
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.midterm.activity
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.midterm.activity
-                                  ?.grade || 0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.midterm
-                                ?.activity || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">Exam:</p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.midterm.exam
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.midterm.exam
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.midterm.exam?.grade ||
-                                  0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.midterm
-                                ?.exam || 0}
-                            </p>
-                          </div>
+                          {Object.entries(
+                            selectedStudent.classroom.grading_system.midterm
+                              .components || {}
+                          ).map(([type, weight]) => (
+                            <div
+                              key={`midterm-${type}`}
+                              className="border p-4 rounded-lg bg-white"
+                            >
+                              <p className="font-semibold capitalize">
+                                {type}:
+                              </p>
+                              <p className="text-gray-700">
+                                {selectedStudent.grades.midterm[type]
+                                  ?.earnedPoints || 0}
+                                /
+                                {selectedStudent.grades.midterm[type]
+                                  ?.totalPoints || 0}{" "}
+                                ={" "}
+                                <span className="font-medium text-indigo-600">
+                                  {selectedStudent.grades.midterm[type]
+                                    ?.grade || 0}
+                                </span>
+                                /{weight}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                         <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
                           <p className="font-medium text-indigo-800">
                             Midterm Total:{" "}
                             {selectedStudent.grades.midterm.term_grade || 0}/
                             {Object.values(
-                              selectedStudent.classroom.grading_system
-                                .midterm || {}
+                              selectedStudent.classroom.grading_system.midterm
+                                ?.components || {}
                             ).reduce((a, b) => a + b, 0)}
                           </p>
                         </div>
@@ -1112,88 +949,40 @@ const ClassDetailPage = () => {
                           Final Grades
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">Quiz:</p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.final.quiz
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.final.quiz?.totalPoints ||
-                                0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.final.quiz?.grade || 0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.final
-                                ?.quiz || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">
-                              Assignment:
-                            </p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.final.assignment
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.final.assignment
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.final.assignment
-                                  ?.grade || 0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.final
-                                ?.assignment || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">
-                              Activity:
-                            </p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.final.activity
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.final.activity
-                                ?.totalPoints || 0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.final.activity?.grade ||
-                                  0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.final
-                                ?.activity || 0}
-                            </p>
-                          </div>
-                          <div className="border p-4 rounded-lg bg-white">
-                            <p className="font-semibold capitalize">Exam:</p>
-                            <p className="text-gray-700">
-                              {selectedStudent.grades.final.exam
-                                ?.earnedPoints || 0}
-                              /
-                              {selectedStudent.grades.final.exam?.totalPoints ||
-                                0}{" "}
-                              ={" "}
-                              <span className="font-medium text-indigo-600">
-                                {selectedStudent.grades.final.exam?.grade || 0}
-                              </span>
-                              /
-                              {selectedStudent.classroom.grading_system.final
-                                ?.exam || 0}
-                            </p>
-                          </div>
+                          {Object.entries(
+                            selectedStudent.classroom.grading_system.final
+                              .components || {}
+                          ).map(([type, weight]) => (
+                            <div
+                              key={`final-${type}`}
+                              className="border p-4 rounded-lg bg-white"
+                            >
+                              <p className="font-semibold capitalize">
+                                {type}:
+                              </p>
+                              <p className="text-gray-700">
+                                {selectedStudent.grades.final[type]
+                                  ?.earnedPoints || 0}
+                                /
+                                {selectedStudent.grades.final[type]
+                                  ?.totalPoints || 0}{" "}
+                                ={" "}
+                                <span className="font-medium text-indigo-600">
+                                  {selectedStudent.grades.final[type]?.grade ||
+                                    0}
+                                </span>
+                                /{weight}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                         <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
                           <p className="font-medium text-indigo-800">
                             Final Total:{" "}
                             {selectedStudent.grades.final.term_grade || 0}/
                             {Object.values(
-                              selectedStudent.classroom.grading_system.final ||
-                                {}
+                              selectedStudent.classroom.grading_system.final
+                                ?.components || {}
                             ).reduce((a, b) => a + b, 0)}
                           </p>
                         </div>
@@ -1439,46 +1228,21 @@ const ClassDetailPage = () => {
                       >
                         All
                       </button>
-                      <button
-                        onClick={() => setActivityTypeFilter("quiz")}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          activityTypeFilter === "quiz"
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                        }`}
-                      >
-                        Quizzes
-                      </button>
-                      <button
-                        onClick={() => setActivityTypeFilter("exam")}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          activityTypeFilter === "exam"
-                            ? "bg-purple-600 text-white"
-                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                        }`}
-                      >
-                        Exams
-                      </button>
-                      <button
-                        onClick={() => setActivityTypeFilter("activity")}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          activityTypeFilter === "activity"
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                        }`}
-                      >
-                        Activities
-                      </button>
-                      <button
-                        onClick={() => setActivityTypeFilter("assignment")}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          activityTypeFilter === "assignment"
-                            ? "bg-orange-600 text-white"
-                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                        }`}
-                      >
-                        Assignments
-                      </button>
+
+                      {uniqueActivityTypes.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setActivityTypeFilter(type)}
+                          className={`px-3 py-1 rounded-md text-sm ${
+                            activityTypeFilter === type
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                          }`}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}{" "}
+                          {/* Capitalize */}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <div>

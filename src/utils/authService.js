@@ -1022,9 +1022,29 @@ export const updateClassroom = async (
   grading_system
 ) => {
   try {
+    // Client-side validation of grading system
+    if (grading_system) {
+      const validateTerm = (term) => {
+        if (!term || !term.components) return false;
+        const components = term.components;
+        const total = Object.values(components).reduce(
+          (sum, value) => sum + Number(value),
+          0
+        );
+        return total === 100;
+      };
+
+      if (!validateTerm(grading_system.midterm)) {
+        throw new Error("Midterm grading components must total exactly 100%");
+      }
+
+      if (!validateTerm(grading_system.final)) {
+        throw new Error("Final grading components must total exactly 100%");
+      }
+    }
+
     const response = await axios.put(
-      `
-      ${BASE_URL}/classrooms/update_classroom/${roomId}`,
+      `${BASE_URL}/classrooms/update_classroom/${roomId}`,
       {
         classroom_name,
         subject_code,
@@ -1039,9 +1059,13 @@ export const updateClassroom = async (
       data: response.data,
     };
   } catch (error) {
+    console.error("Update classroom error:", error);
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to update classroom",
+      error:
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update classroom",
     };
   }
 };
@@ -1309,12 +1333,11 @@ export const addActivity = async (
   timeLimit,
   title,
   description,
-  type = "assignment", // Changed default to assignment
+  type = "assignment", // Default activity type
   grading_breakdown
 ) => {
   try {
-    let response;
-    const basePayload = {
+    const payload = {
       classroom_id: classId,
       question: questions.map((q) => ({
         text: q.text,
@@ -1337,41 +1360,15 @@ export const addActivity = async (
       })),
       title,
       description,
+      time_limit: Number(timeLimit),
+      activity_type: type, // "quiz", "assignment", "activity", or "exam"
+      grading_breakdown,
     };
 
-    switch (type) {
-      case "quiz":
-        response = await axios.post(`${BASE_URL}/quizzes/add_quiz`, {
-          ...basePayload,
-          time_limit: Number(timeLimit),
-          grading_breakdown,
-        });
-        break;
-      case "assignment":
-        response = await axios.post(`${BASE_URL}/assignments/add_assignment`, {
-          ...basePayload,
-          time_limit: Number(timeLimit),
-          grading_breakdown,
-        });
-        break;
-      case "activity":
-        response = await axios.post(`${BASE_URL}/activities/add_activity`, {
-          ...basePayload,
-          // Activities can have optional time limits
-          time_limit: timeLimit ? Number(timeLimit) : null,
-          grading_breakdown,
-        });
-        break;
-      case "exam":
-        response = await axios.post(`${BASE_URL}/exams/add_exam`, {
-          ...basePayload,
-          time_limit: Number(timeLimit),
-          grading_breakdown,
-        });
-        break;
-      default:
-        throw new Error("Invalid activity type");
-    }
+    const response = await axios.post(
+      `${BASE_URL}/main_activity/add_activity`,
+      payload
+    );
 
     return {
       success: true,
@@ -1404,25 +1401,9 @@ export const specificActivity = async (activity_id) => {
   }
 };
 
-export const updateActivity = async (activityId, activityType, data) => {
+export const updateActivity = async (activityId, data) => {
   try {
-    let endpoint;
-    switch (activityType) {
-      case "quiz":
-        endpoint = `${BASE_URL}/quizzes/update_quiz/${activityId}`;
-        break;
-      case "assignment":
-        endpoint = `${BASE_URL}/assignments/update_assignment/${activityId}`;
-        break;
-      case "exam":
-        endpoint = `${BASE_URL}/exams/update_exam/${activityId}`;
-        break;
-      case "activity":
-        endpoint = `${BASE_URL}/activities/update_activity/${activityId}`;
-        break;
-      default:
-        throw new Error("Invalid activity type");
-    }
+    const endpoint = `${BASE_URL}/main_activity/update_activity/${activityId}`;
 
     // Format questions for update - preserve the existing structure
     const formattedData = {
@@ -1481,71 +1462,10 @@ export const deleteActivity = async (activityId, activityType) => {
 
 /* ANSWER ACTIVITY */
 
-export const allStudentMissingAnswerSpecificQuiz = async (quizId) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_quizzes/get_all_student_missing_answer_specific_quiz/${quizId}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        "Failed to get the students missing quiz answers",
-    };
-  }
-};
-
 export const allStudentMissingAnswerSpecificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/answer_activities/get_all_student_missing_answer_specific_activity/${activity_id}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        "Failed to get the students missing exam answers",
-    };
-  }
-};
-export const allStudentMissingAnswerSpecificAssignment = async (
-  assignment_id
-) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_assignments/get_all_student_missing_answer_specific_assignment/${assignment_id}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        "Failed to get the students missing exam answers",
-    };
-  }
-};
-
-export const allStudentMissingAnswerSpecificExam = async (examId) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_exams/get_all_student_missing_answer_specific_exam/${examId}`
+      `${BASE_URL}/main_answer/get_all_student_missing_answer_specific_activity/${activity_id}`
     );
 
     return {
@@ -1565,7 +1485,7 @@ export const allStudentMissingAnswerSpecificExam = async (examId) => {
 export const allAnswerSpecificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/answer_activities/get_all_answer_specific_activity/${activity_id}`
+      `${BASE_URL}/main_answer/get_all_answer_specific_activity/${activity_id}`
     );
 
     return {
@@ -1575,59 +1495,8 @@ export const allAnswerSpecificActivity = async (activity_id) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || "Failed to get the quiz answers",
-    };
-  }
-};
-export const allAnswerSpecificAssignment = async (assignment_id) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_assignments/get_all_answer_specific_assignment/${assignment_id}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.error || "Failed to get the quiz answers",
-    };
-  }
-};
-
-export const allAnswerSpecificQuiz = async (quizId) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_quizzes/get_all_answer_specific_quiz/${quizId}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.error || "Failed to get the quiz answers",
-    };
-  }
-};
-export const allAnswerSpecificExam = async (examId) => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/answer_exams/get_all_answer_specific_exam/${examId}`
-    );
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.error || "Failed to get the exam answers",
+      error:
+        error.response?.data?.error || "Failed to get the activity answers",
     };
   }
 };

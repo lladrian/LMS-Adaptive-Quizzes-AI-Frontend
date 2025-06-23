@@ -15,6 +15,7 @@ const EditActivityModal = ({
     if (activity?.question) {
       const questions = activity.question.map((q) => {
         if (q.answer_type === "options" && q.correct_option) {
+          h;
           // Find which option key contains the correct answer
           const optionKey =
             Object.entries(q.options || {}).find(
@@ -57,29 +58,87 @@ const EditActivityModal = ({
         return;
       }
 
-      // Prepare payload with correct option values
-      const payload = {
-        classroom_id: classId,
-        question: activityToEdit.question.map((q) => {
-          if (q.answer_type === "options") {
-            return {
-              ...q,
-              correct_option: q.options?.[q.correct_option] || q.correct_option,
-            };
-          }
-          return q;
-        }),
-        time_limit: activityToEdit.submission_time,
+      // Debug: Log current state to check values
+      console.log("Current activity state:", {
+        classId,
         title: activityToEdit.title,
         description: activityToEdit.description,
         grading_breakdown: activityToEdit.grading_breakdown,
+        submission_time: activityToEdit.submission_time,
+        type: activityToEdit.type,
+        questions: activityToEdit.question,
+      });
+
+      // Validate required fields with more specific checks
+      const missingFields = [];
+      if (!classId) missingFields.push("classroom_id");
+      if (!activityToEdit.title?.trim()) missingFields.push("title");
+      if (!activityToEdit.description?.trim())
+        missingFields.push("description");
+      if (!activityToEdit.grading_breakdown?.trim())
+        missingFields.push("grading_breakdown");
+      if (!activityToEdit.submission_time) missingFields.push("time_limit");
+      if (!activityToEdit.question?.length) missingFields.push("questions");
+
+      if (missingFields.length > 0) {
+        toast.error(`Missing required fields: ${missingFields.join(", ")}`);
+        return;
+      }
+
+      // Validate each question
+      const questionErrors = [];
+      activityToEdit.question.forEach((q, index) => {
+        if (!q.text?.trim()) questionErrors.push(`Question ${index + 1} text`);
+        if (!q.points) questionErrors.push(`Question ${index + 1} points`);
+        if (!q.answer_type)
+          questionErrors.push(`Question ${index + 1} answer type`);
+
+        if (q.answer_type === "options") {
+          if (!q.options || Object.keys(q.options).length === 0) {
+            questionErrors.push(`Question ${index + 1} options`);
+          }
+          if (!q.correct_option) {
+            questionErrors.push(`Question ${index + 1} correct option`);
+          }
+        } else if (
+          q.answer_type === "programming" &&
+          !q.expected_output?.trim()
+        ) {
+          questionErrors.push(`Question ${index + 1} expected output`);
+        }
+      });
+
+      if (questionErrors.length > 0) {
+        toast.error(`Missing question fields: ${questionErrors.join(", ")}`);
+        return;
+      }
+
+      // Prepare payload with correct field names
+      const payload = {
+        classroom_id: classId,
+        question: activityToEdit.question.map((q) => ({
+          text: q.text.trim(),
+          points: Number(q.points),
+          answer_type: q.answer_type,
+          ...(q.answer_type === "options"
+            ? {
+                options: q.options,
+                correct_option:
+                  q.options?.[q.correct_option] || q.correct_option,
+              }
+            : {
+                expected_output: q.expected_output.trim(),
+              }),
+        })),
+        time_limit: Number(activityToEdit.submission_time),
+        title: activityToEdit.title.trim(),
+        description: activityToEdit.description.trim(),
+        grading_breakdown: activityToEdit.grading_breakdown.trim(),
       };
 
-      const result = await updateActivity(
-        activityToEdit._id,
-        activityToEdit.type,
-        payload
-      );
+      console.log("Payload being sent:", payload); // Debug log
+
+      const result = await updateActivity(activityToEdit._id, payload);
 
       if (result.success) {
         toast.success("Activity updated successfully");
@@ -90,7 +149,7 @@ const EditActivityModal = ({
       }
     } catch (error) {
       console.error("Error updating activity:", error);
-      toast.error("An error occurred while updating");
+      toast.error(error.message || "An error occurred while updating");
     }
   };
 
