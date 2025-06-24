@@ -9,7 +9,7 @@ import {
   FiMessageSquare,
   FiEdit2,
 } from "react-icons/fi";
-import { addActivity } from "../utils/authService";
+import { addActivity, specificClassroom } from "../utils/authService";
 import AIPromptModal from "./AIPromptModal";
 
 const CreateAssignmentModal = ({
@@ -20,8 +20,6 @@ const CreateAssignmentModal = ({
   progLanguage,
   uniqueGradingTypes = {},
 }) => {
-  console.log("uniqueGradingTypes");
-  console.log(uniqueGradingTypes);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -237,6 +235,7 @@ const CreateAssignmentModal = ({
         assignmentData.grading_breakdown
       );
 
+
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -265,8 +264,23 @@ const CreateAssignmentModal = ({
     }
   };
 
-  const nextStep = () => {
+  //const nextStep = () => {
+  const nextStep = async () => {
+    const result =  await specificClassroom(classId);
+
+    const type = assignmentData.type?.toLowerCase();
+    const breakdown = assignmentData.grading_breakdown?.toLowerCase(); // 'midterm' or 'final'
+    const components = breakdown === 'midterm' ? result.data.data.classroom.grading_system.midterm.components : result.data.data.classroom.grading_system.final.components;
+    const componentKeys = Object.keys(components);
+
+
+
     if (currentStep === 1) {
+      if (!componentKeys.includes(type)) {
+        setError(`❌ "${type}" is not found in grading components`);
+        return;
+      } 
+
       if (!assignmentData.title) {
         setError("Title is required");
         return;
@@ -279,6 +293,7 @@ const CreateAssignmentModal = ({
         setError("Please select grading breakdown for exams");
         return;
       }
+    
     } else if (currentStep === 2) {
       if (assignmentData.questions.length === 0) {
         setError("Please add at least one question");

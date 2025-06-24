@@ -1470,6 +1470,7 @@ const ClassDetailPage = () => {
           onSuccess={handleActivityCreated}
           progLanguage={ClassroomData?.classroom.programming_language}
           uniqueGradingTypes={uniqueGradingTypes}
+          
         />
       )}
 
