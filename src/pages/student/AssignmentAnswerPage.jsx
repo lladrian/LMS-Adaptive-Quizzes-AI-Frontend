@@ -4,27 +4,12 @@ import Editor from "@monaco-editor/react";
 import {
   compilerRunCode,
   allLanguage,
-  specificExam,
-  specificQuiz,
-  specificAssignment,
   specificActivity,
-  specificClassroom,
-  takeExam,
-  takeQuiz,
   takeActivity,
-  takeAssignment,
-  examAnswer,
-  quizAnswer,
-  assignmentAnswer,
   activityAnswer,
-  specificExamAnswer,
-  specificQuizAnswer,
-  specificAssignmentAnswer,
   specificActivityAnswer,
-  specificExamSpecificAnswer,
-  specificQuizSpecificAnswer,
-  specificAssignmentSpecificAnswer,
   specificActivitySpecificAnswer,
+  specificClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -74,8 +59,8 @@ const CodeEditor = ({ value, onChange, language, height }) => {
   );
 };
 
-const AssignmentAnswerPage = () => {
-  const { assignmentId, type, classId } = useParams();
+const ActivityAnswerPage = () => {
+  const { assignmentId, classId } = useParams();
   const [started, setStarted] = useState(false);
   const [code, setCode] = useState("");
   const [languages, setLanguages] = useState([]);
@@ -99,7 +84,7 @@ const AssignmentAnswerPage = () => {
   useEffect(() => {
     const handleCopyPaste = (e) => {
       e.preventDefault();
-      toast.warning("Copy/paste is disabled for this assignment");
+      toast.warning("Copy/paste is disabled for this activity");
       return false;
     };
 
@@ -123,7 +108,7 @@ const AssignmentAnswerPage = () => {
 
   useEffect(() => {
     fetchSpecificClassroom();
-    fetchAssignment();
+    fetchActivity();
   }, []);
 
   const fetchSpecificClassroom = async () => {
@@ -140,6 +125,7 @@ const AssignmentAnswerPage = () => {
   };
 
   const formatTime = (seconds) => {
+    if (seconds <= 0) return "00:00:00";
     const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
     const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
     const s = String(seconds % 60).padStart(2, "0");
@@ -147,27 +133,26 @@ const AssignmentAnswerPage = () => {
   };
 
   useEffect(() => {
-    if (!answersData) return;
+    console.log(answersData)
 
-    const baseTime =
-      answersData?.quiz?.submission_time ||
-      answersData?.exam?.submission_time ||
-      answersData?.assignment?.submission_time ||
-      answersData?.activity?.submission_time ||
-      0;
+    if (!answersData || !answersData?.answer?.opened_at) return;
 
-    const extTime =
-      answersData?.quiz?.extended_minutes ||
-      answersData?.exam?.extended_minutes ||
-      answersData?.assignment?.extended_minutes ||
-      answersData?.activity?.extended_minutes ||
-      0;
+    const baseTime = parseInt(answersData?.activity?.submission_time || 0, 10);
+    const extTime = parseInt(answersData?.activity?.extended_minutes || 0, 10);
+    const totalTimeInSeconds = (baseTime + extTime) * 60;
 
     setExtendedTime(extTime);
-    const totalTimeInSeconds = (baseTime + extTime) * 60;
     setTotalTime(totalTimeInSeconds);
 
-    const openedAt = new Date(answersData?.opened_at?.replace(" ", "T"));
+    console.log(answersData)
+
+
+    const openedAt = new Date(answersData?.answer?.opened_at.replace(" ", "T"));
+    if (isNaN(openedAt.getTime())) {
+      console.error("Invalid opened_at date:", answersData.opened_at);
+      return;
+    }
+
 
     const updateCountdown = () => {
       const now = new Date();
@@ -175,10 +160,12 @@ const AssignmentAnswerPage = () => {
       const remaining = totalTimeInSeconds - elapsed;
 
       if (remaining <= 0) {
-        setTimeLeft(0);
-        setTimeExpired(true);
-        if (!answersData.submitted_at) {
-          handleSubmitAll();
+        if (!timeExpired) {
+          setTimeLeft(0);
+          setTimeExpired(true);
+          if (!answersData.submitted_at) {
+            handleSubmitAll(); // Submit only once
+          }
         }
       } else {
         setTimeLeft(remaining);
@@ -186,10 +173,11 @@ const AssignmentAnswerPage = () => {
       }
     };
 
-    updateCountdown();
+    updateCountdown(); // run immediately
     const timer = setInterval(updateCountdown, 1000);
+
     return () => clearInterval(timer);
-  }, [answersData]);
+  }, [answersData, timeExpired]); // <- include timeExpired to prevent infinite loop
 
   const fetchLanguages = async (language) => {
     try {
@@ -202,39 +190,19 @@ const AssignmentAnswerPage = () => {
     }
   };
 
-  const startAssignmentAttempt = async () => {
+  const startActivityAttempt = async () => {
     try {
-      if (type === "quiz") {
-        await takeQuiz(assignmentId, studentId);
-      } else if (type === "exam") {
-        await takeExam(assignmentId, studentId);
-      } else if (type === "assignment") {
-        await takeAssignment(assignmentId, studentId);
-      } else if (type === "activity") {
-        await takeActivity(assignmentId, studentId);
-      }
+      await takeActivity(assignmentId, studentId);
     } catch (error) {
-      console.error("Failed to start assignment:", error);
-      toast.error("Failed to start the assignment/activity");
+      console.error("Failed to start activity:", error);
+      toast.error("Failed to start the activity");
     }
   };
 
   const getAnswers = async (combinedQuestions, answer_id) => {
     try {
-      let result, answers;
-      if (type === "quiz") {
-        result = await specificQuizAnswer(answer_id);
-        answers = [...(result.data?.data?.answers || [])];
-      } else if (type === "exam") {
-        result = await specificExamAnswer(answer_id);
-        answers = [...(result.data?.data?.answers || [])];
-      } else if (type === "assignment") {
-        result = await specificAssignmentAnswer(answer_id);
-        answers = [...(result.data?.data?.answers || [])];
-      } else if (type === "activity") {
-        result = await specificActivityAnswer(answer_id);
-        answers = [...(result.data?.data?.answers || [])];
-      }
+      const result = await specificActivityAnswer(answer_id);
+      const answers = [...(result.data?.data?.answers || [])];
       functionGetAnswers(answers, combinedQuestions);
       setStarted(result.success);
     } catch (error) {
@@ -270,63 +238,29 @@ const AssignmentAnswerPage = () => {
     setCorrect(initialAnswersCorrect);
   };
 
-  const fetchAssignment = async () => {
+  const fetchActivity = async () => {
     try {
-      let result, answerResult, combinedQuestions;
-
-      if (type === "quiz") {
-        result = await specificQuiz(assignmentId);
-        answerResult = await specificQuizSpecificAnswer(
-          assignmentId,
-          studentId
-        );
-        combinedQuestions = [...(result.data?.data?.question || [])];
-      } else if (type === "exam") {
-        result = await specificExam(assignmentId);
-        answerResult = await specificExamSpecificAnswer(
-          assignmentId,
-          studentId
-        );
-        combinedQuestions = [...(result.data?.data?.question || [])];
-      } else if (type === "assignment") {
-        result = await specificAssignment(assignmentId);
-        answerResult = await specificAssignmentSpecificAnswer(
-          assignmentId,
-          studentId
-        );
-        combinedQuestions = [...(result.data?.data?.question || [])];
-      } else if (type === "activity") {
-        result = await specificActivity(assignmentId);
-        answerResult = await specificActivitySpecificAnswer(
-          assignmentId,
-          studentId
-        );
-        combinedQuestions = [...(result.data?.data?.question || [])];
-      }
+      const result = await specificActivity(assignmentId);
+      const answerResult = await specificActivitySpecificAnswer(
+        assignmentId,
+        studentId
+      );
+      const combinedQuestions = [...(result.data?.data?.question || [])];
 
       setAnswersData(answerResult.data.data);
       setQuestions(combinedQuestions);
-      getAnswers(combinedQuestions, answerResult.data?.data?._id);
+      getAnswers(combinedQuestions, answerResult.data?.data?.answer?._id);
     } catch (error) {
-      console.error("Failed to fetch assignment:", error);
+      console.error("Failed to fetch activity:", error);
     }
   };
 
   const submitAnswers = async (answers) => {
     try {
-      let result;
-      if (type === "quiz") {
-        result = await quizAnswer(assignmentId, studentId, answers);
-      } else if (type === "exam") {
-        result = await examAnswer(assignmentId, studentId, answers);
-      } else if (type === "assignment") {
-        result = await assignmentAnswer(assignmentId, studentId, answers);
-      } else if (type === "activity") {
-        result = await activityAnswer(assignmentId, studentId, answers);
-      }
+      const result = await activityAnswer(assignmentId, studentId, answers);
 
       if (result.success) {
-        toast.success(result?.data?.message);
+        toast.success("Answers submitted successfully!");
         setAnswers(questions.map(() => ""));
         setSelectedAnswer(questions.map(() => ""));
       } else {
@@ -406,15 +340,16 @@ const AssignmentAnswerPage = () => {
       points: points[i] || 0,
       is_correct: correct[i] || 0,
     }));
+    console.log(submitted);
 
     submitAnswers(submitted);
     setCurrentIndex(0);
-    fetchAssignment();
+    fetchActivity();
   };
 
-  const startAssignment = async () => {
-    await startAssignmentAttempt();
-    await fetchAssignment();
+  const startActivity = async () => {
+    await startActivityAttempt();
+    await fetchActivity();
     setStarted(true);
   };
 
@@ -444,7 +379,7 @@ const AssignmentAnswerPage = () => {
     <div className="p-6 space-y-4 no-select">
       <button
         onClick={() => navigate(-1)}
-        className="cursor-pointer  text-md text-blue-600 hover:underline flex items-center gap-1"
+        className="cursor-pointer text-md text-blue-600 hover:underline flex items-center gap-1"
       >
         ← Back
       </button>
@@ -474,28 +409,13 @@ const AssignmentAnswerPage = () => {
           {!started && (
             <div className="text-center w-full no-select">
               <h2 className="text-xl font-bold mb-4">
-                Ready to Start the{" "}
-                {type === "quiz"
-                  ? "Quiz"
-                  : type === "exam"
-                  ? "Exam"
-                  : type === "assignment"
-                  ? "Assignment"
-                  : "Activity"}
-                ?
+                Ready to Start the Activity?
               </h2>
               <button
-                onClick={startAssignment}
+                onClick={startActivity}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
               >
-                Start{" "}
-                {type === "quiz"
-                  ? "Quiz"
-                  : type === "exam"
-                  ? "Exam"
-                  : type === "assignment"
-                  ? "Assignment"
-                  : "Activity"}
+                Start Activity
               </button>
             </div>
           )}
@@ -529,7 +449,6 @@ const AssignmentAnswerPage = () => {
                         </p>
                       </div>
                     )}
-
                     {!answersData?.submitted_at && (
                       <div>
                         <p
@@ -648,7 +567,7 @@ const AssignmentAnswerPage = () => {
               {started && currentQuestion.answer_type === "programming" && (
                 <CodeEditor
                   value={code}
-                  onChange={handleCodeChange}
+ onChange={handleCodeChange}
                   language={classroom?.classroom?.programming_language}
                   height="400px"
                 />
@@ -661,4 +580,4 @@ const AssignmentAnswerPage = () => {
   );
 };
 
-export default AssignmentAnswerPage;
+export default ActivityAnswerPage;

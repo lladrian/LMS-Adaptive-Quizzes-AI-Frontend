@@ -29,11 +29,14 @@ const EditClassModal = ({
     midterm: "",
     final: "",
   });
+  const [selectedComponents, setSelectedComponents] = useState({
+    midterm: [],
+    final: [],
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (showEditClassModal && data) {
-      // Normalize the grading system structure from props
       const normalizeGradingSystem = (gradingData) => {
         if (!gradingData) {
           return {
@@ -42,16 +45,13 @@ const EditClassModal = ({
           };
         }
 
-        // Ensure both terms exist
         const normalized = {
           midterm: gradingData.midterm || { components: {} },
           final: gradingData.final || { components: {} },
         };
 
-        // Convert to components structure if needed
         ["midterm", "final"].forEach((term) => {
           if (!normalized[term].components) {
-            // If components don't exist, check for direct properties
             const { quiz, exam, activity, assignment, ...rest } =
               normalized[term];
             normalized[term] = {
@@ -75,6 +75,12 @@ const EditClassModal = ({
         description: data.description || "",
         programming_language: data.programming_language || "",
         grading_system: normalizeGradingSystem(data.grading_system),
+      });
+
+      // Initialize selected components as empty arrays
+      setSelectedComponents({
+        midterm: [],
+        final: [],
       });
     }
   }, [showEditClassModal, data]);
@@ -148,10 +154,35 @@ const EditClassModal = ({
     setNewComponentName((prev) => ({ ...prev, [term]: "" }));
   };
 
-  const removeComponent = (term, componentName) => {
+  const toggleComponentSelection = (term, componentName) => {
+    setSelectedComponents((prev) => {
+      const currentSelection = [...prev[term]];
+      const index = currentSelection.indexOf(componentName);
+
+      if (index === -1) {
+        currentSelection.push(componentName);
+      } else {
+        currentSelection.splice(index, 1);
+      }
+
+      return {
+        ...prev,
+        [term]: currentSelection,
+      };
+    });
+  };
+
+  const removeSelectedComponents = (term) => {
+    if (selectedComponents[term].length === 0) {
+      toast.error("No components selected for removal");
+      return;
+    }
+
     setFormData((prev) => {
       const components = { ...prev.grading_system[term].components };
-      delete components[componentName];
+      selectedComponents[term].forEach((component) => {
+        delete components[component];
+      });
 
       return {
         ...prev,
@@ -164,6 +195,12 @@ const EditClassModal = ({
         },
       };
     });
+
+    // Clear selection after removal
+    setSelectedComponents((prev) => ({
+      ...prev,
+      [term]: [],
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -241,13 +278,20 @@ const EditClassModal = ({
     return (
       <div className="space-y-3">
         {componentEntries.length > 0 ? (
-          componentEntries.map(([name, value]) => (
-            <div key={`${term}-${name}`} className="flex items-center gap-2">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">
-                  {name.replace(/_/g, " ")} (%)
-                </label>
-                <div className="flex gap-2">
+          <div className="space-y-2">
+            {componentEntries.map(([name, value]) => (
+              <div key={`${term}-${name}`} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedComponents[term].includes(name)}
+                  onChange={() => toggleComponentSelection(term, name)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  disabled={isSubmitting}
+                />
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1 capitalize">
+                    {name.replace(/_/g, " ")} (%)
+                  </label>
                   <input
                     type="number"
                     value={value}
@@ -257,18 +301,19 @@ const EditClassModal = ({
                     max="100"
                     disabled={isSubmitting}
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeComponent(term, name)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-md"
-                    disabled={isSubmitting}
-                  >
-                    <FiTrash2 size={16} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            <button
+              type="button"
+              onClick={() => removeSelectedComponents(term)}
+              className="mt-2 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+              disabled={selectedComponents[term].length === 0 || isSubmitting}
+            >
+              <FiTrash2 size={14} />
+              Remove Selected
+            </button>
+          </div>
         ) : (
           <p className="text-sm text-gray-500">No components added yet</p>
         )}

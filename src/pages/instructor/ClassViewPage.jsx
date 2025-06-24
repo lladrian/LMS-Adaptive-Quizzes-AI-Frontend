@@ -178,6 +178,17 @@ const ClassDetailPage = () => {
     ...new Set(allActivities.map((a) => a.activityType).filter(Boolean)),
   ];
 
+  const uniqueGradingTypes = [
+    ...new Set([
+      ...Object.keys(
+        ClassroomData.classroom.grading_system.midterm.components || {}
+      ),
+      ...Object.keys(
+        ClassroomData.classroom.grading_system.final.components || {}
+      ),
+    ]),
+  ];
+
   // Calculate pagination for activities
   const activityStartIndex = (currentPage.activities - 1) * itemsPerPage;
   const activityEndIndex = activityStartIndex + itemsPerPage;
@@ -216,7 +227,6 @@ const ClassDetailPage = () => {
     setIsLoading(true);
     try {
       const result = await specificClassroom(classId);
-      console.log(result); // keep this to verify
 
       // ✅ Corrected path
       const data = result?.data?.data;
@@ -256,8 +266,6 @@ const ClassDetailPage = () => {
         student_id
       );
       setSelectedStudentActivities(result.data.data);
-      console.log("allStudentActivities");
-      console.log(result);
     } catch (error) {
       console.error("Error removing student:", error);
       toast.error("An error occurred while removing student");
@@ -867,6 +875,8 @@ const ClassDetailPage = () => {
                       Student Grade Details
                     </h2>
                   </div>
+             
+
 
                   {/* Scrollable Content */}
                   <div className="overflow-y-auto p-6">
@@ -891,7 +901,9 @@ const ClassDetailPage = () => {
                           <p className="text-lg font-semibold text-indigo-800">
                             Overall Grade:{" "}
                             <span className="text-2xl">
-                              {selectedStudent.overallGrade || null}
+                              {console.log(222)}
+                              {console.log(selectedStudent.grades.student_grade.grade)}
+                              {selectedStudent.grades.student_grade.grade || null}
                               /100
                             </span>
                           </p>
@@ -903,34 +915,32 @@ const ClassDetailPage = () => {
                         <h3 className="text-lg font-semibold mb-4 text-gray-800">
                           Midterm Grades
                         </h3>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(
-                            selectedStudent.classroom.grading_system.midterm
-                              .components || {}
-                          ).map(([type, weight]) => (
+                        {Object.entries(
+                          selectedStudent.classroom.grading_system.midterm.components || {}
+                        ).map(([type, weight]) => {
+                          const data = selectedStudent.grades.midterm.categoryBreakdown[type] || {};
+
+                          return (
                             <div
                               key={`midterm-${type}`}
                               className="border p-4 rounded-lg bg-white"
                             >
-                              <p className="font-semibold capitalize">
-                                {type}:
-                              </p>
+                              <p className="font-semibold capitalize">{type}:</p>
+
                               <p className="text-gray-700">
-                                {selectedStudent.grades.midterm[type]
-                                  ?.earnedPoints || 0}
-                                /
-                                {selectedStudent.grades.midterm[type]
-                                  ?.totalPoints || 0}{" "}
-                                ={" "}
+                                {data.earnedPoints || 0}/{data.totalPoints || 0} ={" "}
                                 <span className="font-medium text-indigo-600">
-                                  {selectedStudent.grades.midterm[type]
-                                    ?.grade || 0}
+                                  {data.weightedContribution || 0}
                                 </span>
                                 /{weight}
                               </p>
                             </div>
-                          ))}
+                          );
+                        })}
                         </div>
+
                         <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
                           <p className="font-medium text-indigo-800">
                             Midterm Total:{" "}
@@ -949,32 +959,28 @@ const ClassDetailPage = () => {
                           Final Grades
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(
-                            selectedStudent.classroom.grading_system.final
-                              .components || {}
-                          ).map(([type, weight]) => (
+                        {Object.entries(
+                          selectedStudent.classroom.grading_system.final.components || {}
+                        ).map(([type, weight]) => {
+                          const data = selectedStudent.grades.final.categoryBreakdown[type] || {};
+
+                          return (
                             <div
-                              key={`final-${type}`}
+                              key={`midterm-${type}`}
                               className="border p-4 rounded-lg bg-white"
                             >
-                              <p className="font-semibold capitalize">
-                                {type}:
-                              </p>
+                              <p className="font-semibold capitalize">{type}:</p>
+
                               <p className="text-gray-700">
-                                {selectedStudent.grades.final[type]
-                                  ?.earnedPoints || 0}
-                                /
-                                {selectedStudent.grades.final[type]
-                                  ?.totalPoints || 0}{" "}
-                                ={" "}
+                                {data.earnedPoints || 0}/{data.totalPoints || 0} ={" "}
                                 <span className="font-medium text-indigo-600">
-                                  {selectedStudent.grades.final[type]?.grade ||
-                                    0}
+                                  {data.weightedContribution || 0}
                                 </span>
                                 /{weight}
                               </p>
                             </div>
-                          ))}
+                          );
+                        })}
                         </div>
                         <div className="mt-4 p-3 bg-indigo-50 rounded-lg">
                           <p className="font-medium text-indigo-800">
@@ -1463,6 +1469,7 @@ const ClassDetailPage = () => {
           classId={classId}
           onSuccess={handleActivityCreated}
           progLanguage={ClassroomData?.classroom.programming_language}
+          uniqueGradingTypes={uniqueGradingTypes}
         />
       )}
 

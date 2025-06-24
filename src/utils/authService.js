@@ -400,62 +400,7 @@ export const deleteAdmin = async (id) => {
   }
 };
 
-export const examAnswer = async (exam_id, student_id, array_answers) => {
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/answer_exams/add_answer/${exam_id}/${student_id}`,
-      {
-        array_answers,
-      }
-    );
 
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to create answer",
-    };
-  }
-};
-
-export const quizAnswer = async (quiz_id, student_id, array_answers) => {
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/answer_quizzes/add_answer/${quiz_id}/${student_id}`,
-      {
-        array_answers,
-      }
-    );
-
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to create answer",
-    };
-  }
-};
-export const assignmentAnswer = async (
-  assignment_id,
-  student_id,
-  array_answers
-) => {
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/answer_assignments/add_answer/${assignment_id}/${student_id}`,
-      {
-        array_answers,
-      }
-    );
-
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to create answer",
-    };
-  }
-};
 
 export const askAI = async (ask) => {
   try {
@@ -489,76 +434,14 @@ export const compilerRunCode = async (language, version, code) => {
   }
 };
 
-export const specificExamAnswer = async (answer_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_exams/get_specific_answer/${answer_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific answer",
-    };
-  }
-};
 
-export const specificQuizAnswer = async (answer_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_quizzes/get_specific_answer/${answer_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific answer",
-    };
-  }
-};
-export const specificAssignmentAnswer = async (answer_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_assignments/get_specific_answer/${answer_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific answer",
-    };
-  }
-};
-
-export const takeQuiz = async (quiz_id, student_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_quizzes/take_quiz/${quiz_id}/${student_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to take quiz",
-    };
-  }
-};
 export const takeActivity = async (activity_id, student_id) => {
   try {
     const response = await axios.get(`
-      ${BASE_URL}/answer_activities/take_activity/${activity_id}/${student_id}`);
+      ${BASE_URL}/main_answer/take_activity/${activity_id}/${student_id}`);
 
     return {
       success: true,
@@ -571,90 +454,10 @@ export const takeActivity = async (activity_id, student_id) => {
     };
   }
 };
-export const takeAssignment = async (assignment_id, student_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_assignments/take_assignment/${assignment_id}/${student_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to take assignment",
-    };
-  }
-};
 
-export const takeExam = async (exam_id, student_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_exams/take_exam/${exam_id}/${student_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to take exam",
-    };
-  }
-};
 
-export const specificExam = async (exam_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/exams/get_specific_exam/${exam_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific exam",
-    };
-  }
-};
-
-export const specificQuiz = async (quiz_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/quizzes/get_specific_quiz/${quiz_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific quiz",
-    };
-  }
-};
-export const specificAssignment = async (assignment_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/assignments/get_specific_assignment/${assignment_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message || "Failed to get specific assignment",
-    };
-  }
-};
 
 export const specificActivitySpecificAnswer = async (
   activity_id,
@@ -662,7 +465,7 @@ export const specificActivitySpecificAnswer = async (
 ) => {
   try {
     const response = await axios.get(`
-      ${BASE_URL}/activities/get_specific_activity_specific_answer/${activity_id}/${student_id}`);
+      ${BASE_URL}/main_activity/get_specific_activity_specific_answer/${activity_id}/${student_id}`);
 
     return {
       success: true,
@@ -676,59 +479,9 @@ export const specificActivitySpecificAnswer = async (
   }
 };
 
-export const specificExamSpecificAnswer = async (exam_id, student_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/exams/get_specific_exam_specific_answer/${exam_id}/${student_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific quiz",
-    };
-  }
-};
 
-export const specificQuizSpecificAnswer = async (quiz_id, student_id) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/quizzes/get_specific_quiz_specific_answer/${quiz_id}/${student_id}`);
 
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get specific quiz",
-    };
-  }
-};
-export const specificAssignmentSpecificAnswer = async (
-  assignment_id,
-  student_id
-) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/assignments/get_specific_assignment_specific_answer/${assignment_id}/${student_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message || "Failed to get specific assignment",
-    };
-  }
-};
 
 export const allLanguage = async () => {
   try {
@@ -747,25 +500,6 @@ export const allLanguage = async () => {
   }
 };
 
-export const allAnswerQuizSpecificStudentSpecificClassroom = async (
-  classroom_id,
-  student_id
-) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_quizzes/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get all answers",
-    };
-  }
-};
 
 export const allAnswerActivitySpecificStudentSpecificClassroom = async (
   classroom_id,
@@ -774,27 +508,7 @@ export const allAnswerActivitySpecificStudentSpecificClassroom = async (
   try {
     const response = await axios.get(`
       
-      ${BASE_URL}/answer_activities/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get all answers",
-    };
-  }
-};
-export const allAnswerAssignmentSpecificStudentSpecificClassroom = async (
-  classroom_id,
-  student_id
-) => {
-  try {
-    const response = await axios.get(`
-      
-      ${BASE_URL}/answer_assignments/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
+      ${BASE_URL}/main_answer/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
 
     return {
       success: true,
@@ -808,25 +522,6 @@ export const allAnswerAssignmentSpecificStudentSpecificClassroom = async (
   }
 };
 
-export const allAnswerExamSpecificStudentSpecificClassroom = async (
-  classroom_id,
-  student_id
-) => {
-  try {
-    const response = await axios.get(`
-      ${BASE_URL}/answer_exams/get_all_answer_specific_student_specific_classroom/${classroom_id}/${student_id}`);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to get all answers",
-    };
-  }
-};
 
 /* CLASSROOM */
 export const addClassroom = async (
@@ -1386,7 +1081,7 @@ export const addActivity = async (
 export const specificActivity = async (activity_id) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/activities/get_specific_activity/${activity_id}`
+      `${BASE_URL}/main_activity/get_specific_activity/${activity_id}`
     );
 
     return {
@@ -1568,7 +1263,7 @@ export const recoveryOTP = async (otp_code, email, password) => {
 export const specificActivityAnswer = async (answer_id) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/answer_activities/get_specific_answer/${answer_id}`
+      `${BASE_URL}/main_answer/get_specific_answer/${answer_id}`
     );
 
     return {
@@ -1591,9 +1286,9 @@ export const activityAnswer = async (
 ) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/answer_activities/add_answer/${activity_id}/${student_id}`,
+      `${BASE_URL}/main_answer/add_answer/${activity_id}/${student_id}`,
       {
-        array_answers,
+        answers : array_answers,
       }
     );
 

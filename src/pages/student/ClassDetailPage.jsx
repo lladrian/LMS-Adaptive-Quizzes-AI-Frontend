@@ -18,12 +18,9 @@ import {
 import { BASE_URL } from "../../utils/config";
 import {
   specificClassroom,
-  allAnswerExamSpecificStudentSpecificClassroom,
-  allAnswerQuizSpecificStudentSpecificClassroom,
   allAnswerActivitySpecificStudentSpecificClassroom,
   leaveClassroom,
   computeStudentGrade,
-  allAnswerAssignmentSpecificStudentSpecificClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 import Modal from "../../components/Modal";
@@ -39,23 +36,9 @@ const ClassDetailPage = () => {
     classroom: {},
     students: [],
     materials: [],
-    quizzes: [],
-    exams: [],
-    activities: [],
-    assignments: [],
-    midtermActivities: {
-      quizzes: [],
-      exams: [],
-      activities: [],
-      assignments: [],
-    },
-    finalActivities: {
-      quizzes: [],
-      exams: [],
-      activities: [],
-      assignments: [],
-    },
-    gradingSystem: { midterm: {}, final: {} }, // Changed from grading_system to gradingSystem
+    midtermActivities: [], // ✅ must be array
+    finalActivities: [],
+    gradingSystem: { midterm: {}, final: {} },
   });
   const [grades, setGrades] = useState({
     midterm: {},
@@ -85,6 +68,48 @@ const ClassDetailPage = () => {
     (classroom.materials?.length || 0) / itemsPerPage
   );
 
+  // Get all activity types from grading system
+  const getActivityTypes = () => {
+    const midtermTypes = classroom.gradingSystem?.midterm?.components
+      ? Object.keys(classroom.gradingSystem.midterm.components)
+      : [];
+    const finalTypes = classroom.gradingSystem?.final?.components
+      ? Object.keys(classroom.gradingSystem.final.components)
+      : [];
+    return [...new Set([...midtermTypes, ...finalTypes])];
+  };
+
+  // Get all assignments by combining activities from both terms
+  const getAllAssignments = () => {
+    const midterm = (classroom.midtermActivities || []).map((activity) => ({
+      ...activity,
+      type: activity.activity_type,
+      term: "midterm",
+    }));
+
+    const final = (classroom.finalActivities || []).map((activity) => ({
+      ...activity,
+      type: activity.activity_type,
+      term: "final",
+    }));
+
+    return [...midterm, ...final].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
+  };
+
+  // Get color for activity type badge
+  const getActivityTypeColor = (type) => {
+    const colors = {
+      quiz: "bg-yellow-100 text-yellow-800",
+      exam: "bg-green-100 text-green-800",
+      assignment: "bg-purple-100 text-purple-800",
+      activity: "bg-blue-100 text-blue-800",
+      // Add more types as needed
+    };
+    return colors[type] || "bg-gray-100 text-gray-800";
+  };
+
   // Pagination handlers
   const handlePageChange = (tab, page) => {
     setCurrentPage((prev) => ({
@@ -105,6 +130,12 @@ const ClassDetailPage = () => {
 
   useEffect(() => {
     fetchSpecificClassroom();
+    // console.log("🏁 classroom.gradingSystem:", classroom.gradingSystem);
+    // console.log("✅ Activity Types:", getActivityTypes());
+    // console.log("📦 Midterm Activities:", classroom.midtermActivities);
+    // console.log("📦 Final Activities:", classroom.finalActivities);
+    // console.log("🧪 All Assignments:", getAllAssignments());
+    // console.log("🎯 Filtered Assignments:", filterAssignments());
   }, [classId]);
 
   useEffect(() => {
@@ -136,62 +167,38 @@ const ClassDetailPage = () => {
   const fetchSpecificClassroom = async () => {
     setIsLoading(true);
     try {
-      const [
-        classResult,
-        examResult,
-        quizResult,
-        activityResult,
-        assignmentResult,
-        gradeResult,
-      ] = await Promise.all([
+      const [classResult, activityResult, gradeResult] = await Promise.all([
         specificClassroom(classId),
-        allAnswerExamSpecificStudentSpecificClassroom(classId, studentId),
-        allAnswerQuizSpecificStudentSpecificClassroom(classId, studentId),
         allAnswerActivitySpecificStudentSpecificClassroom(classId, studentId),
-        allAnswerAssignmentSpecificStudentSpecificClassroom(classId, studentId),
         computeStudentGrade(classId, studentId),
       ]);
 
       if (classResult.success) {
-        setClassroom((prev) => ({
-          ...prev,
-          ...classResult.data.data,
-          // Combine all assignments from both terms
-          assignments: [
-            ...(classResult.data.data.midtermActivities?.quizzes || []),
-            ...(classResult.data.data.midtermActivities?.exams || []),
-            ...(classResult.data.data.midtermActivities?.activities || []),
-            ...(classResult.data.data.midtermActivities?.assignments || []),
-            ...(classResult.data.data.finalActivities?.quizzes || []),
-            ...(classResult.data.data.finalActivities?.exams || []),
-            ...(classResult.data.data.finalActivities?.activities || []),
-            ...(classResult.data.data.finalActivities?.assignments || []),
-          ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
-        }));
+        let classroomData = classResult.data.data;
+        // Merge grading system from gradeResult if available
+        if (gradeResult.success && gradeResult.data.data) {
+          classroomData = {
+            ...classroomData,
+            gradingSystem: gradeResult.data.gradingSystem,
+          };
+        }
+        setClassroom(classroomData);
         setRestrictedSections(
-          classResult.data.data.classroom?.restricted_sections || []
+          classroomData.classroom?.restricted_sections || []
         );
       }
 
-      // Combine all answers including assignments
-      if (
-        examResult.success &&
-        quizResult.success &&
-        activityResult.success &&
-        assignmentResult.success
-      ) {
-        setAnswers(
-          [
-            ...(examResult.data.data || []),
-            ...(quizResult.data.data || []),
-            ...(activityResult.data.data || []),
-            ...(assignmentResult.data.data || []),
-          ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-        );
+      if (activityResult.success) {
+        setAnswers(activityResult.data.data || []);
       }
 
-      if (gradeResult.success) {
-        setGrades(gradeResult.data.data);
+      if (gradeResult?.data?.data) {
+        const gradeData = gradeResult.data.data;
+        setGrades({
+          midterm: gradeData.midterm || {},
+          final: gradeData.final || {},
+          student_grade: gradeData.student_grade || {},
+        });
       }
     } catch (error) {
       console.error("Error fetching classroom:", error);
@@ -202,35 +209,25 @@ const ClassDetailPage = () => {
   };
 
   const filterAssignments = () => {
-    return (
-      classroom.assignments?.filter((assignment) => {
-        const isAnswered = answers.some(
-          (ans) =>
-            (ans?.quiz?._id === assignment?._id ||
-              ans?.exam?._id === assignment?._id ||
-              ans?.activity?._id === assignment?._id ||
-              ans?.assignment?._id === assignment?._id) &&
-            ans?.submitted_at
-        );
+    const assignments = getAllAssignments();
 
-        const isOngoing = answers.some(
-          (ans) =>
-            (ans?.quiz?._id === assignment?._id ||
-              ans?.exam?._id === assignment?._id ||
-              ans?.activity?._id === assignment?._id ||
-              ans?.assignment?._id === assignment?._id) &&
-            ans?.opened_at &&
-            !ans?.submitted_at
-        );
+    return assignments.filter((assignment) => {
+      const answer = answers.find((ans) => {
+        const ansAssignment =
+          ans.quiz || ans.exam || ans.activity || ans.assignment;
+        return ansAssignment?._id === assignment?._id;
+      });
 
-        if (selectedStatus === "all") return true;
-        if (selectedStatus === "not yet") return !isAnswered && !isOngoing;
-        if (selectedStatus === "ongoing") return isOngoing;
-        if (selectedStatus === "completed") return isAnswered;
+      const isCompleted = answer?.submitted_at;
+      const isOngoing = answer?.opened_at && !answer?.submitted_at;
 
-        return true;
-      }) || []
-    );
+      if (selectedStatus === "all") return true;
+      if (selectedStatus === "not yet") return !isCompleted && !isOngoing;
+      if (selectedStatus === "ongoing") return isOngoing;
+      if (selectedStatus === "completed") return isCompleted;
+
+      return true;
+    });
   };
 
   const assignmentStartIndex = (currentPage.assignments - 1) * itemsPerPage;
@@ -274,23 +271,6 @@ const ClassDetailPage = () => {
     );
   }
 
-  // Helper function to determine the term of an assignment
-  const getAssignmentTerm = (assignmentId, classroom) => {
-    const isMidterm =
-      classroom.midtermActivities?.quizzes?.some(
-        (q) => q._id === assignmentId
-      ) ||
-      classroom.midtermActivities?.exams?.some((e) => e._id === assignmentId) ||
-      classroom.midtermActivities?.activities?.some(
-        (a) => a._id === assignmentId
-      ) ||
-      classroom.midtermActivities?.assignments?.some(
-        (a) => a._id === assignmentId
-      );
-
-    return isMidterm ? "midterm" : "final";
-  };
-
   // Helper function to convert numeric grade to letter grade
   const getGradeLetter = (grade) => {
     if (grade >= 90) return "A (Excellent)";
@@ -298,6 +278,195 @@ const ClassDetailPage = () => {
     if (grade >= 70) return "C (Average)";
     if (grade >= 60) return "D (Below Average)";
     return "F (Fail)";
+  };
+
+  // Render grade breakdown for a term
+  const renderGradeBreakdown = (term) => {
+    const student_grade =  term === "midterm" ? grades.midterm.categoryBreakdown : grades.final.categoryBreakdown;
+    const termData = grades[term] || {};
+    const gradingComponents = classroom.gradingSystem?.[term] || {};
+    const activityTypes = Object.keys(gradingComponents);
+
+    return (
+      <div className="border-b pb-4">
+        <h3 className="text-lg font-semibold mb-2 text-indigo-700">
+          {term.charAt(0).toUpperCase() + term.slice(1)} Grades
+        </h3>
+        <div className="space-y-2 text-gray-700">
+          {/* {activityTypes.map((type) => (
+            <div key={type} className="flex justify-between">
+              <span>{type.charAt(0).toUpperCase() + type.slice(1)}:</span>
+              <span>
+                {termData[type]?.earnedPoints || 0}/
+                {termData[type]?.totalPoints || 0} ={" "}
+                {termData[type]?.grade || 0}/{gradingComponents[type] || 0}%
+              </span>
+            </div>
+          ))} */}
+          {Object.keys(student_grade).map((type) => (
+            <div key={type} className="flex justify-between">
+              <span>{type.charAt(0).toUpperCase() + type.slice(1)}:</span>
+              <span>
+                {student_grade[type]?.earnedPoints || 0}/
+                {student_grade[type]?.totalPoints || 0} ={" "}
+                {student_grade[type]?.weightedContribution}/{student_grade[type]?.weight || 0}%
+              </span>
+            </div>
+          ))}
+          <div className="flex justify-between font-bold mt-2">
+            <span>{term.charAt(0).toUpperCase() + term.slice(1)} Total:</span>
+            <span>
+              {termData.term_grade || 0}/
+              {Object.values(gradingComponents).reduce((a, b) => a + b, 0)}%
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render grading system overview
+  const renderGradingSystem = (term) => {
+    // Check both possible locations for grading system data
+    const gradingSystem =
+      classroom.gradingSystem?.[term] || grades.gradingSystem?.[term] || {};
+
+    const components = gradingSystem.components || gradingSystem; // Handle both structures
+
+    if (!components || Object.keys(components).length === 0) {
+      return (
+        <p className="text-gray-500">
+          No grading components defined for {term}
+        </p>
+      );
+    }
+
+    return (
+      <div>
+        <h3 className="text-lg font-semibold mb-2">
+          {term.charAt(0).toUpperCase() + term.slice(1)}
+        </h3>
+        <div className="space-y-2 text-gray-700">
+          {Object.entries(components).map(([type, value]) => (
+            <div key={type}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}: {value}%
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+
+  const midterm_activities = classroom.activities.filter(activity => activity.grading_breakdown === 'midterm');
+  const final_activities = classroom.activities.filter(activity => activity.grading_breakdown === 'final');
+  const capitalizeWords = (str) => {
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Group activities by grading_breakdown and activity_type and count them
+const groupAndCountActivities = (activities) => {
+  return activities.reduce((acc, activity) => {
+    const key = `${activity.grading_breakdown}-${activity.activity_type}`;
+    if (!acc[key]) {
+      acc[key] = {
+        grading_breakdown: activity.grading_breakdown,
+        activity_type: activity.activity_type,
+        count: 0,
+      };
+    }
+    acc[key].count += 1;
+    return acc;
+  }, {});
+};
+
+  // Render activity counts for classroom overview
+  const renderActivityCounts = () => {
+    const groupedActivitiesMidterm = groupAndCountActivities(midterm_activities);
+    const groupedActivitiesFinal = groupAndCountActivities(final_activities);
+    const groupedArrayMidterm = Object.values(groupedActivitiesMidterm);
+    const groupedArrayFinal = Object.values(groupedActivitiesFinal);
+
+    const activityTypes = getActivityTypes();
+    const counts = {};
+
+    activityTypes.forEach((type) => {
+      counts[type] = {
+        midterm: (classroom.midtermActivities[type] || []).length,
+        final: (classroom.finalActivities[type] || []).length,
+        total: 0,
+      };
+      counts[type].total = counts[type].midterm + counts[type].final;
+    });
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Object.entries(counts).map(([type, count]) => (
+          <div
+            key={type}
+            className={`p-4 rounded-xl shadow-sm ${
+              type === "quiz"
+                ? "bg-yellow-100 text-yellow-800"
+                : type === "exam"
+                ? "bg-green-100 text-green-800"
+                : type === "assignment"
+                ? "bg-purple-100 text-purple-800"
+                : "bg-blue-100 text-blue-800"
+            }`}
+          >
+            <h3 className="text-sm font-medium">
+              Total {type.charAt(0).toUpperCase() + type.slice(1)}s
+            </h3>
+            <p className="text-2xl font-bold">{count.total}</p>
+            <p className="text-xs mt-1">
+              {count.midterm} midterm, {count.final} final
+            </p>
+          </div>
+        ))}
+
+        <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+          <h3 className="text-sm font-medium">Total Materials</h3>
+          <p className="text-2xl font-bold">
+            {classroom.materials?.length || 0}
+          </p>
+        </div>
+
+        <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+          <h3 className="text-sm font-medium">Total Midterm Activities</h3>
+          <p className="text-2xl font-bold">
+            {classroom.midtermActivities.length}
+          </p>
+        </div>
+
+        <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+          <h3 className="text-sm font-medium">Total Final Activities</h3>
+          <p className="text-2xl font-bold">
+            {classroom.finalActivities.length}
+          </p>
+        </div>
+
+        {groupedArrayMidterm.map((group) => (
+            <div key={`${group.grading_breakdown}-${group.activity_type}`} className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+              <h3 className="text-lg font-semibold">
+                Total {capitalizeWords(group.grading_breakdown)} - {capitalizeWords(group.activity_type)}
+              </h3>
+              <p className="text-2xl font-bold">{group.count}</p>
+            </div>
+        ))}
+
+        {groupedArrayFinal.map((group) => (
+            <div key={`${group.grading_breakdown}-${group.activity_type}`} className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
+              <h3 className="text-lg font-semibold">
+                Total {capitalizeWords(group.grading_breakdown)} - {capitalizeWords(group.activity_type)}
+              </h3>
+              <p className="text-2xl font-bold">{group.count}</p>
+            </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -594,7 +763,7 @@ const ClassDetailPage = () => {
               ) : (
                 <>
                   <h2 className="text-xl font-semibold">Assignments</h2>
-                  <div className="mb-4">
+                  {/* <div className="mb-4">
                     <select
                       value={selectedStatus}
                       onChange={(e) => setSelectedStatus(e.target.value)}
@@ -605,18 +774,16 @@ const ClassDetailPage = () => {
                       <option value="ongoing">Ongoing</option>
                       <option value="completed">Completed</option>
                     </select>
-                  </div>
+                  </div> */}
 
                   {currentAssignments.length > 0 ? (
                     <div className="space-y-3">
                       {currentAssignments.map((assignment) => {
-                        const answer = answers.find(
-                          (ans) =>
-                            ans?.quiz?._id === assignment?._id ||
-                            ans?.exam?._id === assignment?._id ||
-                            ans?.activity?._id === assignment?._id ||
-                            ans?.assignment?._id === assignment?._id
-                        );
+                        const answer = answers.find((ans) => {
+                          const ansAssignment =
+                            ans.main_activity 
+                          return ansAssignment?._id === assignment?._id;
+                        });
 
                         const isCompleted = answer?.submitted_at;
                         const isOngoing =
@@ -643,15 +810,9 @@ const ClassDetailPage = () => {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span
-                                      className={`px-2 py-1 rounded-full text-xs capitalize ${
-                                        assignment.type === "quiz"
-                                          ? "bg-yellow-100 text-yellow-800"
-                                          : assignment.type === "exam"
-                                          ? "bg-green-100 text-green-800"
-                                          : assignment.type === "assignment"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : "bg-blue-100 text-blue-800"
-                                      }`}
+                                      className={`px-2 py-1 rounded-full text-xs capitalize ${getActivityTypeColor(
+                                        assignment.type
+                                      )}`}
                                     >
                                       {assignment.type} -{" "}
                                       {assignment.grading_breakdown}
@@ -737,13 +898,12 @@ const ClassDetailPage = () => {
                                     ? "View Submission"
                                     : isOngoing
                                     ? "Continue Assignment"
-                                    : assignment.type === "quiz"
-                                    ? "Take Quiz"
-                                    : assignment.type === "exam"
-                                    ? "Take Exam"
-                                    : assignment.type === "assignment"
-                                    ? "Submit Assignment"
-                                    : "Take Activity"}
+                                    : `Start ${
+                                        assignment.type
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                        assignment.type.slice(1)
+                                      }`}
                                 </Link>
                                 {isCompleted && answer?.grade && (
                                   <div className="mt-3 text-sm">
@@ -764,7 +924,6 @@ const ClassDetailPage = () => {
                     <p className="text-gray-500">No assignments available.</p>
                   )}
 
-                  {/* Pagination remains the same */}
                   {totalAssignmentPages > 1 && (
                     <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                       <button
@@ -833,121 +992,8 @@ const ClassDetailPage = () => {
                     </h2>
                     {grades.student_grade ? (
                       <div className="space-y-4">
-                        {/* Midterm Grades */}
-                        <div className="border-b pb-4">
-                          <h3 className="text-lg font-semibold mb-2 text-indigo-700">
-                            Midterm Grades
-                          </h3>
-                          <div className="space-y-2 text-gray-700">
-                            <div className="flex justify-between">
-                              <span>📘 Quiz:</span>
-                              <span>
-                                {grades.midterm?.quiz?.earnedPoints || 0}/
-                                {grades.midterm?.quiz?.totalPoints || 0} ={" "}
-                                {grades.midterm?.quiz?.grade || 0}/
-                                {classroom.gradingSystem?.midterm?.quiz || 0}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>📝 Assignment:</span>
-                              <span>
-                                {grades.midterm?.assignment?.earnedPoints || 0}/
-                                {grades.midterm?.assignment?.totalPoints || 0} ={" "}
-                                {grades.midterm?.assignment?.grade || 0}/
-                                {classroom.gradingSystem?.midterm?.assignment ||
-                                  0}
-                                %
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>🎯 Activity:</span>
-                              <span>
-                                {grades.midterm?.activity?.earnedPoints || 0}/
-                                {grades.midterm?.activity?.totalPoints || 0} ={" "}
-                                {grades.midterm?.activity?.grade || 0}/
-                                {classroom.gradingSystem?.midterm?.activity ||
-                                  0}
-                                %
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>📚 Midterm Exam:</span>
-                              <span>
-                                {grades.midterm?.exam?.earnedPoints || 0}/
-                                {grades.midterm?.exam?.totalPoints || 0} ={" "}
-                                {grades.midterm?.exam?.grade || 0}/
-                                {classroom.gradingSystem?.midterm?.exam || 0}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-bold mt-2">
-                              <span>🎯 Midterm Total:</span>
-                              <span>
-                                {grades.midterm?.term_grade || 0}/
-                                {Object.values(
-                                  classroom.gradingSystem?.midterm || {}
-                                ).reduce((a, b) => a + b, 0)}
-                                %
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Final Grades */}
-                        <div className="border-b pb-4">
-                          <h3 className="text-lg font-semibold mb-2 text-indigo-700">
-                            Final Grades
-                          </h3>
-                          <div className="space-y-2 text-gray-700">
-                            <div className="flex justify-between">
-                              <span>📘 Quiz:</span>
-                              <span>
-                                {grades.final?.quiz?.earnedPoints || 0}/
-                                {grades.final?.quiz?.totalPoints || 0} ={" "}
-                                {grades.final?.quiz?.grade || 0}/
-                                {classroom.gradingSystem?.final?.quiz || 0}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>📝 Assignment:</span>
-                              <span>
-                                {grades.final?.assignment?.earnedPoints || 0}/
-                                {grades.final?.assignment?.totalPoints || 0} ={" "}
-                                {grades.final?.assignment?.grade || 0}/
-                                {classroom.gradingSystem?.final?.assignment ||
-                                  0}
-                                %
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>🎯 Activity:</span>
-                              <span>
-                                {grades.final?.activity?.earnedPoints || 0}/
-                                {grades.final?.activity?.totalPoints || 0} ={" "}
-                                {grades.final?.activity?.grade || 0}/
-                                {classroom.gradingSystem?.final?.activity || 0}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>📖 Final Exam:</span>
-                              <span>
-                                {grades.final?.exam?.earnedPoints || 0}/
-                                {grades.final?.exam?.totalPoints || 0} ={" "}
-                                {grades.final?.exam?.grade || 0}/
-                                {classroom.gradingSystem?.final?.exam || 0}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-bold mt-2">
-                              <span>🎯 Final Total:</span>
-                              <span>
-                                {grades.final?.term_grade || 0}/
-                                {Object.values(
-                                  classroom.gradingSystem?.final || {}
-                                ).reduce((a, b) => a + b, 0)}
-                                %
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                        {renderGradeBreakdown("midterm")}
+                        {renderGradeBreakdown("final")}
 
                         {/* Total Grade */}
                         <div className="pt-2">
@@ -1001,20 +1047,14 @@ const ClassDetailPage = () => {
                           </th>
                         </tr>
                       </thead>
+
                       <tbody className="bg-white divide-y divide-gray-200">
                         {answers.length > 0 ? (
-                          answers
-                            .filter((a) => a.submitted_at)
+                          answers.filter((a) => a.submitted_at)
                             .map((answer) => {
                               const assignment =
-                                answer.quiz ||
-                                answer.exam ||
-                                answer.activity ||
-                                answer.assignment;
-                              const term = getAssignmentTerm(
-                                assignment._id,
-                                classroom
-                              );
+                                answer.main_activity 
+                              const term = assignment?.grading_breakdown;
                               const totalPoints = (
                                 assignment.question || []
                               ).reduce((acc, q) => acc + (q.points || 0), 0);
@@ -1038,17 +1078,11 @@ const ClassDetailPage = () => {
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <span
-                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                        assignment.type === "quiz"
-                                          ? "bg-yellow-100 text-yellow-800"
-                                          : assignment.type === "exam"
-                                          ? "bg-green-100 text-green-800"
-                                          : assignment.type === "assignment"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : "bg-blue-100 text-blue-800"
-                                      }`}
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getActivityTypeColor(
+                                        assignment.activity_type
+                                      )}`}
                                     >
-                                      {assignment.type.toUpperCase()}
+                                      {assignment.activity_type.toUpperCase()}
                                     </span>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap font-medium">
@@ -1078,7 +1112,7 @@ const ClassDetailPage = () => {
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <Link
-                                      to={`/student/class/${classId}/${assignment._id}/${assignment.type}/view_answer`}
+                                      to={`/student/class/${classId}/${assignment._id}/${assignment.activity_type}/view_answer`}
                                       className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
                                     >
                                       View
@@ -1135,97 +1169,16 @@ const ClassDetailPage = () => {
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold">Classroom Overview</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-blue-100 text-blue-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Students</h3>
-                  <p className="text-2xl font-bold">
-                    {classroom.students?.length || 0}
-                  </p>
-                </div>
-
-                <div className="bg-cyan-100 text-cyan-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Assignments</h3>
-                  <p className="text-2xl font-bold">
-                    {classroom.assignments?.length || 0}
-                  </p>
-                </div>
-
-                <div className="bg-yellow-100 text-yellow-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Quizzes</h3>
-                  <p className="text-2xl font-bold">
-                    {(classroom.midtermActivities?.quizzes?.length || 0) +
-                      (classroom.finalActivities?.quizzes?.length || 0)}
-                  </p>
-                </div>
-
-                <div className="bg-green-100 text-green-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Exams</h3>
-                  <p className="text-2xl font-bold">
-                    {(classroom.midtermActivities?.exams?.length || 0) +
-                      (classroom.finalActivities?.exams?.length || 0)}
-                  </p>
-                </div>
-
-                <div className="bg-gray-100 text-gray-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Activities</h3>
-                  <p className="text-2xl font-bold">
-                    {(classroom.midtermActivities?.activities?.length || 0) +
-                      (classroom.finalActivities?.activities?.length || 0)}
-                  </p>
-                </div>
-
-                <div className="bg-fuchsia-100 text-fuchsia-800 p-4 rounded-xl shadow-sm">
-                  <h3 className="text-sm font-medium">Total Materials</h3>
-                  <p className="text-2xl font-bold">
-                    {classroom.materials?.length || 0}
-                  </p>
-                </div>
-              </div>
+              {renderActivityCounts()}
 
               <div className="bg-white p-6 rounded shadow-md">
                 <h2 className="text-xl font-bold mb-4 text-gray-800">
                   Grading System
                 </h2>
-                {classroom.gradingSystem ? (
+                {classroom.gradingSystem || grades.gradingSystem ? (
                   <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Midterm</h3>
-                      <div className="space-y-2 text-gray-700">
-                        <div>
-                          📘 Quiz: {classroom.gradingSystem.midterm?.quiz || 0}%
-                        </div>
-                        <div>
-                          📝 Assignment:{" "}
-                          {classroom.gradingSystem.midterm?.assignment || 0}%
-                        </div>
-                        <div>
-                          🎯 Activity:{" "}
-                          {classroom.gradingSystem.midterm?.activity || 0}%
-                        </div>
-                        <div>
-                          📚 Exam: {classroom.gradingSystem.midterm?.exam || 0}%
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Final</h3>
-                      <div className="space-y-2 text-gray-700">
-                        <div>
-                          📘 Quiz: {classroom.gradingSystem.final?.quiz || 0}%
-                        </div>
-                        <div>
-                          📝 Assignment:{" "}
-                          {classroom.gradingSystem.final?.assignment || 0}%
-                        </div>
-                        <div>
-                          🎯 Activity:{" "}
-                          {classroom.gradingSystem.final?.activity || 0}%
-                        </div>
-                        <div>
-                          📚 Exam: {classroom.gradingSystem.final?.exam || 0}%
-                        </div>
-                      </div>
-                    </div>
+                    {renderGradingSystem("midterm")}
+                    {renderGradingSystem("final")}
                     <div className="mt-4 border-t pt-2 text-blue-600 font-bold text-xl">
                       🔢 Total: 100%
                     </div>

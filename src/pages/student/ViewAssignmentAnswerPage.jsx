@@ -4,33 +4,18 @@ import CodeEditor from "../../components/CodeEditor";
 import {
   compilerRunCode,
   allLanguage,
-  specificExam,
-  specificQuiz,
   specificActivity,
-  specificAssignment,
-  examAnswer,
-  quizAnswer,
   activityAnswer,
-  assignmentAnswer,
-  specificExamAnswer,
-  specificQuizAnswer,
   specificActivityAnswer,
-  specificAssignmentAnswer,
-  takeExam,
-  takeQuiz,
   takeActivity,
-  takeAssignment as takeAssignmentAPI,
-  specificExamSpecificAnswer,
-  specificQuizSpecificAnswer,
   specificActivitySpecificAnswer,
-  specificAssignmentSpecificAnswer,
   askAI,
   specificClassroom,
 } from "../../utils/authService";
 import { toast } from "react-toastify";
 
-const AssignmentAnswerPage = () => {
-  const { assignmentId, type, classId } = useParams();
+const ActivityAnswerPage = () => {
+  const { assignmentId, classId } = useParams();
   const [started, setStarted] = useState(false);
   const [code, setCode] = useState("");
   const [compiler, setCompiler] = useState({
@@ -56,7 +41,7 @@ const AssignmentAnswerPage = () => {
 
   useEffect(() => {
     fetchSpecificClassroom();
-    fetchAssignment();
+    fetchActivity();
   }, []);
 
   const fetchSpecificClassroom = async () => {
@@ -75,12 +60,7 @@ const AssignmentAnswerPage = () => {
   useEffect(() => {
     if (!answersData?.opened_at) return;
 
-    const countdownFrom =
-      (answersData?.quiz?.submission_time ||
-        answersData?.exam?.submission_time ||
-        answersData?.activity?.submission_time ||
-        answersData?.assignment?.submission_time) * 60 || 0;
-
+    const countdownFrom = (answersData?.activity?.submission_time || 0) * 60;
     const openedAt = new Date(answersData?.opened_at?.replace(" ", "T"));
 
     const updateCountdown = () => {
@@ -113,53 +93,20 @@ const AssignmentAnswerPage = () => {
     }
   };
 
-  const takeAssignment = async () => {
+  const startActivityAttempt = async () => {
     try {
-      let result;
-      switch (type) {
-        case "quiz":
-          result = await takeQuiz(assignmentId, studentId);
-          break;
-        case "exam":
-          result = await takeExam(assignmentId, studentId);
-          break;
-        case "activity":
-          result = await takeActivity(assignmentId, studentId);
-          break;
-        case "assignment":
-          result = await takeAssignmentAPI(assignmentId, studentId);
-          break;
-        default:
-          throw new Error("Invalid assignment type");
-      }
+      const result = await takeActivity(assignmentId, studentId);
       return result?.success;
     } catch (error) {
-      console.error("Failed to start assignment:", error);
-      toast.error("Failed to start assignment");
+      console.error("Failed to start activity:", error);
+      toast.error("Failed to start activity");
       return false;
     }
   };
 
   const getAnswers = async (combinedQuestions, answer_id) => {
     try {
-      let result;
-      switch (type) {
-        case "quiz":
-          result = await specificQuizAnswer(answer_id);
-          break;
-        case "exam":
-          result = await specificExamAnswer(answer_id);
-          break;
-        case "activity":
-          result = await specificActivityAnswer(answer_id);
-          break;
-        case "assignment":
-          result = await specificAssignmentAnswer(answer_id);
-          break;
-        default:
-          throw new Error("Invalid assignment type");
-      }
-
+      const result = await specificActivityAnswer(answer_id);
       const answers = [...(result.data?.data?.answers || [])];
       functionGetAnswers(answers, combinedQuestions);
       setStarted(result.success);
@@ -197,77 +144,45 @@ const AssignmentAnswerPage = () => {
     setCorrect(initialAnswersCorrect);
   };
 
-  const fetchAssignment = async () => {
+  const fetchActivity = async () => {
     try {
-      let result, answerResult;
-      switch (type) {
-        case "quiz":
-          result = await specificQuiz(assignmentId);
-          answerResult = await specificQuizSpecificAnswer(
-            assignmentId,
-            studentId
-          );
-          break;
-        case "exam":
-          result = await specificExam(assignmentId);
-          answerResult = await specificExamSpecificAnswer(
-            assignmentId,
-            studentId
-          );
-          break;
-        case "activity":
-          result = await specificActivity(assignmentId);
-          answerResult = await specificActivitySpecificAnswer(
-            assignmentId,
-            studentId
-          );
-          break;
-        case "assignment":
-          result = await specificAssignment(assignmentId);
-          answerResult = await specificAssignmentSpecificAnswer(
-            assignmentId,
-            studentId
-          );
-          break;
-        default:
-          throw new Error("Invalid assignment type");
-      }
+      const result = await specificActivity(assignmentId);
+      const answerResult = await specificActivitySpecificAnswer(
+        assignmentId,
+        studentId
+      );
+
 
       const combinedQuestions = [...(result.data?.data?.question || [])];
-      setAnswersData(answerResult.data.data);
       setQuestions(combinedQuestions);
-      getAnswers(combinedQuestions, answerResult.data?.data?._id);
+
+      // Only proceed if we have answer data
+      if (answerResult.success && answerResult.data?.data) {
+        setAnswersData(answerResult.data.data);
+        getAnswers(combinedQuestions, answerResult.data?.data?.answer?._id);
+      } else {
+        // Initialize empty answers if no answer exists yet
+        setAnswers(combinedQuestions.map(() => ""));
+        setSelectedAnswer(combinedQuestions.map(() => ""));
+        setPoints(combinedQuestions.map(() => 0));
+        setCorrect(combinedQuestions.map(() => 0));
+        setStarted(true); // Still allow starting the activity
+      }
     } catch (error) {
-      console.error("Failed to fetch assignment:", error);
-      toast.error("Failed to fetch assignment");
+      console.error("Failed to fetch activity:", error);
+      toast.error("Failed to fetch activity");
     }
   };
 
   const submitAnswers = async (answers) => {
     try {
-      let result;
-      switch (type) {
-        case "quiz":
-          result = await quizAnswer(assignmentId, studentId, answers);
-          break;
-        case "exam":
-          result = await examAnswer(assignmentId, studentId, answers);
-          break;
-        case "activity":
-          result = await activityAnswer(assignmentId, studentId, answers);
-          break;
-        case "assignment":
-          result = await assignmentAnswer(assignmentId, studentId, answers);
-          break;
-        default:
-          throw new Error("Invalid assignment type");
-      }
+      const result = await activityAnswer(assignmentId, studentId, answers);
 
       if (result.success) {
         toast.success(result?.data?.message);
         setAnswers(questions.map(() => ""));
         setSelectedAnswer(questions.map(() => ""));
-        fetchAssignment(); // Refresh data after submission
+        fetchActivity(); // Refresh data after submission
       } else {
         toast.error(result.error);
       }
@@ -353,10 +268,10 @@ const AssignmentAnswerPage = () => {
     submitAnswers(submitted);
   };
 
-  const startAssignment = async () => {
-    const success = await takeAssignment();
+  const startActivity = async () => {
+    const success = await startActivityAttempt();
     if (success) {
-      await fetchAssignment();
+      await fetchActivity();
       setStarted(true);
     }
   };
@@ -380,13 +295,12 @@ const AssignmentAnswerPage = () => {
   };
 
   const currentQuestion = questions[currentIndex];
-  const assignmentTypeName = type.charAt(0).toUpperCase() + type.slice(1);
 
   return (
     <div className="p-6 space-y-4">
       <button
         onClick={() => navigate(-1)}
-        className="cursor-pointer  text-md text-blue-600 hover:underline flex items-center gap-1"
+        className="cursor-pointer text-md text-blue-600 hover:underline flex items-center gap-1"
       >
         ← Back
       </button>
@@ -401,13 +315,13 @@ const AssignmentAnswerPage = () => {
           {!started && (
             <div className="text-center w-full">
               <h2 className="text-xl font-bold mb-4">
-                Ready to Start the {assignmentTypeName}?
+                Ready to Start the Activity?
               </h2>
               <button
-                onClick={startAssignment}
+                onClick={startActivity}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded"
               >
-                Start {assignmentTypeName}
+                Start Activity
               </button>
             </div>
           )}
@@ -581,4 +495,4 @@ const AssignmentAnswerPage = () => {
   );
 };
 
-export default AssignmentAnswerPage;
+export default ActivityAnswerPage;

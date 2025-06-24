@@ -18,7 +18,10 @@ const CreateAssignmentModal = ({
   classId,
   onSuccess,
   progLanguage,
+  uniqueGradingTypes = {},
 }) => {
+  console.log("uniqueGradingTypes");
+  console.log(uniqueGradingTypes);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -48,21 +51,6 @@ const CreateAssignmentModal = ({
     { id: 1, name: "Activity Details" },
     { id: 2, name: "Add Questions" },
     { id: 3, name: "Review & Submit" },
-  ];
-
-  const activityTypes = [
-    {
-      value: "activity",
-      label: "Laboratory Activity",
-      description: "Graded laboratory task or coding exercise",
-    },
-    {
-      value: "assignment",
-      label: "Assignment",
-      description: "Graded coding project or problem set",
-    },
-    { value: "quiz", label: "Quiz", description: "Short graded assessment" },
-    { value: "exam", label: "Exam", description: "Major graded assessment" },
   ];
 
   const handleAssignmentChange = (e) => {
@@ -575,28 +563,22 @@ const CreateAssignmentModal = ({
                       Activity Type *
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {activityTypes.map((activity) => (
+                      {uniqueGradingTypes.map((type) => (
                         <div
-                          key={activity.value}
+                          key={type}
                           onClick={() =>
                             setAssignmentData((prev) => ({
                               ...prev,
-                              type: activity.value,
-                              timeLimit: prev.timeLimit,
+                              type: type,
                             }))
                           }
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                            assignmentData.type === activity.value
-                              ? "border-indigo-500 bg-indigo-50"
+                          className={`p-4 border rounded-lg cursor-pointer text-center transition-all ${
+                            assignmentData.type === type
+                              ? "border-indigo-500 bg-indigo-50 font-medium"
                               : "border-gray-300 hover:border-indigo-300"
                           }`}
                         >
-                          <h4 className="font-medium text-gray-800">
-                            {activity.label}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {activity.description}
-                          </p>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
                         </div>
                       ))}
                     </div>
