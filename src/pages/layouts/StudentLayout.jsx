@@ -29,13 +29,7 @@ const StudentLayout = () => {
 
   const handleLogout = () => {
     navigate("/");
-    localStorage.removeItem("role");
-    localStorage.removeItem("first_name");
-    localStorage.removeItem("middle_name");
-    localStorage.removeItem("last_name");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
-    localStorage.removeItem("status");
+    localStorage.clear();
   };
   return (
     <div className="flex h-screen bg-gray-50">

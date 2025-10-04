@@ -31,7 +31,10 @@ const AdminDashboard = () => {
   const [unhiddenClassrooms, setUnhiddenClassrooms] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const adminFullname = localStorage.getItem("fullname");
+
+   const fName = localStorage.getItem("first_name");
+   const mName = localStorage.getItem("middle_name");
+   const lName = localStorage.getItem("last_name");
 
   // Pagination states
   const [materialPage, setMaterialPage] = useState(1);
@@ -295,7 +298,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">
-        Welcome back, {adminFullname}
+        Welcome back, {fName} 
       </h1>
 
       {/* Stats Cards */}
@@ -352,7 +355,7 @@ const AdminDashboard = () => {
               className="flex items-start pb-4 border-b border-gray-100 last:border-0"
             >
               <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold mr-4">
-                {activity.fullname?.charAt(0) || "U"}
+                {activity.first_name?.charAt(0) || "U"}
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800">

@@ -66,20 +66,27 @@ const Classrooms = () => {
   };
 
   // Filter classrooms based on search term
-  const filteredClassrooms = classrooms.filter(
-    (classroom) =>
-      classroom.classroom_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      classroom.subject_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (classroom.instructor &&
-        (classroom.instructor.fullname
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-          classroom.instructor.email
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())))
-  );
+  const filteredClassrooms = classrooms.filter((classroom) => {
+    const classroomName = classroom.classroom_name?.toLowerCase() || "";
+    const subjectCode = classroom.subject_code?.toLowerCase() || "";
+    const instructorEmail = classroom.instructor?.email?.toLowerCase() || "";
+    const instructorFName = classroom.instructor?.first_name?.toLowerCase() || "";
+    const instructorMName = classroom.instructor?.middle_name?.toLowerCase() || "";
+    const instructorLName = classroom.instructor?.last_name?.toLowerCase() || "";
+
+    const term = searchTerm.toLowerCase();
+
+    return (
+      classroomName.includes(term) ||
+      subjectCode.includes(term) ||
+      instructorEmail.includes(term) ||
+      instructorFName.includes(term) ||
+      instructorMName.includes(term) ||
+      instructorLName.includes(term)
+    );
+  });
+
+
 
   // Get current classrooms for pagination
   const indexOfLastClassroom = currentPage * classroomsPerPage;
@@ -187,8 +194,8 @@ const Classrooms = () => {
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900">
-                                 {classroom?.student_instructor?.first_name} {classroom?.student_instructor?.middle_name} {classroom?.student_instructor?.last_name}
-                                 {classroom?.instructor?.first_name} {classroom?.instructor?.middle_name} {classroom?.instructor?.last_name}
+                                  {classroom?.student_instructor?.first_name} {classroom?.student_instructor?.middle_name} {classroom?.student_instructor?.last_name}
+                                  {classroom?.instructor?.first_name} {classroom?.instructor?.middle_name} {classroom?.instructor?.last_name}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {classroom?.student_instructor?.email}
@@ -215,11 +222,10 @@ const Classrooms = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              classroom.is_hidden === 0
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${classroom.is_hidden === 0
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                              }`}
                           >
                             {getStatusText(classroom.is_hidden)}
                           </span>
@@ -273,11 +279,10 @@ const Classrooms = () => {
                   <button
                     onClick={() => paginate(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className={`cursor-pointer relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                      currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`cursor-pointer relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     Previous
                   </button>
@@ -286,11 +291,10 @@ const Classrooms = () => {
                       paginate(Math.min(totalPages, currentPage + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className={`cursor-pointer ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                      currentPage === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`cursor-pointer ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     Next
                   </button>
@@ -324,11 +328,10 @@ const Classrooms = () => {
                       <button
                         onClick={() => paginate(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className={`cursor-pointer relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                          currentPage === 1
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                        className={`cursor-pointer relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                          }`}
                       >
                         <span className="sr-only">Previous</span>
                         <FiChevronLeft className="h-5 w-5" />
@@ -340,11 +343,10 @@ const Classrooms = () => {
                           <button
                             key={number}
                             onClick={() => paginate(number)}
-                            className={`cursor-pointer relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === number
-                                ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                            className={`cursor-pointer relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number
+                              ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                              }`}
                           >
                             {number}
                           </button>
@@ -356,11 +358,10 @@ const Classrooms = () => {
                           paginate(Math.min(totalPages, currentPage + 1))
                         }
                         disabled={currentPage === totalPages}
-                        className={`cursor-pointer relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                          currentPage === totalPages
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                        className={`cursor-pointer relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                          }`}
                       >
                         <span className="sr-only">Next</span>
                         <FiChevronRight className="h-5 w-5" />

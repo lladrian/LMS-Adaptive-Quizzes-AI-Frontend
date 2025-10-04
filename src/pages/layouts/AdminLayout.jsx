@@ -30,13 +30,11 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     navigate("/");
-    localStorage.removeItem("role");
-    localStorage.removeItem("fullname");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
-    localStorage.removeItem("status");
+    localStorage.clear();
   };
-  const adminName = localStorage.getItem("fullname");
+  const fName = localStorage.getItem("first_name");
+  const mName = localStorage.getItem("middle_name");
+  const lName = localStorage.getItem("last_name");
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -126,11 +124,11 @@ const AdminLayout = () => {
                   className="flex items-center hover:bg-gray-100 p-1 rounded transition"
                 >
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                    {adminName?.charAt(0).toUpperCase()}
+                    {fName?.charAt(0).toUpperCase()} 
                   </div>
                   {sidebarOpen && (
                     <span className="ml-2 text-sm font-medium text-gray-700">
-                      {adminName}
+                      {fName} {mName} {lName} 
                     </span>
                   )}
                 </Link>
