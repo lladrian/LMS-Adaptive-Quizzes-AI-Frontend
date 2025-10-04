@@ -180,18 +180,19 @@ const Classrooms = () => {
                           {classroom.subject_code}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {classroom.instructor ? (
+                          {classroom?.instructor || classroom?.student_instructor ? (
                             <div className="flex items-center">
                               <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold mr-3">
                                 <FiUser />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900">
-                                  {classroom.instructor.fullname ||
-                                    `${classroom.instructor.first_name} ${classroom.instructor.last_name}`}
+                                 {classroom?.student_instructor?.first_name} {classroom?.student_instructor?.middle_name} {classroom?.student_instructor?.last_name}
+                                 {classroom?.instructor?.first_name} {classroom?.instructor?.middle_name} {classroom?.instructor?.last_name}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                  {classroom.instructor.email}
+                                  {classroom?.student_instructor?.email}
+                                  {classroom?.instructor?.email}
                                 </div>
                               </div>
                             </div>

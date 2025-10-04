@@ -15,7 +15,7 @@ const EditActivityModal = ({
     if (activity?.question) {
       const questions = activity.question.map((q) => {
         if (q.answer_type === "options" && q.correct_option) {
-          h;
+        
           // Find which option key contains the correct answer
           const optionKey =
             Object.entries(q.options || {}).find(

@@ -413,8 +413,6 @@ const ClassDetailPage = () => {
   };
 
   const handleViewClick = (student) => {
-    console.log("student");
-    console.log(student);
     setSelectedStudent(student);
     setIsModalOpen(true);
   };
@@ -638,7 +636,7 @@ const ClassDetailPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentStudents.length > 0 ? (
                     currentStudents.map((student) => (
-                      <tr key={student._id} className="hover:bg-gray-50">
+                      <tr key={student.student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.student.first_name}{" "}
                           {student.student.middle_name}{" "}
@@ -723,7 +721,7 @@ const ClassDetailPage = () => {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white w-full max-w-4xl h-[80vh] overflow-y-auto rounded-lg shadow-xl p-8">
                   <h2 className="text-3xl font-bold text-gray-800 mb-4 border-b pb-2">
-                    Student Activities
+                    Student Activities 
                   </h2>
 
                   <div className="space-y-4 text-md text-gray-700">
@@ -789,7 +787,7 @@ const ClassDetailPage = () => {
                         <div className="font-medium">
                           Title:{" "}
                           <span className="font-normal">
-                            {activity?.title || activity?.activity?.title}
+                            {activity?.title || activity?.activity?.title || activity?.main_activity?.title}
                           </span>
                         </div>
                         <div>
@@ -798,6 +796,7 @@ const ClassDetailPage = () => {
                             {(
                               activity?.activity_type ||
                               activity?.activity?.activity_type ||
+                              activity?.main_activity?.activity_type ||
                               "N/A"
                             ).toUpperCase()}{" "}
                           </span>
@@ -808,23 +807,21 @@ const ClassDetailPage = () => {
                             {(
                               activity?.grading_breakdown ||
                               activity?.activity?.grading_breakdown ||
+                              activity?.main_activity?.grading_breakdown ||
                               "N/A"
                             ).toUpperCase()}{" "}
                           </span>
                         </div>
                         {activityFilter !== "all" && (
                           <div>
-                            Score:{" "}
-                            {(activity?.answer?.answers || []).reduce(
-                              (acc, q) => acc + (q.points || 0),
-                              0
-                            )}{" "}
-                            /{" "}
+                            Score:{" "} 
+                            {activity?.is_submitted
+                              ? (activity?.answers || []).reduce((acc, q) => acc + (q.points || 0), 0)
+                              : 0}
+                            / {" "}
                             {(
-                              activity?.quiz?.question ||
-                              activity?.exam?.question ||
-                              activity?.activity?.question ||
                               activity?.question ||
+                              activity?.main_activity?.question ||
                               []
                             ).reduce((acc, q) => acc + (q.points || 0), 0)}
                           </div>
@@ -901,8 +898,6 @@ const ClassDetailPage = () => {
                           <p className="text-lg font-semibold text-indigo-800">
                             Overall Grade:{" "}
                             <span className="text-2xl">
-                              {console.log(222)}
-                              {console.log(selectedStudent.grades.student_grade.grade)}
                               {selectedStudent.grades.student_grade.grade || null}
                               /100
                             </span>

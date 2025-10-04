@@ -1207,7 +1207,7 @@ const groupAndCountActivities = (activities) => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {classroom.students?.length > 0 ? (
                       classroom.students.map((student) => (
-                        <tr key={student._id} className="hover:bg-gray-50">
+                        <tr key={student.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap font-medium">
                             {student.first_name} {student.middle_name}{" "}
                             {student.last_name}

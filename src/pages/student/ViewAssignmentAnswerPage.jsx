@@ -337,6 +337,7 @@ const ActivityAnswerPage = () => {
                     <p className="mb-2">{currentQuestion.text}</p>
 
                     {(currentQuestion.answer_type === "programming" ||
+                      currentQuestion.answer_type === "options" ||
                       answersData.submitted_at) && (
                       <div className="mt-2">
                         {currentQuestion.answer_type === "programming" && (
