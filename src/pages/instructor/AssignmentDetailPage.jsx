@@ -288,7 +288,6 @@ const AssignmentDetailPage = () => {
     try {
       const result = await extendActivityTime(
         assignmentId,
-        activityData.activity_type,
         parseInt(extendMinutes)
       );
 
@@ -397,21 +396,40 @@ const AssignmentDetailPage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Time Limit</p>
                     <p className="font-medium">
-                      {Math.floor(
+                      {/* {Math.floor(
                         (activityData.submission_time +
-                          (activityData.extended_minutes || 0)) /
+                          (activityData.extended_minutes || 0 && activityData.extended_minutes > 0)) /
                           60
                       )}
                       h{" "}
                       {(activityData.submission_time +
-                        (activityData.extended_minutes || 0)) %
+                        (activityData.extended_minutes || 0 && activityData.extended_minutes > 0)) %
                         60}
                       m
                       {activityData.extended_minutes > 0 && (
                         <span className="text-green-600 text-sm ml-2">
                           (+{activityData.extended_minutes}m extended)
                         </span>
-                      )}
+                      )} */}
+                      {(() => {
+                        const baseTime = activityData.submission_time || 0;
+                        const extended = activityData.extended_minutes > 0 ? activityData.extended_minutes : 0;
+                        const totalMinutes = Math.max(baseTime + extended, 0);
+
+                        const hours = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+
+                        return (
+                          <>
+                            {hours}h {minutes}m
+                            {activityData.extended_minutes > 0 && (
+                              <span className="text-green-600 text-sm ml-2">
+                                (+{activityData.extended_minutes}m extended)
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -661,7 +679,7 @@ const AssignmentDetailPage = () => {
 
                   {filteredMissingStudents.length > 0 &&
                     filteredMissingStudents.map((student) => (
-                      <tr key={student._id} className="hover:bg-gray-50">
+                      <tr key={student.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">
                             {student.first_name} {student.middle_name}{" "}
@@ -750,7 +768,7 @@ const AssignmentDetailPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Additional Minutes
                 </label>
-                <input
+                {/* <input
                   type="number"
                   min="1"
                   value={extendMinutes}
@@ -760,10 +778,28 @@ const AssignmentDetailPage = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   placeholder="Enter minutes to extend"
                   disabled={isExtending}
-                />
-                <p className="text-xs text-gray-500 mt-1">
+                /> */}
+                <input
+                type="number"
+                value={extendMinutes}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty string, negative sign alone, or valid numbers (positive or negative)
+                  if (/^-?\d*$/.test(value)) {
+                    setExtendMinutes(value);
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                placeholder="Enter minutes to extend"
+                disabled={isExtending}
+              />
+
+                {/* <p className="text-xs text-gray-500 mt-1">
                   Current extension: {activityData.extended_minutes || 0}{" "}
                   minutes
+                </p> */}
+                <p className="text-xs text-gray-500 mt-1">
+                  Current extension: {Math.max(activityData.extended_minutes || 0, 0)} minutes
                 </p>
               </div>
               <div className="mt-6 flex justify-end space-x-3">

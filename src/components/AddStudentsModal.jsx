@@ -133,7 +133,7 @@ const AddStudentsModal = ({ isOpen, onClose, classId, onSuccess }) => {
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => (
                   <div
-                    key={student.student_id_number}
+                    key={student._id}
                     className={`p-3 border rounded-lg flex items-center justify-between cursor-pointer ${
                       selectedStudents.includes(student.student_id_number)
                         ? "border-indigo-500 bg-indigo-50"
@@ -144,7 +144,7 @@ const AddStudentsModal = ({ isOpen, onClose, classId, onSuccess }) => {
                     }
                   >
                     <div>
-                      <h4 className="font-medium">{student.fullname}</h4>
+                      <h4 className="font-medium">{student.first_name} {student.middle_name} {student.last_name}</h4>
                       <p className="text-sm text-gray-600">{student.email}</p>
                       {student.student_id_number && (
                         <p className="text-xs text-gray-500">

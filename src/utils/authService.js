@@ -1362,10 +1362,10 @@ export const promoteUser = async (id, role_name) => {
 };
 
 /* EXTEND TIME */
-export const extendActivityTime = async (activityId, type, minutes) => {
+export const extendActivityTime = async (activityId, minutes) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/extends/${type}/${activityId}/time`,
+      `${BASE_URL}/extends/${activityId}/time`,
       {
         minutes,
       }

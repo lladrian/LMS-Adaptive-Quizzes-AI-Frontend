@@ -357,7 +357,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-800">
                   New {activity.role} registered:{" "}
-                  {activity.fullname || "Unknown User"}
+                  {activity.first_name} {activity.middle_name} {activity.last_name}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {formatTimeAgo(activity.created_at)}
